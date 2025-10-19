@@ -1,16 +1,41 @@
-# recommandation_mobile
+# 💪 MuscuCoach — Application Flutter
 
-A new Flutter project.
+> _Faire progresser ta musculation, c’est plus simple que tu ne le penses !_
 
-## Getting Started
+MuscuCoach est une application mobile développée avec **Flutter** qui t’aide à suivre ta progression, recevoir des **recommandations personnalisées** d’exercices, et rester motivé à chaque entraînement.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🚀 Fonctionnalités principales
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+✅ **Recommandations intelligentes**
+- L’application apprend de tes performances et te propose des exercices adaptés à ton niveau et à tes objectifs (force, masse, endurance).
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+✅ **Interface moderne et motivante**
+- Une expérience fluide avec des écrans propres, des animations légères et un design minimaliste.
+
+✅ **Suivi personnalisé**
+- Visualise ton évolution (poids, répétitions, séries, etc.)
+- Statistiques hebdomadaires pour suivre ta progression.
+
+✅ **Thème clair et sombre**
+- Confort visuel garanti, de jour comme de nuit.
+
+---
+
+## 🧩 Structure du projet
+
+```bash
+lib/
+├── core/
+│   ├── theme/
+│   │   └── app_theme.dart          # Gestion du thème clair/sombre
+│   └── widgets/
+│       └── primary_button.dart     # Bouton principal réutilisable
+│
+├── features/
+│   └── onboarding/
+│       └── presentation/pages/
+│           └── welcome_page.dart   # Écran d'accueil "Commencer"
+│
+└── main.dart                       # Point d'entrée de l'application
