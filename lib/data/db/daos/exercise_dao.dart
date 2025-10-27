@@ -56,6 +56,11 @@ class ExerciseDao extends DatabaseAccessor<AppDb> with _$ExerciseDaoMixin {
     return result.take(limit).toList();
   }
 
+  Stream<List<ExerciseData>> watchAll() {
+    final q = (select(exercise)..orderBy([(t) => OrderingTerm.asc(t.name)]));
+    return q.watch();
+  }
+
   Future<int> insertOne(ExerciseCompanion data) => into(exercise).insert(data);
   Future<bool> updateOne(ExerciseData e) => update(exercise).replace(e);
   Future<int> deleteById(int id) =>
