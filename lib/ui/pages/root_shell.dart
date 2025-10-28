@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:recommandation_mobile/ui/pages/match_page.dart';
 import '../../data/db/app_db.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav/bottom_nav_bar.dart';
@@ -21,7 +22,7 @@ class _RootShellState extends State<RootShell> {
     final pages = [
       const DashboardPage(),
       const _PlaceholderPage(title: 'Planning'),
-      const _PlaceholderPage(title: 'Progression'),
+      MatchPage(db: widget.db),
       ExercisesPage(db: widget.db), // ← Mes Exercices
       const _PlaceholderPage(title: 'Profil'),
     ];
@@ -29,7 +30,7 @@ class _RootShellState extends State<RootShell> {
     final items = const [
       BottomNavItem(icon: Icons.home_outlined, label: 'Acceuil'),
       BottomNavItem(icon: Icons.calendar_month_outlined, label: 'Planning'),
-      BottomNavItem(icon: Icons.show_chart, label: 'Progression'),
+      BottomNavItem(icon: Icons.show_chart, label: 'Match'),
       BottomNavItem(icon: Icons.fitness_center, label: 'Mes Exercices'),
       BottomNavItem(icon: Icons.person, label: 'Profil'),
     ];
