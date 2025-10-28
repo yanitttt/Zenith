@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../widgets/bottom_nav/bottom_nav_bar.dart';
 import 'dashboard_page.dart';
 import 'exercises_page.dart';
+import 'admin_page.dart'; // ⬅️ NEW
 
 class RootShell extends StatefulWidget {
   final AppDb db;
@@ -23,8 +24,8 @@ class _RootShellState extends State<RootShell> {
       const DashboardPage(),
       const _PlaceholderPage(title: 'Planning'),
       MatchPage(db: widget.db),
-      ExercisesPage(db: widget.db), // ← Mes Exercices
-      const _PlaceholderPage(title: 'Profil'),
+      ExercisesPage(db: widget.db),
+      AdminPage(db: widget.db), // ⬅️ Admin (remplace Profil)
     ];
 
     final items = const [
@@ -32,7 +33,7 @@ class _RootShellState extends State<RootShell> {
       BottomNavItem(icon: Icons.calendar_month_outlined, label: 'Planning'),
       BottomNavItem(icon: Icons.show_chart, label: 'Match'),
       BottomNavItem(icon: Icons.fitness_center, label: 'Mes Exercices'),
-      BottomNavItem(icon: Icons.person, label: 'Profil'),
+      BottomNavItem(icon: Icons.admin_panel_settings, label: 'Admin'), // ⬅️
     ];
 
     return Scaffold(
