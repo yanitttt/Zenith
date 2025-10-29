@@ -11,26 +11,32 @@ class UserRepository {
 
   /// Insère un profil UNIQUEMENT si la table est vide.
   /// Retourne l'id créé ou jette une Exception si rien n'a été inséré.
-  Future<int> createProfileStrict({required String prenom, required String nom}) async {
+  Future<int> createProfileStrict({
+    required String prenom,
+    required String nom,
+    required DateTime birthDate,
+    required String gender, // "female" | "male"
+  }) async {
     return _dao.transaction(() async {
       await _dao.ensureSingleton();
       final before = await _dao.countUsers();
       if (before > 0) {
         final u = await _dao.firstUser();
-        return u!.id; // déjà un user → on renvoie son id
+        return u!.id; // déjà un user
       }
 
-      final newId = await _dao.insertOne(AppUserCompanion(
+      final id = await _dao.insertOne(AppUserCompanion(
         prenom: Value(prenom),
         nom: Value(nom),
+        birth_date: Value(birthDate),
+        gender: Value(gender),
       ));
 
       final after = await _dao.countUsers();
       if (after != before + 1) {
-        // rien n’a été ajouté → on annule et on lève une erreur
         throw Exception('Aucun profil créé (count $before → $after)');
       }
-      return newId;
+      return id;
     });
   }
 }

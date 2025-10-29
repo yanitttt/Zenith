@@ -1,6 +1,8 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; // ⬅️ +++
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'data/db/app_db.dart';
 import 'core/prefs/app_prefs.dart';
 import 'ui/theme/app_theme.dart';
@@ -15,11 +17,11 @@ void main() async {
   final sp = await SharedPreferences.getInstance();
   final prefs = AppPrefs(sp);
 
-  // Normalise la table: garde au plus 1 ligne (ne touche pas à des colonnes optionnelles)
+  // Garde au plus 1 ligne dans app_user
   final userDao = UserDao(db);
   await userDao.ensureSingleton();
 
-  // Décision basée sur la BDD
+  // Décision basée sur la BDD (source de vérité)
   final count = await userDao.countUsers();
   if (count > 0) {
     final existing = await userDao.firstUser();
@@ -35,11 +37,26 @@ void main() async {
     await prefs.setOnboarded(false);
   }
 
-  final home = prefs.onboarded ? RootShell(db: db) : OnboardingFlow(db: db, prefs: prefs);
+  final home = prefs.onboarded
+      ? RootShell(db: db)
+      : OnboardingFlow(db: db, prefs: prefs);
 
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: AppTheme.dark,
+
+    // ⬇️ Localisations nécessaires au DatePicker & co.
+    localizationsDelegates: const [
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
+    supportedLocales: const [
+      Locale('fr'),
+      Locale('en'),
+    ],
+    locale: const Locale('fr'), // optionnel: force l'UI en français
+
     home: home,
   ));
 }

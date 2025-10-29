@@ -1,11 +1,11 @@
-// lib/ui/pages/onboarding/onboarding_flow.dart
 import 'package:flutter/material.dart';
 import '../../../core/prefs/app_prefs.dart';
 import '../../../data/db/app_db.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../root_shell.dart';
 import 'name_page.dart';
-import 'welcome_page.dart';
+import 'dob_page.dart';
+import 'gender_page.dart';
 
 class OnboardingFlow extends StatefulWidget {
   final AppDb db;
@@ -19,6 +19,11 @@ class OnboardingFlow extends StatefulWidget {
 class _OnboardingFlowState extends State<OnboardingFlow> {
   late final UserRepository _users;
 
+  String? _prenom;
+  String? _nom;
+  DateTime? _dob;
+  Gender? _gender;
+
   @override
   void initState() {
     super.initState();
@@ -26,17 +31,53 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 
   void _goToName() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => NamePage(onSubmit: _finish)),
-    );
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => NamePage(onSubmit: ({required prenom, required nom}) async {
+        _prenom = prenom;
+        _nom = nom;
+        if (!mounted) return;
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => DobPage(
+            initial: _dob,
+            onNext: (d) async {
+              _dob = d;
+              if (!mounted) return;
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => GenderPage(
+                  initial: _gender,
+                  onNext: (g) async {
+                    _gender = g;
+                    await _finish(); // insertion finale
+                  },
+                  onBack: () => Navigator.of(context).pop(),
+                ),
+              ));
+            },
+            onBack: () => Navigator.of(context).pop(),
+          ),
+        ));
+      }),
+    ));
   }
 
-  Future<void> _finish({required String prenom, required String nom}) async {
+  Future<void> _finish() async {
     try {
-      // 1) tentative d’insertion STRICTE
-      final id = await _users.createProfileStrict(prenom: prenom, nom: nom);
+      final prenom = _prenom?.trim() ?? '';
+      final nom = _nom?.trim() ?? '';
+      final dob = _dob;
+      final gender = _gender;
 
-      // 2) succès → on persiste et on navigue
+      if (prenom.isEmpty || nom.isEmpty || dob == null || gender == null) {
+        throw Exception('Champs manquants');
+      }
+
+      final id = await _users.createProfileStrict(
+        prenom: prenom,
+        nom: nom,
+        birthDate: dob,
+        gender: gender == Gender.female ? 'female' : 'male',
+      );
+
       await widget.prefs.setCurrentUserId(id);
       await widget.prefs.setOnboarded(true);
 
@@ -49,47 +90,27 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       debugPrint('[ONBOARD][ERROR] $e');
       debugPrint(st.toString());
       if (!mounted) return;
-      // 3) échec → on RESTE sur la page nom/prénom et on affiche une erreur
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Création du profil impossible : $e')),
       );
     }
   }
 
-
-  Future<void> _logDbState({String tag = ''}) async {
-    try {
-      // integrity + user_version
-      final integrity = await widget.db.integrityCheck();
-      final userVersion = await widget.db.pragmaUserVersion();
-      debugPrint('[DB][$tag] integrity_check=$integrity user_version=$userVersion');
-
-      // schéma de la table app_user
-      final cols = await widget.db.customSelect('PRAGMA table_info(app_user);').get();
-      final colList = cols.map((r) => r.data['name']).join(', ');
-      debugPrint('[DB][$tag] app_user columns = [$colList]');
-
-      // quelques lignes de contrôle
-      final rows = await widget.db.customSelect('SELECT id, prenom, nom FROM app_user LIMIT 5;').get();
-      debugPrint('[DB][$tag] first rows app_user = ${rows.map((r) => r.data).toList()}');
-    } catch (e, st) {
-      debugPrint('[DB][$tag][ERROR] $e');
-      debugPrint(st.toString());
-    }
-  }
-
-  Future<int> _countUsers() async {
-    final res = await widget.db.customSelect('SELECT COUNT(*) AS c FROM app_user;').getSingle();
-    final c = (res.data['c'] as int?) ?? 0;
-    return c;
-  }
-
-  void _showErrorSnack(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+  @override
+  Widget build(BuildContext context) {
+    // Écran de bienvenue -> lance le flow
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: ElevatedButton(
+          onPressed: _goToName,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.amber,
+            foregroundColor: Colors.black,
+          ),
+          child: const Text('Commencer'),
+        ),
+      ),
     );
   }
-
-  @override
-  Widget build(BuildContext context) => WelcomePage(onStart: _goToName);
 }

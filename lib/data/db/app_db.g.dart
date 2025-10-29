@@ -1309,6 +1309,26 @@ class $AppUserTable extends AppUser with TableInfo<$AppUserTable, AppUserData> {
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _birth_dateMeta = const VerificationMeta(
+    'birth_date',
+  );
+  @override
+  late final GeneratedColumn<DateTime> birth_date = GeneratedColumn<DateTime>(
+    'birth_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _genderMeta = const VerificationMeta('gender');
+  @override
+  late final GeneratedColumn<String> gender = GeneratedColumn<String>(
+    'gender',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1319,6 +1339,8 @@ class $AppUserTable extends AppUser with TableInfo<$AppUserTable, AppUserData> {
     height,
     level,
     metabolism,
+    birth_date,
+    gender,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1377,6 +1399,18 @@ class $AppUserTable extends AppUser with TableInfo<$AppUserTable, AppUserData> {
         metabolism.isAcceptableOrUnknown(data['metabolism']!, _metabolismMeta),
       );
     }
+    if (data.containsKey('birth_date')) {
+      context.handle(
+        _birth_dateMeta,
+        birth_date.isAcceptableOrUnknown(data['birth_date']!, _birth_dateMeta),
+      );
+    }
+    if (data.containsKey('gender')) {
+      context.handle(
+        _genderMeta,
+        gender.isAcceptableOrUnknown(data['gender']!, _genderMeta),
+      );
+    }
     return context;
   }
 
@@ -1419,6 +1453,14 @@ class $AppUserTable extends AppUser with TableInfo<$AppUserTable, AppUserData> {
         DriftSqlType.string,
         data['${effectivePrefix}metabolism'],
       ),
+      birth_date: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}birth_date'],
+      ),
+      gender: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}gender'],
+      ),
     );
   }
 
@@ -1437,6 +1479,12 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
   final double? height;
   final int? level;
   final String? metabolism;
+
+  /// Date de naissance. Drift stocke `DateTime` en INTEGER (epoch micros).
+  final DateTime? birth_date;
+
+  /// Sexe de l’utilisateur ("female" | "male")
+  final String? gender;
   const AppUserData({
     required this.id,
     this.prenom,
@@ -1446,6 +1494,8 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
     this.height,
     this.level,
     this.metabolism,
+    this.birth_date,
+    this.gender,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1472,6 +1522,12 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
     if (!nullToAbsent || metabolism != null) {
       map['metabolism'] = Variable<String>(metabolism);
     }
+    if (!nullToAbsent || birth_date != null) {
+      map['birth_date'] = Variable<DateTime>(birth_date);
+    }
+    if (!nullToAbsent || gender != null) {
+      map['gender'] = Variable<String>(gender);
+    }
     return map;
   }
 
@@ -1492,6 +1548,12 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
           metabolism == null && nullToAbsent
               ? const Value.absent()
               : Value(metabolism),
+      birth_date:
+          birth_date == null && nullToAbsent
+              ? const Value.absent()
+              : Value(birth_date),
+      gender:
+          gender == null && nullToAbsent ? const Value.absent() : Value(gender),
     );
   }
 
@@ -1509,6 +1571,8 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
       height: serializer.fromJson<double?>(json['height']),
       level: serializer.fromJson<int?>(json['level']),
       metabolism: serializer.fromJson<String?>(json['metabolism']),
+      birth_date: serializer.fromJson<DateTime?>(json['birth_date']),
+      gender: serializer.fromJson<String?>(json['gender']),
     );
   }
   @override
@@ -1523,6 +1587,8 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
       'height': serializer.toJson<double?>(height),
       'level': serializer.toJson<int?>(level),
       'metabolism': serializer.toJson<String?>(metabolism),
+      'birth_date': serializer.toJson<DateTime?>(birth_date),
+      'gender': serializer.toJson<String?>(gender),
     };
   }
 
@@ -1535,6 +1601,8 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
     Value<double?> height = const Value.absent(),
     Value<int?> level = const Value.absent(),
     Value<String?> metabolism = const Value.absent(),
+    Value<DateTime?> birth_date = const Value.absent(),
+    Value<String?> gender = const Value.absent(),
   }) => AppUserData(
     id: id ?? this.id,
     prenom: prenom.present ? prenom.value : this.prenom,
@@ -1544,6 +1612,8 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
     height: height.present ? height.value : this.height,
     level: level.present ? level.value : this.level,
     metabolism: metabolism.present ? metabolism.value : this.metabolism,
+    birth_date: birth_date.present ? birth_date.value : this.birth_date,
+    gender: gender.present ? gender.value : this.gender,
   );
   AppUserData copyWithCompanion(AppUserCompanion data) {
     return AppUserData(
@@ -1556,6 +1626,9 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
       level: data.level.present ? data.level.value : this.level,
       metabolism:
           data.metabolism.present ? data.metabolism.value : this.metabolism,
+      birth_date:
+          data.birth_date.present ? data.birth_date.value : this.birth_date,
+      gender: data.gender.present ? data.gender.value : this.gender,
     );
   }
 
@@ -1569,14 +1642,26 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
           ..write('weight: $weight, ')
           ..write('height: $height, ')
           ..write('level: $level, ')
-          ..write('metabolism: $metabolism')
+          ..write('metabolism: $metabolism, ')
+          ..write('birth_date: $birth_date, ')
+          ..write('gender: $gender')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, prenom, nom, age, weight, height, level, metabolism);
+  int get hashCode => Object.hash(
+    id,
+    prenom,
+    nom,
+    age,
+    weight,
+    height,
+    level,
+    metabolism,
+    birth_date,
+    gender,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1588,7 +1673,9 @@ class AppUserData extends DataClass implements Insertable<AppUserData> {
           other.weight == this.weight &&
           other.height == this.height &&
           other.level == this.level &&
-          other.metabolism == this.metabolism);
+          other.metabolism == this.metabolism &&
+          other.birth_date == this.birth_date &&
+          other.gender == this.gender);
 }
 
 class AppUserCompanion extends UpdateCompanion<AppUserData> {
@@ -1600,6 +1687,8 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
   final Value<double?> height;
   final Value<int?> level;
   final Value<String?> metabolism;
+  final Value<DateTime?> birth_date;
+  final Value<String?> gender;
   const AppUserCompanion({
     this.id = const Value.absent(),
     this.prenom = const Value.absent(),
@@ -1609,6 +1698,8 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
     this.height = const Value.absent(),
     this.level = const Value.absent(),
     this.metabolism = const Value.absent(),
+    this.birth_date = const Value.absent(),
+    this.gender = const Value.absent(),
   });
   AppUserCompanion.insert({
     this.id = const Value.absent(),
@@ -1619,6 +1710,8 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
     this.height = const Value.absent(),
     this.level = const Value.absent(),
     this.metabolism = const Value.absent(),
+    this.birth_date = const Value.absent(),
+    this.gender = const Value.absent(),
   });
   static Insertable<AppUserData> custom({
     Expression<int>? id,
@@ -1629,6 +1722,8 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
     Expression<double>? height,
     Expression<int>? level,
     Expression<String>? metabolism,
+    Expression<DateTime>? birth_date,
+    Expression<String>? gender,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1639,6 +1734,8 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
       if (height != null) 'height': height,
       if (level != null) 'level': level,
       if (metabolism != null) 'metabolism': metabolism,
+      if (birth_date != null) 'birth_date': birth_date,
+      if (gender != null) 'gender': gender,
     });
   }
 
@@ -1651,6 +1748,8 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
     Value<double?>? height,
     Value<int?>? level,
     Value<String?>? metabolism,
+    Value<DateTime?>? birth_date,
+    Value<String?>? gender,
   }) {
     return AppUserCompanion(
       id: id ?? this.id,
@@ -1661,6 +1760,8 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
       height: height ?? this.height,
       level: level ?? this.level,
       metabolism: metabolism ?? this.metabolism,
+      birth_date: birth_date ?? this.birth_date,
+      gender: gender ?? this.gender,
     );
   }
 
@@ -1691,6 +1792,12 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
     if (metabolism.present) {
       map['metabolism'] = Variable<String>(metabolism.value);
     }
+    if (birth_date.present) {
+      map['birth_date'] = Variable<DateTime>(birth_date.value);
+    }
+    if (gender.present) {
+      map['gender'] = Variable<String>(gender.value);
+    }
     return map;
   }
 
@@ -1704,7 +1811,9 @@ class AppUserCompanion extends UpdateCompanion<AppUserData> {
           ..write('weight: $weight, ')
           ..write('height: $height, ')
           ..write('level: $level, ')
-          ..write('metabolism: $metabolism')
+          ..write('metabolism: $metabolism, ')
+          ..write('birth_date: $birth_date, ')
+          ..write('gender: $gender')
           ..write(')'))
         .toString();
   }
@@ -3706,6 +3815,8 @@ typedef $$AppUserTableCreateCompanionBuilder =
       Value<double?> height,
       Value<int?> level,
       Value<String?> metabolism,
+      Value<DateTime?> birth_date,
+      Value<String?> gender,
     });
 typedef $$AppUserTableUpdateCompanionBuilder =
     AppUserCompanion Function({
@@ -3717,6 +3828,8 @@ typedef $$AppUserTableUpdateCompanionBuilder =
       Value<double?> height,
       Value<int?> level,
       Value<String?> metabolism,
+      Value<DateTime?> birth_date,
+      Value<String?> gender,
     });
 
 class $$AppUserTableFilterComposer extends Composer<_$AppDb, $AppUserTable> {
@@ -3764,6 +3877,16 @@ class $$AppUserTableFilterComposer extends Composer<_$AppDb, $AppUserTable> {
 
   ColumnFilters<String> get metabolism => $composableBuilder(
     column: $table.metabolism,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get birth_date => $composableBuilder(
+    column: $table.birth_date,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get gender => $composableBuilder(
+    column: $table.gender,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -3815,6 +3938,16 @@ class $$AppUserTableOrderingComposer extends Composer<_$AppDb, $AppUserTable> {
     column: $table.metabolism,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get birth_date => $composableBuilder(
+    column: $table.birth_date,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get gender => $composableBuilder(
+    column: $table.gender,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$AppUserTableAnnotationComposer
@@ -3851,6 +3984,14 @@ class $$AppUserTableAnnotationComposer
     column: $table.metabolism,
     builder: (column) => column,
   );
+
+  GeneratedColumn<DateTime> get birth_date => $composableBuilder(
+    column: $table.birth_date,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get gender =>
+      $composableBuilder(column: $table.gender, builder: (column) => column);
 }
 
 class $$AppUserTableTableManager
@@ -3889,6 +4030,8 @@ class $$AppUserTableTableManager
                 Value<double?> height = const Value.absent(),
                 Value<int?> level = const Value.absent(),
                 Value<String?> metabolism = const Value.absent(),
+                Value<DateTime?> birth_date = const Value.absent(),
+                Value<String?> gender = const Value.absent(),
               }) => AppUserCompanion(
                 id: id,
                 prenom: prenom,
@@ -3898,6 +4041,8 @@ class $$AppUserTableTableManager
                 height: height,
                 level: level,
                 metabolism: metabolism,
+                birth_date: birth_date,
+                gender: gender,
               ),
           createCompanionCallback:
               ({
@@ -3909,6 +4054,8 @@ class $$AppUserTableTableManager
                 Value<double?> height = const Value.absent(),
                 Value<int?> level = const Value.absent(),
                 Value<String?> metabolism = const Value.absent(),
+                Value<DateTime?> birth_date = const Value.absent(),
+                Value<String?> gender = const Value.absent(),
               }) => AppUserCompanion.insert(
                 id: id,
                 prenom: prenom,
@@ -3918,6 +4065,8 @@ class $$AppUserTableTableManager
                 height: height,
                 level: level,
                 metabolism: metabolism,
+                birth_date: birth_date,
+                gender: gender,
               ),
           withReferenceMapper:
               (p0) =>

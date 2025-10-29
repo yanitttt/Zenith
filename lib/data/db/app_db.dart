@@ -1,7 +1,7 @@
 // lib/data/db/app_db.dart
 import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart'; // ✅ utiliser la base native
+import 'package:drift/native.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -10,11 +10,11 @@ part 'app_db.g.dart';
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'bdd_recommandation_v2.db'));
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dir.path, 'bdd_recommandation_v2.db'));
 
+    // Copier la DB packagée uniquement si elle n'existe pas encore
     if (!await file.exists()) {
-      // copie depuis assets vers file
       final data = await rootBundle.load('assets/db/bdd_recommandation_v2.db');
       final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
       await file.writeAsBytes(bytes, flush: true);
@@ -24,7 +24,7 @@ LazyDatabase _openConnection() {
   });
 }
 
-/* ======== TABLES ======== */
+/* ===================== TABLES ===================== */
 
 class Exercise extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -62,18 +62,20 @@ class ExerciseEquipment extends Table {
 class AppUser extends Table {
   IntColumn get id => integer().autoIncrement()();
 
-  // déjà ajoutés
   TextColumn get prenom => text().nullable()();
   TextColumn get nom => text().nullable()();
 
-  // ➕ aligne sur la BDD existante (tous en nullable)
+  // Colonnes existantes de ta DB packagée (laisse en nullable)
   IntColumn get age => integer().nullable()();
   RealColumn get weight => real().nullable()();
   RealColumn get height => real().nullable()();
   IntColumn get level => integer().nullable()();
   TextColumn get metabolism => text().nullable()();
-}
 
+  /// Nouveaux champs (Drift => SQL: birth_date, gender)
+  DateTimeColumn get birthDate => dateTime().nullable()();
+  TextColumn get gender => text().nullable()(); // "female" | "male"
+}
 
 class UserFeedback extends Table {
   IntColumn get userId => integer().named('user_id')();
@@ -105,7 +107,7 @@ class SessionExercise extends Table {
   Set<Column> get primaryKey => {sessionId, exerciseId};
 }
 
-/* ======== DB ======== */
+/* ===================== DB ===================== */
 
 @DriftDatabase(
   tables: [
@@ -123,58 +125,75 @@ class SessionExercise extends Table {
 class AppDb extends _$AppDb {
   AppDb() : super(_openConnection());
 
+  // 🔼 Bump pour déclencher l’upgrade si une vieille DB est présente
   @override
-  int get schemaVersion => 4; // ⬅️ bump
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    // Filet de sécurité : s’assurer des colonnes à chaque ouverture
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
+      await _safeAddColumn('app_user', 'prenom', 'TEXT');
+      await _safeAddColumn('app_user', 'nom', 'TEXT');
+      await _safeAddColumn('app_user', 'birth_date', 'INTEGER'); // DateTime
+      await _safeAddColumn('app_user', 'gender', 'TEXT');
     },
+
     onUpgrade: (migrator, from, to) async {
-      // v2/v3 : tes migrations existantes (prenom/nom, etc.)
+      // v2 : introduction prenom/nom + migration éventuelle depuis "name"
       if (from < 2) {
-        await _ensureUserNameColumns();
+        await _safeAddColumn('app_user', 'prenom', 'TEXT');
+        await _safeAddColumn('app_user', 'nom', 'TEXT');
         if (await _columnExists('app_user', 'name')) {
           await customStatement('UPDATE app_user SET nom = name WHERE nom IS NULL;');
         }
       }
+
+      // v3 : ceinture
       if (from < 3) {
-        await _ensureUserNameColumns();
+        await _safeAddColumn('app_user', 'prenom', 'TEXT');
+        await _safeAddColumn('app_user', 'nom', 'TEXT');
       }
 
-      // v4 : colonne singleton + contrainte d'unicité + dédoublonnage
+      // v4 : (optionnel) gestion singleton — laissons en migration seulement
       if (from < 4) {
         await _safeAddColumn('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 0');
-
-        // Garder une seule ligne si plusieurs existent déjà
         await customStatement('DELETE FROM app_user WHERE id NOT IN (SELECT MIN(id) FROM app_user);');
-        // S’assurer que la (seule) ligne a singleton=0
         await customStatement('UPDATE app_user SET singleton = 0;');
-        // Créer un index unique (empêche toute 2e ligne)
-        await customStatement('CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);');
+        await customStatement(
+          'CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);',
+        );
+      }
+
+      // v5+ : nouveaux champs profil
+      if (from < 5) {
+        await _safeAddColumn('app_user', 'birth_date', 'INTEGER');
+        await _safeAddColumn('app_user', 'gender', 'TEXT');
+      }
+      // v6 → v7 : garde-fou (au cas où)
+      if (from < 7) {
+        await _safeAddColumn('app_user', 'birth_date', 'INTEGER');
+        await _safeAddColumn('app_user', 'gender', 'TEXT');
       }
     },
   );
 
-// ---------- Helpers (déjà vus plus haut, garde-les dans AppDb) ----------
-  Future<void> _ensureUserNameColumns() async {
-    await _safeAddColumn('app_user', 'prenom', 'TEXT');
-    await _safeAddColumn('app_user', 'nom', 'TEXT');
-  }
-
-  Future<bool> _columnExists(String table, String column) async {
-    final rows = await customSelect('PRAGMA table_info($table);').get();
-    for (final r in rows) {
-      if ((r.data['name'] ?? '').toString() == column) return true;
-    }
-    return false;
-  }
+  /* ---------- Helpers ---------- */
 
   Future<void> _safeAddColumn(String table, String column, String sqlType) async {
     if (!await _columnExists(table, column)) {
       await customStatement('ALTER TABLE $table ADD COLUMN $column $sqlType;');
     }
+  }
+
+  Future<bool> _columnExists(String table, String column) async {
+    final rows = await customSelect('PRAGMA table_info($table);').get();
+    for (final r in rows) {
+      final name = (r.data['name'] ?? '').toString();
+      if (name == column) return true;
+    }
+    return false;
   }
 
   Future<String> integrityCheck() async {
@@ -187,6 +206,4 @@ class AppDb extends _$AppDb {
     final v = (row.data.values.first ?? '0').toString();
     return int.tryParse(v) ?? 0;
   }
-
-
 }

@@ -1,3 +1,4 @@
+// lib/ui/pages/admin_page.dart
 import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
@@ -29,7 +30,7 @@ class _AdminPageState extends State<AdminPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Column(
             children: [
-              // Header Admin
+              // Header
               Container(
                 decoration: BoxDecoration(
                   color: AppTheme.surface,
@@ -50,13 +51,12 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                     ),
                     Spacer(),
-                    // placeholder pour actions futures (export, purge, etc.)
                   ],
                 ),
               ),
               const SizedBox(height: 12),
 
-              // Bloc stats + liste users
+              // Bloc liste
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
@@ -66,7 +66,7 @@ class _AdminPageState extends State<AdminPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Stats bandeau
+                      // Bandeau stats
                       FutureBuilder<int>(
                         future: _userDao.countUsers(),
                         builder: (context, snap) {
@@ -101,7 +101,7 @@ class _AdminPageState extends State<AdminPage> {
                         },
                       ),
 
-                      // Liste des users
+                      // Liste
                       Expanded(
                         child: StreamBuilder<List<AppUserData>>(
                           stream: _userDao.watchAllOrdered(),
@@ -142,6 +142,50 @@ class _UserCard extends StatelessWidget {
   final AppUserData u;
   const _UserCard({required this.u});
 
+  // ---------- helpers présentation ----------
+  String _fmtDate(DateTime d) {
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    final yy = d.year.toString();
+    return '$dd/$mm/$yy';
+  }
+
+  int? _calcAge(DateTime? dob) {
+    if (dob == null) return null;
+    final now = DateTime.now();
+    int years = now.year - dob.year;
+    final hadBirthday = (now.month > dob.month) ||
+        (now.month == dob.month && now.day >= dob.day);
+    if (!hadBirthday) years--;
+    return years;
+  }
+
+  String _genderLabel(String? g) {
+    switch ((g ?? '').toLowerCase()) {
+      case 'female':
+      case 'f':
+        return 'Femme';
+      case 'male':
+      case 'm':
+        return 'Homme';
+      default:
+        return '—';
+    }
+  }
+
+  IconData _genderIcon(String? g) {
+    switch ((g ?? '').toLowerCase()) {
+      case 'female':
+      case 'f':
+        return Icons.female;
+      case 'male':
+      case 'm':
+        return Icons.male;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final title = [
@@ -149,12 +193,20 @@ class _UserCard extends StatelessWidget {
       if ((u.nom ?? '').trim().isNotEmpty) u.nom!.trim(),
     ].join(' ').trim();
 
-    final subtitle = 'id=${u.id}'
-        '${u.age != null ? '  •  âge=${u.age}' : ''}'
-        '${u.weight != null ? '  •  poids=${u.weight}kg' : ''}'
-        '${u.height != null ? '  •  taille=${u.height}cm' : ''}'
-        '${u.level != null ? '  •  niveau=${u.level}' : ''}'
-        '${u.metabolism != null ? '  •  métabolisme=${u.metabolism}' : ''}';
+    final lines = <String>[];
+    lines.add('id=${u.id}');
+    if (u.level != null) lines.add('niveau=${u.level}');
+    if (u.weight != null) lines.add('poids=${u.weight}kg');
+    if (u.height != null) lines.add('taille=${u.height}cm');
+    if (u.metabolism != null && u.metabolism!.trim().isNotEmpty) {
+      lines.add('métabolisme=${u.metabolism}');
+    }
+    final subtitle = lines.join('  •  ');
+
+    final age = _calcAge(u.birth_date);
+    final birth = u.birth_date != null ? _fmtDate(u.birth_date!) : null;
+    final genderLabel = _genderLabel(u.gender);
+    final genderIcon = _genderIcon(u.gender);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -174,7 +226,7 @@ class _UserCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: AppTheme.gold, width: 2),
               ),
-              child: const Icon(Icons.person, color: AppTheme.gold),
+              child: Icon(genderIcon, color: AppTheme.gold),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -193,15 +245,39 @@ class _UserCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12.5,
-                        height: 1.2,
+                    if (subtitle.isNotEmpty)
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12.5,
+                          height: 1.2,
+                        ),
                       ),
+                    const SizedBox(height: 8),
+
+                    // Chips infos: genre / naissance / âge
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: [
+                        _InfoChip(
+                          icon: genderIcon,
+                          text: genderLabel,
+                        ),
+                        if (birth != null)
+                          _InfoChip(
+                            icon: Icons.cake_outlined,
+                            text: 'Né(e) le $birth',
+                          ),
+                        if (age != null)
+                          _InfoChip(
+                            icon: Icons.calendar_today_outlined,
+                            text: '$age ans',
+                          ),
+                      ],
                     ),
                   ],
                 ),
@@ -211,6 +287,32 @@ class _UserCard extends StatelessWidget {
             const Icon(Icons.chevron_right, color: Colors.white38),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _InfoChip({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F0F),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFF1B1B1B), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppTheme.gold),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: Colors.white)),
+        ],
       ),
     );
   }
