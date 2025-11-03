@@ -203,8 +203,8 @@ class _UserCard extends StatelessWidget {
     }
     final subtitle = lines.join('  •  ');
 
-    final age = _calcAge(u.birth_date);
-    final birth = u.birth_date != null ? _fmtDate(u.birth_date!) : null;
+    final age = _calcAge(u.birthDate);
+    final birth = u.birthDate != null ? _fmtDate(u.birthDate!) : null;
     final genderLabel = _genderLabel(u.gender);
     final genderIcon = _genderIcon(u.gender);
 

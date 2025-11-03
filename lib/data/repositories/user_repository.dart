@@ -16,6 +16,10 @@ class UserRepository {
     required String nom,
     required DateTime birthDate,
     required String gender, // "female" | "male"
+    required double weight,
+    required double height,
+    required String level, // "debutant" | "intermediaire" | "avance"
+    required String metabolism, // "rapide" | "lent"
   }) async {
     return _dao.transaction(() async {
       await _dao.ensureSingleton();
@@ -28,8 +32,12 @@ class UserRepository {
       final id = await _dao.insertOne(AppUserCompanion(
         prenom: Value(prenom),
         nom: Value(nom),
-        birth_date: Value(birthDate),
+        birthDate: Value(birthDate),
         gender: Value(gender),
+        weight: Value(weight),
+        height: Value(height),
+        level: Value(level),
+        metabolism: Value(metabolism),
       ));
 
       final after = await _dao.countUsers();

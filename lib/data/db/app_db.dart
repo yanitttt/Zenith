@@ -69,8 +69,8 @@ class AppUser extends Table {
   IntColumn get age => integer().nullable()();
   RealColumn get weight => real().nullable()();
   RealColumn get height => real().nullable()();
-  IntColumn get level => integer().nullable()();
-  TextColumn get metabolism => text().nullable()();
+  TextColumn get level => text().nullable()(); // "debutant" | "intermediaire" | "avance"
+  TextColumn get metabolism => text().nullable()(); // "rapide" | "lent"
 
   /// Nouveaux champs (Drift => SQL: birth_date, gender)
   DateTimeColumn get birthDate => dateTime().nullable()();

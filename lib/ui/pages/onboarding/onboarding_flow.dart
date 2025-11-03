@@ -6,6 +6,10 @@ import '../root_shell.dart';
 import 'name_page.dart';
 import 'dob_page.dart';
 import 'gender_page.dart';
+import 'weight_page.dart';
+import 'height_page.dart';
+import 'level_page.dart';
+import 'metabolism_page.dart';
 
 class OnboardingFlow extends StatefulWidget {
   final AppDb db;
@@ -23,6 +27,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   String? _nom;
   DateTime? _dob;
   Gender? _gender;
+  double? _weight;
+  double? _height;
+  FitnessLevel? _level;
+  Metabolism? _metabolism;
 
   @override
   void initState() {
@@ -47,7 +55,47 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                   initial: _gender,
                   onNext: (g) async {
                     _gender = g;
-                    await _finish(); // insertion finale
+                    if (!mounted) return;
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => WeightPage(
+                        initialWeight: _weight,
+                        onNext: (w) async {
+                          _weight = w;
+                          if (!mounted) return;
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (_) => HeightPage(
+                              initialHeight: _height,
+                              onNext: (h) async {
+                                _height = h;
+                                if (!mounted) return;
+                                Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (_) => LevelPage(
+                                    initialLevel: _level,
+                                    onNext: (l) async {
+                                      _level = l;
+                                      if (!mounted) return;
+                                      Navigator.of(context).push(MaterialPageRoute(
+                                        builder: (_) => MetabolismPage(
+                                          initialMetabolism: _metabolism,
+                                          onNext: (m) async {
+                                            _metabolism = m;
+                                            await _finish(); // insertion finale
+                                          },
+                                          onBack: () => Navigator.of(context).pop(),
+                                        ),
+                                      ));
+                                    },
+                                    onBack: () => Navigator.of(context).pop(),
+                                  ),
+                                ));
+                              },
+                              onBack: () => Navigator.of(context).pop(),
+                            ),
+                          ));
+                        },
+                        onBack: () => Navigator.of(context).pop(),
+                      ),
+                    ));
                   },
                   onBack: () => Navigator.of(context).pop(),
                 ),
@@ -66,8 +114,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       final nom = _nom?.trim() ?? '';
       final dob = _dob;
       final gender = _gender;
+      final weight = _weight;
+      final height = _height;
+      final level = _level;
+      final metabolism = _metabolism;
 
-      if (prenom.isEmpty || nom.isEmpty || dob == null || gender == null) {
+      if (prenom.isEmpty || nom.isEmpty || dob == null || gender == null ||
+          weight == null || height == null || level == null || metabolism == null) {
         throw Exception('Champs manquants');
       }
 
@@ -76,6 +129,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         nom: nom,
         birthDate: dob,
         gender: gender == Gender.female ? 'female' : 'male',
+        weight: weight,
+        height: height,
+        level: level.name, // 'debutant', 'intermediaire', 'avance'
+        metabolism: metabolism.name, // 'rapide', 'lent'
       );
 
       await widget.prefs.setCurrentUserId(id);
