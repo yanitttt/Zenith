@@ -16,6 +16,12 @@ class SessionDao extends DatabaseAccessor<AppDb> with _$SessionDaoMixin {
     return q.get();
   }
 
+  Future<List<SessionData>> allForUser(int userId) {
+    return (select(session)
+      ..where((s) => s.userId.equals(userId))
+      ..orderBy([(s) => OrderingTerm.desc(s.dateTs)])).get();
+  }
+
   Future<List<(SessionExerciseData, ExerciseData)>> sessionDetails(int sessionId) {
     final j = select(sessionExercise).join([
       innerJoin(exercise, exercise.id.equalsExp(sessionExercise.exerciseId)),

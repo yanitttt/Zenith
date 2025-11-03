@@ -21,7 +21,7 @@ class _RootShellState extends State<RootShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const DashboardPage(),
+      DashboardPage(db: widget.db),
       const _PlaceholderPage(title: 'Planning'),
       MatchPage(db: widget.db),
       ExercisesPage(db: widget.db),
