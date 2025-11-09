@@ -275,12 +275,22 @@ class _UserCard extends StatelessWidget {
                         if (birth != null)
                           _InfoChip(
                             icon: Icons.cake_outlined,
-                            text: 'Né(e) le $birth $imcArrondi $imcCategory', 
+                            text: 'Né(e) le $birth ',
                           ),
                         if (age != null)
                           _InfoChip(
                             icon: Icons.calendar_today_outlined,
                             text: '$age ans',
+                          ),
+                        if (imcArrondi != null)
+                          _InfoChip(
+                            icon : Icons.chevron_right,
+                            text: "IMC : $imcArrondi",
+                          ),
+                        if (imcCategory != null)
+                          _InfoChip(
+                            icon : Icons.chevron_right,
+                            text: "IMC : $imcCategory",
                           ),
                       ],
                     ),
