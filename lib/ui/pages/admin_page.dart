@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
 import '../theme/app_theme.dart';
+import '../../services/service.dart';
 
 class AdminPage extends StatefulWidget {
   final AppDb db;
@@ -207,7 +208,11 @@ class _UserCard extends StatelessWidget {
     final birth = u.birthDate != null ? _fmtDate(u.birthDate!) : null;
     final genderLabel = _genderLabel(u.gender);
     final genderIcon = _genderIcon(u.gender);
-
+    final calc = IMCcalculator(height: u.height!, weight: u.weight!);
+    final imc = calc.calculateIMC();
+    final imcArrondi = double.parse(imc.toStringAsFixed(2));
+    final imcCategory = calc.getIMCCategory();
+    
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Container(
@@ -270,7 +275,7 @@ class _UserCard extends StatelessWidget {
                         if (birth != null)
                           _InfoChip(
                             icon: Icons.cake_outlined,
-                            text: 'Né(e) le $birth',
+                            text: 'Né(e) le $birth $imcArrondi $imcCategory', 
                           ),
                         if (age != null)
                           _InfoChip(
