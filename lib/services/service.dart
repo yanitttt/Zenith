@@ -9,7 +9,7 @@ class IMCcalculator {
       throw ArgumentError("Le poids doit être un nombre positif.");
     }
 
-    final tailleM = height > 10 ? height / 100 : height;
+    final tailleM = height > 10 ? height / 100 : height; //conversion en m 
 
     return weight / (tailleM * tailleM);
   }
