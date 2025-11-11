@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:recommandation_mobile/services/service.dart';
+import 'package:recommandation_mobile/services/ImcService.dart';
 
 void main() {
   group('IMCcalculator', () {
