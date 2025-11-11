@@ -128,7 +128,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         prenom: prenom,
         nom: nom,
         birthDate: dob,
-        gender: gender == Gender.female ? 'female' : 'male',
+        gender: gender == Gender.femme ? 'female' : 'male',
         weight: weight,
         height: height,
         level: level.name, // 'debutant', 'intermediaire', 'avance'

@@ -163,10 +163,10 @@ class _UserCard extends StatelessWidget {
 
   String _genderLabel(String? g) {
     switch ((g ?? '').toLowerCase()) {
-      case 'female':
+      case 'femme':
       case 'f':
         return 'Femme';
-      case 'male':
+      case 'homme':
       case 'm':
         return 'Homme';
       default:
@@ -176,10 +176,10 @@ class _UserCard extends StatelessWidget {
 
   IconData _genderIcon(String? g) {
     switch ((g ?? '').toLowerCase()) {
-      case 'female':
+      case 'femme':
       case 'f':
         return Icons.female;
-      case 'male':
+      case 'homme':
       case 'm':
         return Icons.male;
       default:

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
-enum Gender { female, male }
+enum Gender { femme, homme }
 
 class GenderPage extends StatefulWidget {
   final Gender? initial;
@@ -54,18 +54,18 @@ class _GenderPageState extends State<GenderPage> {
 
               _genderButton(
                 label: 'Femelle',
-                selected: _value == Gender.female,
+                selected: _value == Gender.femme,
                 icon: Icons.female,
                 primary: true,
-                onTap: () => setState(() => _value = Gender.female),
+                onTap: () => setState(() => _value = Gender.femme),
               ),
               const SizedBox(height: 18),
               _genderButton(
                 label: 'Mâle',
-                selected: _value == Gender.male,
+                selected: _value == Gender.homme,
                 icon: Icons.male,
                 primary: false,
-                onTap: () => setState(() => _value = Gender.male),
+                onTap: () => setState(() => _value = Gender.homme),
               ),
 
               const Spacer(),
