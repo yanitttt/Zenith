@@ -75,8 +75,8 @@ class _MatchPageState extends State<MatchPage> {
       return [];
     }
     // Créer une pile de 3 cartes avec exercices aléatoires
-    final count = _allExercises.length >= 3 ? 3 : _allExercises.length;
-    return List.generate(count, (_) => _allExercises[_random.nextInt(_allExercises.length)]);
+    final shuffled = List.of(_allExercises)..shuffle(_random);
+    return shuffled.take(3).toList();
   }
 
   void _onSwipe() {
