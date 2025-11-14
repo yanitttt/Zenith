@@ -74,7 +74,7 @@ class _MatchPageState extends State<MatchPage> {
       debugPrint('[MATCH] _allExercises is empty, returning empty stack');
       return [];
     }
-    // Créer une pile de 3 cartes avec exercices aléatoires 
+    // Créer une pile de 3 cartes avec exercices aléatoires TEST
     final shuffled = List.of(_allExercises)..shuffle(_random);
     return shuffled.take(3).toList();
 
