@@ -3,13 +3,9 @@ import '../../../core/prefs/app_prefs.dart';
 import '../../../data/db/app_db.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../root_shell.dart';
-import 'name_page.dart';
-import 'dob_page.dart';
-import 'gender_page.dart';
-import 'weight_page.dart';
-import 'height_page.dart';
-import 'level_page.dart';
-import 'metabolism_page.dart';
+import 'profile_basics_page.dart';
+import 'metabolism_page.dart' as metabolism_page;
+import 'level_page.dart' as level_page;
 
 class OnboardingFlow extends StatefulWidget {
   final AppDb db;
@@ -29,8 +25,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Gender? _gender;
   double? _weight;
   double? _height;
-  FitnessLevel? _level;
-  Metabolism? _metabolism;
+  level_page.FitnessLevel? _level;
+  metabolism_page.Metabolism? _metabolism;
 
   @override
   void initState() {
@@ -38,73 +34,47 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     _users = UserRepository(widget.db);
   }
 
-  void _goToName() {
+  void _startOnboarding() {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => NamePage(onSubmit: ({required prenom, required nom}) async {
-        _prenom = prenom;
-        _nom = nom;
-        if (!mounted) return;
-        Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => DobPage(
-            initial: _dob,
-            onNext: (d) async {
-              _dob = d;
-              if (!mounted) return;
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => GenderPage(
-                  initial: _gender,
-                  onNext: (g) async {
-                    _gender = g;
-                    if (!mounted) return;
-                    Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => WeightPage(
-                        initialWeight: _weight,
-                        onNext: (w) async {
-                          _weight = w;
-                          if (!mounted) return;
-                          Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => HeightPage(
-                              initialHeight: _height,
-                              onNext: (h) async {
-                                _height = h;
-                                if (!mounted) return;
-                                Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) => LevelPage(
-                                    initialLevel: _level,
-                                    onNext: (l) async {
-                                      _level = l;
-                                      if (!mounted) return;
-                                      Navigator.of(context).push(MaterialPageRoute(
-                                        builder: (_) => MetabolismPage(
-                                          initialMetabolism: _metabolism,
-                                          onNext: (m) async {
-                                            _metabolism = m;
-                                            await _finish(); // insertion finale
-                                          },
-                                          onBack: () => Navigator.of(context).pop(),
-                                        ),
-                                      ));
-                                    },
-                                    onBack: () => Navigator.of(context).pop(),
-                                  ),
-                                ));
-                              },
-                              onBack: () => Navigator.of(context).pop(),
-                            ),
-                          ));
-                        },
-                        onBack: () => Navigator.of(context).pop(),
-                      ),
-                    ));
-                  },
-                  onBack: () => Navigator.of(context).pop(),
-                ),
-              ));
-            },
-            onBack: () => Navigator.of(context).pop(),
-          ),
-        ));
-      }),
+      builder: (_) => ProfileBasicsPage(
+        onNext: ({
+          required String prenom,
+          required String nom,
+          required DateTime birthDate,
+          required double weight,
+          required double height,
+          required Gender gender,
+        }) async {
+          _prenom = prenom;
+          _nom = nom;
+          _dob = birthDate;
+          _gender = gender;
+          _weight = weight;
+          _height = height;
+
+          if (!mounted) return;
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => metabolism_page.MetabolismPage(
+              initialMetabolism: _metabolism,
+              onBack: () => Navigator.of(context).pop(),
+              onNext: (m) async {
+                _metabolism = m;
+                if (!mounted) return;
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => level_page.LevelPage(
+                    initialLevel: _level,
+                    onBack: () => Navigator.of(context).pop(),
+                    onNext: (l) async {
+                      _level = l;
+                      await _finish();
+                    },
+                  ),
+                ));
+              },
+            ),
+          ));
+        },
+      ),
     ));
   }
 
@@ -119,8 +89,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       final level = _level;
       final metabolism = _metabolism;
 
-      if (prenom.isEmpty || nom.isEmpty || dob == null || gender == null ||
-          weight == null || height == null || level == null || metabolism == null) {
+      if (prenom.isEmpty ||
+          nom.isEmpty ||
+          dob == null ||
+          gender == null ||
+          weight == null ||
+          height == null ||
+          level == null ||
+          metabolism == null) {
         throw Exception('Champs manquants');
       }
 
@@ -131,8 +107,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         gender: gender == Gender.femme ? 'female' : 'male',
         weight: weight,
         height: height,
-        level: level.name, // 'debutant', 'intermediaire', 'avance'
-        metabolism: metabolism.name, // 'rapide', 'lent'
+        level: level.name,
+        metabolism: metabolism.name,
       );
 
       await widget.prefs.setCurrentUserId(id);
@@ -141,7 +117,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => RootShell(db: widget.db)),
-            (_) => false,
+        (_) => false,
       );
     } catch (e, st) {
       debugPrint('[ONBOARD][ERROR] $e');
@@ -155,12 +131,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
-    // Écran de bienvenue -> lance le flow
     return Scaffold(
       backgroundColor: Colors.black,
       body: Center(
         child: ElevatedButton(
-          onPressed: _goToName,
+          onPressed: _startOnboarding,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.amber,
             foregroundColor: Colors.black,
