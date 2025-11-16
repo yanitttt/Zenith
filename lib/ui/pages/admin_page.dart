@@ -22,6 +22,43 @@ class _AdminPageState extends State<AdminPage> {
     _userDao = UserDao(widget.db);
   }
 
+  Future<void> _confirmAndDelete(int userId) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer le profil ?'),
+        content: const Text(
+          'Cette action effacera le profil et toutes ses données (séances, feedbacks, objectifs, matériel…). '
+              'Voulez-vous continuer ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton.tonal(
+            style: FilledButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: Colors.red,
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok == true) {
+      await _userDao.deleteUserCascade(userId);
+      if (mounted) {
+        setState(() {}); // rafraîchit la liste
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profil supprimé.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,7 +158,10 @@ class _AdminPageState extends State<AdminPage> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               itemCount: users.length,
                               separatorBuilder: (_, __) => const SizedBox(height: 10),
-                              itemBuilder: (_, i) => _UserCard(u: users[i]),
+                              itemBuilder: (_, i) => _UserCard(
+                                u: users[i],
+                                onDelete: () => _confirmAndDelete(users[i].id),
+                              ),
                             );
                           },
                         ),
@@ -141,7 +181,13 @@ class _AdminPageState extends State<AdminPage> {
 
 class _UserCard extends StatelessWidget {
   final AppUserData u;
-  const _UserCard({required this.u});
+  final VoidCallback? onDelete;
+
+  const _UserCard({
+    required this.u,
+    this.onDelete,
+    Key? key,
+  }) : super(key: key);
 
   // ---------- helpers présentation ----------
   String _fmtDate(DateTime d) {
@@ -155,8 +201,8 @@ class _UserCard extends StatelessWidget {
     if (dob == null) return null;
     final now = DateTime.now();
     int years = now.year - dob.year;
-    final hadBirthday = (now.month > dob.month) ||
-        (now.month == dob.month && now.day >= dob.day);
+    final hadBirthday =
+        (now.month > dob.month) || (now.month == dob.month && now.day >= dob.day);
     if (!hadBirthday) years--;
     return years;
   }
@@ -208,11 +254,16 @@ class _UserCard extends StatelessWidget {
     final birth = u.birthDate != null ? _fmtDate(u.birthDate!) : null;
     final genderLabel = _genderLabel(u.gender);
     final genderIcon = _genderIcon(u.gender);
-    final calc = IMCcalculator(height: u.height!, weight: u.weight!);
-    final imc = calc.calculateIMC();
-    final imcArrondi = double.parse(imc.toStringAsFixed(2));
-    final imcCategory = calc.getIMCCategory();
-    
+
+    double? imcArrondi;
+    String? imcCategory;
+    if (u.height != null && u.weight != null) {
+      final calc = IMCcalculator(height: u.height!, weight: u.weight!);
+      final imc = calc.calculateIMC();
+      imcArrondi = double.parse(imc.toStringAsFixed(2));
+      imcCategory = calc.getIMCCategory();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Container(
@@ -263,35 +314,22 @@ class _UserCard extends StatelessWidget {
                       ),
                     const SizedBox(height: 8),
 
-                    // Chips infos: genre / naissance / âge
+                    // Chips infos: genre / naissance / âge / IMC
                     Wrap(
                       spacing: 8,
                       runSpacing: 6,
                       children: [
-                        _InfoChip(
-                          icon: genderIcon,
-                          text: genderLabel,
-                        ),
+                        _InfoChip(icon: genderIcon, text: genderLabel),
                         if (birth != null)
-                          _InfoChip(
-                            icon: Icons.cake_outlined,
-                            text: 'Né(e) le $birth ',
-                          ),
+                          const SizedBox.shrink(), // aligne le wrap
+                        if (birth != null)
+                          _InfoChip(icon: Icons.cake_outlined, text: 'Né(e) le $birth'),
                         if (age != null)
-                          _InfoChip(
-                            icon: Icons.calendar_today_outlined,
-                            text: '$age ans',
-                          ),
+                          _InfoChip(icon: Icons.calendar_today_outlined, text: '$age ans'),
                         if (imcArrondi != null)
-                          _InfoChip(
-                            icon : Icons.chevron_right,
-                            text: "IMC : $imcArrondi",
-                          ),
+                          _InfoChip(icon: Icons.chevron_right, text: 'IMC : $imcArrondi'),
                         if (imcCategory != null)
-                          _InfoChip(
-                            icon : Icons.chevron_right,
-                            text: "IMC : $imcCategory",
-                          ),
+                          _InfoChip(icon: Icons.chevron_right, text: 'IMC : $imcCategory'),
                       ],
                     ),
                   ],
@@ -299,7 +337,19 @@ class _UserCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: Colors.white38),
+            // Actions (trailing)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Supprimer le profil',
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.chevron_right, color: Colors.white38),
+              ],
+            ),
           ],
         ),
       ),

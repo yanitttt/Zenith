@@ -363,9 +363,13 @@ class AppDb extends _$AppDb {
       await _ensureAppUserSingletonColumnAndIndex(); // <<--- AJOUT CLEF
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 1');
+        // Ajouter la colonne birth_date si manquante
+        await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
       }
       await customStatement('PRAGMA foreign_keys = ON;');
     },
+
+
     onCreate: (m) async {
       await m.createAll();            // crée toutes les tables de @DriftDatabase
       await _createAllIndexes();      // puis les index idempotents
@@ -374,6 +378,8 @@ class AppDb extends _$AppDb {
       await _ensureAppUserSingletonColumnAndIndex(); // assure colonne+index
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 1');
+        // Ajouter la colonne birth_date si manquante
+        await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
       }
       // Garantir la colonne singleton avant de créer l'index unique
       await _addColumnIfMissing('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 1');
