@@ -17,6 +17,7 @@ class _MatchPageState extends State<MatchPage> {
   late final ExerciseRepository repo;
   List<ExerciseData> _allExercises = [];
   List<ExerciseData> _cardStack = [];
+  List<ExerciseData> _history = [];
   final _random = Random();
   int _currentIndex = 0;
   bool _isLoading = true;
@@ -50,7 +51,6 @@ class _MatchPageState extends State<MatchPage> {
       // D'abord assigner _allExercises AVANT d'appeler _generateInitialStack()
       _allExercises = exercises;
       _allExercises.shuffle(_random);
-
       final stack = _generateInitialStack();
       debugPrint('[MATCH] Pile générée avec ${stack.length} cartes');
 
@@ -80,7 +80,7 @@ class _MatchPageState extends State<MatchPage> {
       debugPrint('[MATCH] _allExercises is empty, returning empty stack');
       return [];
     }
-    // Créer une pile de 3 cartes avec exercices aléatoires TEST
+    // Créer une pile de 3 cartes avec exercices aléatoires
     final shuffled = List.of(_allExercises)..shuffle(_random);
     return shuffled.take(3).toList();
   }
@@ -91,6 +91,7 @@ class _MatchPageState extends State<MatchPage> {
       // Retirer la première carte et en ajouter une nouvelle aléatoire
       if (_cardStack.isNotEmpty) {
         final removed = _cardStack.removeAt(0);
+        _history.add(removed);
         _allExercises.remove(removed);
       }
       if (_allExercises.isNotEmpty) {
@@ -100,8 +101,13 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _onUndo() {
-    // Pour l'instant, on ne fait rien (complexe à implémenter avec l'historique)
-    // Tu peux stocker un historique si tu veux
+    if (_history.isEmpty) return;
+
+    setState(() {
+      final last = _history.removeLast();
+      _cardStack.insert(0, last);
+      _currentIndex = (_currentIndex - 1).clamp(0, 999999);
+    });
   }
 
   @override
