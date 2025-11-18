@@ -7,6 +7,9 @@ import '../root_shell.dart';
 import 'profile_basics_page.dart';
 import 'metabolism_page.dart' as metabolism_page;
 import 'level_page.dart' as level_page;
+import 'objectives_page.dart';
+import 'equipment_page.dart';
+import 'package:drift/drift.dart' as drift;
 
 class OnboardingFlow extends StatefulWidget {
   final AppDb db;
@@ -28,6 +31,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   double? _height;
   level_page.FitnessLevel? _level;
   metabolism_page.Metabolism? _metabolism;
+  List<int>? _objectiveIds;
+  List<int>? _equipmentIds;
 
   @override
   void initState() {
@@ -67,7 +72,25 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                     onBack: () => Navigator.of(context).pop(),
                     onNext: (l) async {
                       _level = l;
-                      await _finish();
+                      if (!mounted) return;
+                      Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => ObjectivesPage(
+                          db: widget.db,
+                          onNext: (objectiveIds) async {
+                            _objectiveIds = objectiveIds;
+                            if (!mounted) return;
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => EquipmentPage(
+                                db: widget.db,
+                                onNext: (equipmentIds) async {
+                                  _equipmentIds = equipmentIds;
+                                  await _finish();
+                                },
+                              ),
+                            ));
+                          },
+                        ),
+                      ));
                     },
                   ),
                 ));
@@ -89,6 +112,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       final height = _height;
       final level = _level;
       final metabolism = _metabolism;
+      final objectiveIds = _objectiveIds;
+      final equipmentIds = _equipmentIds;
 
       if (prenom.isEmpty ||
           nom.isEmpty ||
@@ -97,7 +122,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           weight == null ||
           height == null ||
           level == null ||
-          metabolism == null) {
+          metabolism == null ||
+          objectiveIds == null ||
+          objectiveIds.isEmpty ||
+          equipmentIds == null ||
+          equipmentIds.isEmpty) {
         throw Exception('Champs manquants');
       }
 
@@ -111,6 +140,27 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         level: level.name,
         metabolism: metabolism.name,
       );
+
+      // Insérer les objectifs dans user_goal
+      for (final objectiveId in objectiveIds) {
+        await widget.db.into(widget.db.userGoal).insert(
+              UserGoalCompanion(
+                userId: drift.Value(id),
+                objectiveId: drift.Value(objectiveId),
+                weight: const drift.Value(1.0),
+              ),
+            );
+      }
+
+      // Insérer l'équipement dans user_equipment
+      for (final equipmentId in equipmentIds) {
+        await widget.db.into(widget.db.userEquipment).insert(
+              UserEquipmentCompanion(
+                userId: drift.Value(id),
+                equipmentId: drift.Value(equipmentId),
+              ),
+            );
+      }
 
       await widget.prefs.setCurrentUserId(id);
       await widget.prefs.setOnboarded(true);
