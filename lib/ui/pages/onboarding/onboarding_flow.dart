@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/prefs/app_prefs.dart';
 import '../../../data/db/app_db.dart';
 import '../../../data/repositories/user_repository.dart';
+import '../../../services/home_widget_service.dart';
 import '../root_shell.dart';
 import 'profile_basics_page.dart';
 import 'metabolism_page.dart' as metabolism_page;
@@ -113,6 +114,10 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
       await widget.prefs.setCurrentUserId(id);
       await widget.prefs.setOnboarded(true);
+
+      // Mettre à jour le widget avec les données du profil
+      final widgetService = HomeWidgetService(widget.db);
+      await widgetService.updateHomeWidget();
 
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(

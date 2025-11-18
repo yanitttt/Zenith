@@ -9,6 +9,7 @@ import 'ui/theme/app_theme.dart';
 import 'ui/pages/root_shell.dart';
 import 'ui/pages/onboarding/onboarding_flow.dart';
 import 'data/db/daos/user_dao.dart';
+import 'services/home_widget_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,10 @@ void main() async {
   final db = AppDb();
   final sp = await SharedPreferences.getInstance();
   final prefs = AppPrefs(sp);
+
+  // Initialiser le widget avec les données
+  final widgetService = HomeWidgetService(db);
+  await widgetService.initializeWidget();
 
   // Garde au plus 1 ligne dans app_user
   final userDao = UserDao(db);
