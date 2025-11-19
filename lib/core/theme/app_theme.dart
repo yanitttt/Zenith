@@ -4,7 +4,7 @@ class AppTheme {
   static ThemeData light() {
     return ThemeData(
       useMaterial3: true,
-      colorSchemeSeed: const Color(0xFF4C6EF5), // bleu “easier”
+      colorSchemeSeed: const Color(0xFF0b0f1a), // bleu “easier”
       scaffoldBackgroundColor: Colors.white,
       textTheme: const TextTheme(
         headlineMedium: TextStyle(fontWeight: FontWeight.w700),
@@ -23,7 +23,7 @@ class AppTheme {
   static ThemeData dark() {
     final base = light();
     return base.copyWith(
-      scaffoldBackgroundColor: const Color(0xFF0F1115),
+      scaffoldBackgroundColor: const Color(0xFF0b0f1a),
       textTheme: base.textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
     );
   }

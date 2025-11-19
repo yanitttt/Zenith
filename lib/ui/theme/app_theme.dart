@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  static const Color scaffold = Color(0xFF1E1E1E);
+  static const Color scaffold = Color(0xFF0b0f1a);
   static const Color surface = Color(0xFF2B2B2B);
-  static const Color black = Colors.black;
+  static const Color black = Color(0xFF0b0f1a);
   static const Color gold = Color(0xFFD9BE77);
   static const Color calendarBg = Color(0xFFD4B868);
   static const Color textOnDark = Colors.white;

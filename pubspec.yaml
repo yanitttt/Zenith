@@ -74,6 +74,7 @@ flutter:
     - assets/illustrations/highfive.svg
     - assets/db/BDD_V3.db
     - assets/images/exercises/default.jpg
+    - assets/images/exercises/image.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

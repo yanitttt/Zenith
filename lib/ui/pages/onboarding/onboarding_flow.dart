@@ -11,6 +11,7 @@ import 'objectives_page.dart';
 import 'equipment_page.dart';
 import 'package:drift/drift.dart' as drift;
 
+
 class OnboardingFlow extends StatefulWidget {
   final AppDb db;
   final AppPrefs prefs;
@@ -42,63 +43,71 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   void _startOnboarding() {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => ProfileBasicsPage(
-        onNext: ({
-          required String prenom,
-          required String nom,
-          required DateTime birthDate,
-          required double weight,
-          required double height,
-          required Gender gender,
-        }) async {
-          _prenom = prenom;
-          _nom = nom;
-          _dob = birthDate;
-          _gender = gender;
-          _weight = weight;
-          _height = height;
+      builder: (_) =>
+          ProfileBasicsPage(
+            onNext: ({
+              required String prenom,
+              required String nom,
+              required DateTime birthDate,
+              required double weight,
+              required double height,
+              required Gender gender,
+            }) async {
+              _prenom = prenom;
+              _nom = nom;
+              _dob = birthDate;
+              _gender = gender;
+              _weight = weight;
+              _height = height;
 
-          if (!mounted) return;
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => metabolism_page.MetabolismPage(
-              initialMetabolism: _metabolism,
-              onBack: () => Navigator.of(context).pop(),
-              onNext: (m) async {
-                _metabolism = m;
-                if (!mounted) return;
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => level_page.LevelPage(
-                    initialLevel: _level,
-                    onBack: () => Navigator.of(context).pop(),
-                    onNext: (l) async {
-                      _level = l;
-                      if (!mounted) return;
-                      Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => ObjectivesPage(
-                          db: widget.db,
-                          onNext: (objectiveIds) async {
-                            _objectiveIds = objectiveIds;
-                            if (!mounted) return;
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (_) => EquipmentPage(
-                                db: widget.db,
-                                onNext: (equipmentIds) async {
-                                  _equipmentIds = equipmentIds;
-                                  await _finish();
+              if (!mounted) return;
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) =>
+                    metabolism_page.MetabolismPage(
+                      initialMetabolism: _metabolism,
+                      onBack: () => Navigator.of(context).pop(),
+                      onNext: (m) async {
+                        _metabolism = m;
+                        if (!mounted) return;
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) =>
+                              level_page.LevelPage(
+                                initialLevel: _level,
+                                onBack: () => Navigator.of(context).pop(),
+                                onNext: (l) async {
+                                  _level = l;
+                                  if (!mounted) return;
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                    builder: (_) =>
+                                        ObjectivesPage(
+                                          db: widget.db,
+                                          onNext: (objectiveIds) async {
+                                            _objectiveIds = objectiveIds;
+                                            if (!mounted) return;
+                                            Navigator.of(context).push(
+                                                MaterialPageRoute(
+                                                  builder: (_) =>
+                                                      EquipmentPage(
+                                                        db: widget.db,
+                                                        onNext: (
+                                                            equipmentIds) async {
+                                                          _equipmentIds =
+                                                              equipmentIds;
+                                                          await _finish();
+                                                        },
+                                                      ),
+                                                ));
+                                          },
+                                        ),
+                                  ));
                                 },
                               ),
-                            ));
-                          },
-                        ),
-                      ));
-                    },
-                  ),
-                ));
-              },
-            ),
-          ));
-        },
-      ),
+                        ));
+                      },
+                    ),
+              ));
+            },
+          ),
     ));
   }
 
@@ -144,22 +153,22 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       // Insérer les objectifs dans user_goal
       for (final objectiveId in objectiveIds) {
         await widget.db.into(widget.db.userGoal).insert(
-              UserGoalCompanion(
-                userId: drift.Value(id),
-                objectiveId: drift.Value(objectiveId),
-                weight: const drift.Value(1.0),
-              ),
-            );
+          UserGoalCompanion(
+            userId: drift.Value(id),
+            objectiveId: drift.Value(objectiveId),
+            weight: const drift.Value(1.0),
+          ),
+        );
       }
 
       // Insérer l'équipement dans user_equipment
       for (final equipmentId in equipmentIds) {
         await widget.db.into(widget.db.userEquipment).insert(
-              UserEquipmentCompanion(
-                userId: drift.Value(id),
-                equipmentId: drift.Value(equipmentId),
-              ),
-            );
+          UserEquipmentCompanion(
+            userId: drift.Value(id),
+            equipmentId: drift.Value(equipmentId),
+          ),
+        );
       }
 
       await widget.prefs.setCurrentUserId(id);
@@ -172,7 +181,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => RootShell(db: widget.db)),
-        (_) => false,
+            (_) => false,
       );
     } catch (e, st) {
       debugPrint('[ONBOARD][ERROR] $e');
@@ -187,15 +196,60 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
+      backgroundColor: const Color(0xFF0b0f1a),
+
+      body: Column(
+        children: [
+          const SizedBox(height: 80),
+
+
+          const Text(
+            "Bienvenue !",
+            style: TextStyle(
+              color: Colors.amber,
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 40),
+
+
+          Expanded(
+            child: Center(
+              child: Image.asset(
+                'assets/images/exercises/image.jpg', // ton image
+                width: 400,
+                height: 400,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+        ],
+      ),
+
+      
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(20.0),
         child: ElevatedButton(
           onPressed: _startOnboarding,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.amber,
-            foregroundColor: Colors.black,
+            foregroundColor: const Color(0xFF0b0f1a),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
+            ),
           ),
-          child: const Text('Commencer'),
+          child: const Text(
+            'Commencer',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
     );

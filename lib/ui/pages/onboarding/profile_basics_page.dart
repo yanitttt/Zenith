@@ -173,6 +173,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                               child: TextFormField(
                                 controller: _prenom,
                                 decoration: _dec('Prénom'),
+                                style: const TextStyle(color: Colors.black),
                                 validator: (v) =>
                                     (v == null || v.trim().isEmpty)
                                         ? 'Requis'
@@ -184,6 +185,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                               child: TextFormField(
                                 controller: _nom,
                                 decoration: _dec('Nom'),
+                                style: const TextStyle(color: Colors.black),
                                 validator: (v) =>
                                     (v == null || v.trim().isEmpty)
                                         ? 'Requis'
@@ -248,6 +250,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                                       RegExp(r'^\d+\.?\d{0,2}')),
                                 ],
                                 decoration: _dec('Poids (kg)'),
+                                style: const TextStyle(color: Colors.black),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
                                     return 'Requis';
@@ -271,6 +274,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                                       RegExp(r'^\d+\.?\d{0,2}')),
                                 ],
                                 decoration: _dec('Taille (cm)'),
+                                style: const TextStyle(color: Colors.black),
                                 validator: (v) {
                                   if (v == null || v.trim().isEmpty) {
                                     return 'Requis';

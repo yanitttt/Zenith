@@ -36,7 +36,7 @@ class WelcomePage extends StatelessWidget {
                   ),
                   onPressed: onStart,
                   child: const Text(
-                    'Appuie pour commencer',
+                    'comme',
                     style: TextStyle(fontWeight: FontWeight.w700),
                   ),
                 ),
