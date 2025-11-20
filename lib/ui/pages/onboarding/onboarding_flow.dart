@@ -207,7 +207,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             "Bienvenue !",
             style: TextStyle(
               color: Colors.amber,
-              fontSize: 34,
+              fontSize: 45,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -219,8 +219,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             child: Center(
               child: Image.asset(
                 'assets/images/exercises/image.jpg', // ton image
-                width: 400,
-                height: 400,
+                width: 500,
+                height: 500,
                 fit: BoxFit.contain,
               ),
             ),
