@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import '../../../data/db/app_db.dart';
 import '../../theme/app_theme.dart';
 
@@ -104,8 +103,6 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
     setState(() {
       _isDragging = false;
     });
-
-    final screenWidth = MediaQuery.of(context).size.width;
 
     // Si le drag dépasse le seuil, déclencher le swipe
     if (_dragOffset.dx.abs() > _swipeThreshold) {

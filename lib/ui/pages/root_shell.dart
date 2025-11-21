@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:recommandation_mobile/ui/pages/match_page.dart';
+import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bottom_nav/bottom_nav_bar.dart';
 import 'dashboard_page.dart';
 import 'exercises_page.dart';
-import 'admin_page.dart'; // ⬅️ NEW
+import 'admin_page.dart';
+import 'workout_program_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RootShell extends StatefulWidget {
   final AppDb db;
@@ -17,23 +19,46 @@ class RootShell extends StatefulWidget {
 
 class _RootShellState extends State<RootShell> {
   int _index = 0;
+  AppPrefs? _prefs;
+
+  @override
+  void initState() {
+    super.initState();
+    _initPrefs();
+  }
+
+  Future<void> _initPrefs() async {
+    final sp = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() => _prefs = AppPrefs(sp));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_prefs == null) {
+      return const Scaffold(
+        backgroundColor: AppTheme.scaffold,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.gold),
+        ),
+      );
+    }
+
     final pages = [
       DashboardPage(db: widget.db),
       const _PlaceholderPage(title: 'Planning'),
-      MatchPage(db: widget.db),
+      WorkoutProgramPage(db: widget.db, prefs: _prefs!),
       ExercisesPage(db: widget.db),
-      AdminPage(db: widget.db), // ⬅️ Admin (remplace Profil)
+      AdminPage(db: widget.db),
     ];
 
     final items = const [
       BottomNavItem(icon: Icons.home_outlined, label: 'Acceuil'),
       BottomNavItem(icon: Icons.calendar_month_outlined, label: 'Planning'),
-      BottomNavItem(icon: Icons.show_chart, label: 'Match'),
-      BottomNavItem(icon: Icons.fitness_center, label: 'Mes Exercices'),
-      BottomNavItem(icon: Icons.admin_panel_settings, label: 'Admin'), // ⬅️
+      BottomNavItem(icon: Icons.fitness_center_outlined, label: 'Programme'),
+      BottomNavItem(icon: Icons.list, label: 'Exercices'),
+      BottomNavItem(icon: Icons.admin_panel_settings, label: 'Admin'),
     ];
 
     return Scaffold(

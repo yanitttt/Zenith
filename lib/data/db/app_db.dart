@@ -261,6 +261,8 @@ class Session extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get userId =>
       integer().named('user_id').references(AppUser, #id, onDelete: KeyAction.cascade)();
+  IntColumn get programDayId =>
+      integer().named('program_day_id').references(ProgramDay, #id, onDelete: KeyAction.setNull).nullable()();
   IntColumn get dateTs => integer().named('date_ts')();
   IntColumn get durationMin => integer().named('duration_min').nullable()();
 }
@@ -354,7 +356,7 @@ class AppDb extends _$AppDb {
 
   /// Bump quand tu touches au schéma.
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -365,6 +367,10 @@ class AppDb extends _$AppDb {
         await _addColumnIfMissing('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 1');
         // Ajouter la colonne birth_date si manquante
         await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
+      }
+      // Ajouter program_day_id à la table session si manquante
+      if (await _tableExists('session')) {
+        await _addColumnIfMissing('session', 'program_day_id', 'INTEGER REFERENCES program_day(id) ON DELETE SET NULL');
       }
       await customStatement('PRAGMA foreign_keys = ON;');
     },
@@ -383,6 +389,11 @@ class AppDb extends _$AppDb {
       }
       // Garantir la colonne singleton avant de créer l'index unique
       await _addColumnIfMissing('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 1');
+
+      // Ajouter program_day_id à la table session si manquante
+      if (await _tableExists('session')) {
+        await _addColumnIfMissing('session', 'program_day_id', 'INTEGER REFERENCES program_day(id) ON DELETE SET NULL');
+      }
 
       await _ensureExerciseRelationTable();
 

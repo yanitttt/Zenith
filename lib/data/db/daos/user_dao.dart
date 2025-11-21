@@ -29,14 +29,6 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
     });
   }
 
-  Future<bool> _columnExists(String table, String column) async {
-    final rows = await customSelect('PRAGMA table_info($table);').get();
-    for (final r in rows) {
-      if ((r.data['name'] ?? '').toString() == column) return true;
-    }
-    return false;
-  }
-
   Future<int> insertOne(AppUserCompanion data) => into(appUser).insert(data);
 
   Future<bool> updateOne(AppUserData u) => update(appUser).replace(u);
