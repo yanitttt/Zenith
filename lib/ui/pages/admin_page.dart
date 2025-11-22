@@ -42,10 +42,13 @@ class _AdminPageState extends State<AdminPage> {
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.gold,
+          ),
           onPressed: () => Navigator.of(ctx).pop(false),
           child: const Text('Annuler'),
         ),
-        FilledButton.tonal(
+        FilledButton(
           style: FilledButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: Colors.red,
@@ -117,9 +120,20 @@ class _AdminPageState extends State<AdminPage> {
                             children: [
                               const Spacer(),
                               IconButton(
+                                tooltip: 'Tester les notifications',
+                                onPressed: () async {
+                                  await NotificationService().showNotification(
+                                    id: 1,
+                                    title: "Test Notification",
+                                    body: "Le service de notification fonctionne correctement !",
+                                  );
+                                },
+                                icon: const Icon(Icons.notifications_active, color: AppTheme.gold),
+                              ),
+                              IconButton(
                                 tooltip: 'Rafraîchir',
                                 onPressed: () => setState(() {}),
-                                icon: const Icon(Icons.refresh, color: Colors.white70),
+                                icon: const Icon(Icons.refresh, color: AppTheme.gold),
                               ),
                             ],
                           ),
@@ -545,8 +559,8 @@ class _UserCard extends StatelessWidget {
           width: double.infinity,
           child: FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
+              backgroundColor: AppTheme.gold,
+              foregroundColor: AppTheme.black,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed: () {
@@ -571,10 +585,10 @@ class _UserCard extends StatelessWidget {
         // === BOUTON SUPPRIMER ===
         SizedBox(
           width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red, width: 2),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed:()  {
