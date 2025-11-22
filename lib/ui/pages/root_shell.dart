@@ -50,7 +50,7 @@ class _RootShellState extends State<RootShell> {
       const _PlaceholderPage(title: 'Planning'),
       WorkoutProgramPage(db: widget.db, prefs: _prefs!),
       ExercisesPage(db: widget.db),
-      AdminPage(db: widget.db),
+      AdminPage(db: widget.db, prefs: _prefs!),
     ];
 
     final items = const [
