@@ -7,6 +7,7 @@ import '../../services/ImcService.dart';
 import 'onboarding/onboarding_flow.dart';
 import '../../core/prefs/app_prefs.dart';
 import 'edit_user_page.dart';
+import '../../services/notification_service.dart';
 
 class AdminPage extends StatefulWidget {
   final AppDb db;
@@ -41,10 +42,13 @@ class _AdminPageState extends State<AdminPage> {
       ),
       actions: [
         TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.gold,
+          ),
           onPressed: () => Navigator.of(ctx).pop(false),
           child: const Text('Annuler'),
         ),
-        FilledButton.tonal(
+        FilledButton(
           style: FilledButton.styleFrom(
             foregroundColor: Colors.white,
             backgroundColor: Colors.red,
@@ -58,6 +62,12 @@ class _AdminPageState extends State<AdminPage> {
 
  if (ok == true) {
   await _userDao.deleteUserCascade(userId);
+
+  await NotificationService().showNotification(
+        id: 0,
+        title: "Profil Supprimé",
+        body: "Votre profil a été supprimé avec succès.",
+      );
 
   // Reset prefs
   await widget.prefs.setCurrentUserId(-1); // utiliser -1 plutôt que null
@@ -110,9 +120,20 @@ class _AdminPageState extends State<AdminPage> {
                             children: [
                               const Spacer(),
                               IconButton(
+                                tooltip: 'Tester les notifications',
+                                onPressed: () async {
+                                  await NotificationService().showNotification(
+                                    id: 1,
+                                    title: "Test Notification",
+                                    body: "Le service de notification fonctionne correctement !",
+                                  );
+                                },
+                                icon: const Icon(Icons.notifications_active, color: AppTheme.gold),
+                              ),
+                              IconButton(
                                 tooltip: 'Rafraîchir',
                                 onPressed: () => setState(() {}),
-                                icon: const Icon(Icons.refresh, color: Colors.white70),
+                                icon: const Icon(Icons.refresh, color: AppTheme.gold),
                               ),
                             ],
                           ),
@@ -538,8 +559,8 @@ class _UserCard extends StatelessWidget {
           width: double.infinity,
           child: FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
+              backgroundColor: AppTheme.gold,
+              foregroundColor: AppTheme.black,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed: () {
@@ -564,13 +585,17 @@ class _UserCard extends StatelessWidget {
         // === BOUTON SUPPRIMER ===
         SizedBox(
           width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
+          child: OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red, width: 2),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            onPressed: onDelete,
+            onPressed:()  {
+              if (onDelete != null) {
+                onDelete!();
+              }
+            } ,
             child: const Text(
               "Supprimer le profil",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
