@@ -3,11 +3,6 @@ import '../../data/db/app_db.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../data/repositories/exercise_repository.dart';
 import '../theme/app_theme.dart';
-import '../widgets/banner/header_banner.dart';
-import '../widgets/calendar/calendar_card.dart';
-import '../widgets/progress/progress_card.dart';
-import '../widgets/favorites/favorites_card.dart';
-import '../widgets/stats/stats_card.dart';
 
 class DashboardPage extends StatefulWidget {
   final AppDb db;
@@ -35,11 +30,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _loadDashboardData() async {
     try {
-      // Charger le prénom de l'utilisateur
       final user = await _userRepo.current();
       final prenom = user?.prenom?.trim() ?? "Athlète";
-
-      // Charger des exercices aléatoires
       final allExercises = await _exerciseRepo.all();
       allExercises.shuffle();
       final randomExercises = allExercises.take(4).toList();
@@ -52,7 +44,6 @@ class _DashboardPageState extends State<DashboardPage> {
         });
       }
     } catch (e) {
-      debugPrint('[DASHBOARD] Erreur: $e');
       if (mounted) {
         setState(() {
           _userName = "Athlète";
@@ -65,57 +56,122 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.scaffold,
+      backgroundColor: Color(0xFF0A0F1A),
       body: SafeArea(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            border: Border.all(color: const Color(0xFF111111), width: 2),
-          ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 8),
-              HeaderBanner(
-                title: "Bonjour $_userName !\nPrêt pour ta séance ?",
-                showSettings: true,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Séance",
+                    style: TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                  Icon(Icons.settings, color: Colors.white, size: 26),
+                ],
               ),
-              SizedBox(height: 16),
 
-              // ligne calendrier + progression
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 3, child: CalendarCard()),
-                    SizedBox(width: 16),
-                    Expanded(flex: 2, child: ProgressCard(percent: 0.60)),
-                  ],
+              const SizedBox(height: 20),
+
+              // IMC + BMR buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _goldButton("IMC"),
+                  const SizedBox(width: 16),
+                  _goldButton("BMR"),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              Center(
+                child: Text(
+                  "objectif choisi",
+                  style: TextStyle(color: Colors.white70, fontSize: 16),
                 ),
               ),
 
               const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: AppTheme.gold),
-                      )
-                    : FavoritesCard(exercises: _randomExercises),
+
+              // List of generated exercises
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color(0xFF0F1624),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Color(0xFFFFD700), width: 1.5),
+                  ),
+                  child: _isLoading
+                      ? Center(child: CircularProgressIndicator(color: Colors.amber))
+                      : ListView.builder(
+                          itemCount: _randomExercises.length,
+                          itemBuilder: (context, index) {
+                            final exo = _randomExercises[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12.0),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    backgroundColor: Colors.white,
+                                    radius: 22,
+                                    child: Icon(Icons.fitness_center, color: Colors.black),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      exo.name,
+                                      style: TextStyle(color: Colors.white, fontSize: 16),
+                                    ),
+                                  ),
+                                  Icon(Icons.close, color: Colors.amber, size: 22),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
               ),
 
               const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: StatsCard(db: widget.db),
+
+              // Finish button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFFFD700),
+                    foregroundColor: Colors.black,
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text("Séance finie", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
               ),
 
               const SizedBox(height: 16),
-              const Expanded(child: SizedBox()), // espace vide
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _goldButton(String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 26),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Color(0xFFFFD700), width: 1.5),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: Color(0xFFFFD700), fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
