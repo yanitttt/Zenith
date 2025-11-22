@@ -7,6 +7,7 @@ import '../../services/ImcService.dart';
 import 'onboarding/onboarding_flow.dart';
 import '../../core/prefs/app_prefs.dart';
 import 'edit_user_page.dart';
+import '../../services/notification_service.dart';
 
 class AdminPage extends StatefulWidget {
   final AppDb db;
@@ -58,6 +59,12 @@ class _AdminPageState extends State<AdminPage> {
 
  if (ok == true) {
   await _userDao.deleteUserCascade(userId);
+
+  await NotificationService().showNotification(
+        id: 0,
+        title: "Profil Supprimé",
+        body: "Votre profil a été supprimé avec succès.",
+      );
 
   // Reset prefs
   await widget.prefs.setCurrentUserId(-1); // utiliser -1 plutôt que null
@@ -570,7 +577,11 @@ class _UserCard extends StatelessWidget {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            onPressed: onDelete,
+            onPressed:()  {
+              if (onDelete != null) {
+                onDelete!();
+              }
+            } ,
             child: const Text(
               "Supprimer le profil",
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
