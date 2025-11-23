@@ -95,9 +95,16 @@ class _AdminPageState extends State<AdminPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Column(
             children: [
-
-
-
+              const SizedBox(height: 12),
+              const Text(
+                "Profil",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFD4B868),
+                ),
+              ),
+              const SizedBox(height: 20),
 
               Expanded(
 
