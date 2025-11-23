@@ -95,15 +95,40 @@ class _AdminPageState extends State<AdminPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Column(
             children: [
-              const SizedBox(height: 12),
-              const Text(
-                "Profil",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFD4B868),
-                ),
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      "Profil",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFD4B868),
+                      ),
+                    ),
+                  ),
+
+                  IconButton(
+                    tooltip: 'Tester les notifications',
+                    onPressed: () async {
+                      await NotificationService().showNotification(
+                        id: 1,
+                        title: "Test Notification",
+                        body: "Le service de notification fonctionne correctement !",
+                      );
+                    },
+                    icon: const Icon(Icons.notifications_active, color: AppTheme.gold),
+                  ),
+
+                  IconButton(
+                    tooltip: 'Rafraîchir',
+                    onPressed: () => setState(() {}),
+                    icon: const Icon(Icons.refresh, color: AppTheme.gold),
+                  ),
+                ],
               ),
+
               const SizedBox(height: 20),
 
               Expanded(
@@ -112,41 +137,7 @@ class _AdminPageState extends State<AdminPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Bandeau stats
-                    FutureBuilder<int>(
-                      future: _userDao.countUsers(),
-                      builder: (context, snap) {
-                        final count = snap.data ?? 0;
-                        return Container(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Color(0xFF111111), width: 2),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              const Spacer(),
-                              IconButton(
-                                tooltip: 'Tester les notifications',
-                                onPressed: () async {
-                                  await NotificationService().showNotification(
-                                    id: 1,
-                                    title: "Test Notification",
-                                    body: "Le service de notification fonctionne correctement !",
-                                  );
-                                },
-                                icon: const Icon(Icons.notifications_active, color: AppTheme.gold),
-                              ),
-                              IconButton(
-                                tooltip: 'Rafraîchir',
-                                onPressed: () => setState(() {}),
-                                icon: const Icon(Icons.refresh, color: AppTheme.gold),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+
 
                     // Liste
                     Expanded(
