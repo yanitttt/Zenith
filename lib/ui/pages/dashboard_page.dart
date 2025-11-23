@@ -104,7 +104,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   decoration: BoxDecoration(
                     color: Color(0xFF0F1624),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Color(0xFFFFD700), width: 1.5),
+                    border: Border.all(color: Color(0xFFD9BE77), width: 1.5),
                   ),
                   child: _isLoading
                       ? Center(child: CircularProgressIndicator(color: Colors.amber))
@@ -128,7 +128,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       style: TextStyle(color: Colors.white, fontSize: 16),
                                     ),
                                   ),
-                                  Icon(Icons.close, color: Colors.amber, size: 22),
+                                  Icon(Icons.close, color: Color(0xFFD9BE77), size: 22),
                                 ],
                               ),
                             );
@@ -145,7 +145,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFFFD700),
+                    backgroundColor: Color(0xFFD9BE77),
                     foregroundColor: Colors.black,
                     padding: EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -167,11 +167,11 @@ class _DashboardPageState extends State<DashboardPage> {
       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 26),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Color(0xFFFFD700), width: 1.5),
+        border: Border.all(color: Color(0xFFD9BE77), width: 1.5),
       ),
       child: Text(
         label,
-        style: TextStyle(color: Color(0xFFFFD700), fontSize: 16, fontWeight: FontWeight.bold),
+        style: TextStyle(color: Color(0xFFD9BE77), fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }

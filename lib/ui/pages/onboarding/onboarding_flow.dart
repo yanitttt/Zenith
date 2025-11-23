@@ -207,7 +207,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           const Text(
             "Bienvenue !",
             style: TextStyle(
-              color: Colors.amber,
+              color: Color(0xFFD9BE77),
               fontSize: 45,
               fontWeight: FontWeight.bold,
             ),
@@ -237,7 +237,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         child: ElevatedButton(
           onPressed: _startOnboarding,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.amber,
+            backgroundColor: Color(0xFFD9BE77),
             foregroundColor: const Color(0xFF0b0f1a),
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(

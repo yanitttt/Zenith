@@ -310,7 +310,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -334,7 +334,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -358,7 +358,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -382,7 +382,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -404,7 +404,7 @@ class _UserCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                          border: Border.all(color: Color(0xFFD9BE77), width: 3),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -427,7 +427,7 @@ class _UserCard extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                              border: Border.all(color: Color(0xFFD9BE77), width: 3),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -450,7 +450,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                              border: Border.all(color: Color(0xFFD9BE77), width: 3),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
@@ -473,7 +473,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -506,7 +506,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -530,7 +530,7 @@ class _UserCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 5),
+                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
