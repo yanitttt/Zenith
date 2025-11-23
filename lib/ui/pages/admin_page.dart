@@ -515,7 +515,7 @@ class _UserCard extends StatelessWidget {
                               const Icon(Icons.chevron_right, size: 18),
                               const SizedBox(width: 6),
                               Text(
-                                'IMC : $imcArrondi',
+                                'IMC : $imcArrondi => $imcCategory',
                                 style: const TextStyle(
                                   fontSize: 18, // augmente ici la taille du texte
                                   fontWeight: FontWeight.bold, // optionnel pour accentuer
@@ -525,29 +525,7 @@ class _UserCard extends StatelessWidget {
                           ),
                         ),
 
-                      // IMC catégorie
-                      if (imcCategory != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.chevron_right, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                'IMC : $imcCategory',
-                                style: const TextStyle(
-                                  fontSize: 18, // augmente ici la taille du texte
-                                  fontWeight: FontWeight.bold, // optionnel pour accentuer
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+
                     ],
                   ),
                 const SizedBox(height: 20),
