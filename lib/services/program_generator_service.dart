@@ -126,85 +126,171 @@ class ProgramGeneratorService {
     required String userLevel,
     required int daysPerWeek,
   }) async {
-    final dayNames = [
-      'Jour 1 - Haut du corps',
-      'Jour 2 - Bas du corps',
-      'Jour 3 - Full Body',
-      'Jour 4 - Push',
-      'Jour 5 - Pull',
-      'Jour 6 - Legs',
-    ];
-
-    // Récupérer tous les exercices recommandés
-    final allExercises = await recommendationService.getRecommendedExercises(
-      userId: userId,
-      specificObjectiveId: objectiveId,
-      limit: 30,
-    );
-
-    if (allExercises.isEmpty) {
-      throw Exception('Aucun exercice disponible pour générer un programme');
-    }
-
-    // Séparer par type
-    final polyExercises = allExercises.where((e) => e.type == 'poly').toList();
-    final isoExercises = allExercises.where((e) => e.type == 'iso').toList();
+    // Configuration des séances selon le nombre de jours par semaine
+    final List<Map<String, dynamic>> dayConfigs = _getDayConfigurations(daysPerWeek);
 
     for (int day = 0; day < daysPerWeek; day++) {
-      // Créer le jour
-      final dayId = await db.into(db.programDay).insert(
-            ProgramDayCompanion(
-              programId: Value(programId),
-              name: Value(dayNames[day % dayNames.length]),
-              dayOrder: Value(day + 1),
+      final config = dayConfigs[day];
+      final MuscleGroup muscleGroup = config['muscleGroup'];
+      final String dayName = config['name'];
+
+      // Récupérer les exercices pour ce groupe musculaire
+      final exercises = await recommendationService.getRecommendedExercisesByMuscleGroup(
+        userId: userId,
+        muscleGroup: muscleGroup,
+        specificObjectiveId: objectiveId,
+        limit: 20,
+      );
+
+      if (exercises.isEmpty) {
+        print('[PROGRAM] Aucun exercice trouvé pour $dayName, utilisation du fallback');
+        // Fallback: récupérer tous les exercices
+        final fallbackExercises = await recommendationService.getRecommendedExercises(
+          userId: userId,
+          specificObjectiveId: objectiveId,
+          limit: 20,
+        );
+        if (fallbackExercises.isEmpty) {
+          throw Exception('Aucun exercice disponible pour générer un programme');
+        }
+        await _createProgramDay(
+          programId: programId,
+          dayId: day,
+          dayName: dayName,
+          exercises: fallbackExercises,
+          userLevel: userLevel,
+          objectiveId: objectiveId,
+        );
+        continue;
+      }
+
+      await _createProgramDay(
+        programId: programId,
+        dayId: day,
+        dayName: dayName,
+        exercises: exercises,
+        userLevel: userLevel,
+        objectiveId: objectiveId,
+      );
+    }
+  }
+
+  /// Retourne la configuration des jours selon le nombre de jours par semaine
+  List<Map<String, dynamic>> _getDayConfigurations(int daysPerWeek) {
+    switch (daysPerWeek) {
+      case 1:
+        return [
+          {'name': 'Full Body', 'muscleGroup': MuscleGroup.full},
+        ];
+      case 2:
+        return [
+          {'name': 'Haut du corps', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps', 'muscleGroup': MuscleGroup.lower},
+        ];
+      case 3:
+        return [
+          {'name': 'Haut du corps', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body', 'muscleGroup': MuscleGroup.full},
+        ];
+      case 4:
+        return [
+          {'name': 'Haut du corps 1', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 1', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Haut du corps 2', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 2', 'muscleGroup': MuscleGroup.lower},
+        ];
+      case 5:
+        return [
+          {'name': 'Haut du corps 1', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 1', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body', 'muscleGroup': MuscleGroup.full},
+          {'name': 'Haut du corps 2', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 2', 'muscleGroup': MuscleGroup.lower},
+        ];
+      case 6:
+      default:
+        return [
+          {'name': 'Haut du corps 1', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 1', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body 1', 'muscleGroup': MuscleGroup.full},
+          {'name': 'Haut du corps 2', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 2', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body 2', 'muscleGroup': MuscleGroup.full},
+        ];
+    }
+  }
+
+  /// Crée un jour de programme avec ses exercices
+  Future<void> _createProgramDay({
+    required int programId,
+    required int dayId,
+    required String dayName,
+    required List<RecommendedExercise> exercises,
+    required String userLevel,
+    required int objectiveId,
+  }) async {
+    // Créer le jour
+    final programDayId = await db.into(db.programDay).insert(
+          ProgramDayCompanion(
+            programId: Value(programId),
+            name: Value(dayName),
+            dayOrder: Value(dayId + 1),
+          ),
+        );
+
+    // Séparer par type
+    final polyExercises = exercises.where((e) => e.type == 'poly').toList();
+    final isoExercises = exercises.where((e) => e.type == 'iso').toList();
+
+    // Sélectionner 6 exercices pour ce jour (4 poly, 2 iso)
+    final dayExercises = <RecommendedExercise>[];
+
+    // Ajouter jusqu'à 4 exercices poly
+    for (int i = 0; i < 4 && i < polyExercises.length; i++) {
+      dayExercises.add(polyExercises[i]);
+    }
+
+    // Ajouter jusqu'à 2 exercices iso
+    for (int i = 0; i < 2 && i < isoExercises.length; i++) {
+      dayExercises.add(isoExercises[i]);
+    }
+
+    // Si on n'a pas assez d'exercices, compléter avec les exercices restants
+    if (dayExercises.length < 6) {
+      final remaining = exercises.where((e) => !dayExercises.contains(e)).toList();
+      for (int i = 0; dayExercises.length < 6 && i < remaining.length; i++) {
+        dayExercises.add(remaining[i]);
+      }
+    }
+
+    // Ajouter les exercices au jour avec leurs suggestions
+    for (int position = 0; position < dayExercises.length; position++) {
+      final exercise = dayExercises[position];
+      final suggestions = _getSuggestionsForExercise(
+        exercise: exercise,
+        userLevel: userLevel,
+        position: position,
+      );
+
+      // Récupérer la modalité appropriée
+      final modality = await _getModalityForExercise(
+        objectiveId: objectiveId,
+        userLevel: userLevel,
+      );
+
+      await db.into(db.programDayExercise).insert(
+            ProgramDayExerciseCompanion(
+              programDayId: Value(programDayId),
+              exerciseId: Value(exercise.id),
+              position: Value(position + 1),
+              modalityId: Value(modality?.id),
+              setsSuggestion: Value(suggestions['sets']),
+              repsSuggestion: Value(suggestions['reps']),
+              restSuggestionSec: Value(suggestions['rest']),
+              notes: Value(suggestions['notes']),
             ),
           );
-
-      // Sélectionner 6 exercices pour ce jour (4 poly, 2 iso)
-      final dayExercises = <RecommendedExercise>[];
-
-      // Ajouter 4 exercices poly
-      final startPolyIndex = (day * 4) % polyExercises.length;
-      for (int i = 0; i < 4 && polyExercises.isNotEmpty; i++) {
-        final index = (startPolyIndex + i) % polyExercises.length;
-        dayExercises.add(polyExercises[index]);
-      }
-
-      // Ajouter 2 exercices iso
-      final startIsoIndex = (day * 2) % isoExercises.length;
-      for (int i = 0; i < 2 && isoExercises.isNotEmpty; i++) {
-        final index = (startIsoIndex + i) % isoExercises.length;
-        dayExercises.add(isoExercises[index]);
-      }
-
-      // Ajouter les exercices au jour avec leurs suggestions
-      for (int position = 0; position < dayExercises.length; position++) {
-        final exercise = dayExercises[position];
-        final suggestions = _getSuggestionsForExercise(
-          exercise: exercise,
-          userLevel: userLevel,
-          position: position,
-        );
-
-        // Récupérer la modalité appropriée
-        final modality = await _getModalityForExercise(
-          objectiveId: objectiveId,
-          userLevel: userLevel,
-        );
-
-        await db.into(db.programDayExercise).insert(
-              ProgramDayExerciseCompanion(
-                programDayId: Value(dayId),
-                exerciseId: Value(exercise.id),
-                position: Value(position + 1),
-                modalityId: Value(modality?.id),
-                setsSuggestion: Value(suggestions['sets']),
-                repsSuggestion: Value(suggestions['reps']),
-                restSuggestionSec: Value(suggestions['rest']),
-                notes: Value(suggestions['notes']),
-              ),
-            );
-      }
     }
   }
 

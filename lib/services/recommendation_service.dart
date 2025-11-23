@@ -30,10 +30,63 @@ class RecommendedExercise {
   }
 }
 
+enum MuscleGroup { upper, lower, full }
+
 class RecommendationService {
   final AppDb db;
 
   RecommendationService(this.db);
+
+  // Mapping des muscles vers leur groupe (haut/bas du corps)
+  // Les noms doivent correspondre à ceux de votre base de données
+  static const Map<String, MuscleGroup> _muscleGroupMapping = {
+    // Haut du corps
+    'pectoraux': MuscleGroup.upper,
+    'pectoral': MuscleGroup.upper,
+    'chest': MuscleGroup.upper,
+    'épaules': MuscleGroup.upper,
+    'epaules': MuscleGroup.upper,
+    'shoulders': MuscleGroup.upper,
+    'deltoïdes': MuscleGroup.upper,
+    'deltoides': MuscleGroup.upper,
+    'triceps': MuscleGroup.upper,
+    'biceps': MuscleGroup.upper,
+    'avant-bras': MuscleGroup.upper,
+    'forearms': MuscleGroup.upper,
+    'dos': MuscleGroup.upper,
+    'back': MuscleGroup.upper,
+    'dorsaux': MuscleGroup.upper,
+    'lats': MuscleGroup.upper,
+    'trapèzes': MuscleGroup.upper,
+    'trapezes': MuscleGroup.upper,
+    'traps': MuscleGroup.upper,
+    'rhomboïdes': MuscleGroup.upper,
+    'abdominaux': MuscleGroup.upper,
+    'abdos': MuscleGroup.upper,
+    'abs': MuscleGroup.upper,
+    'core': MuscleGroup.upper,
+
+    // Bas du corps
+    'quadriceps': MuscleGroup.lower,
+    'quads': MuscleGroup.lower,
+    'ischio-jambiers': MuscleGroup.lower,
+    'ischio': MuscleGroup.lower,
+    'hamstrings': MuscleGroup.lower,
+    'mollets': MuscleGroup.lower,
+    'calves': MuscleGroup.lower,
+    'fessiers': MuscleGroup.lower,
+    'glutes': MuscleGroup.lower,
+    'adducteurs': MuscleGroup.lower,
+    'abducteurs': MuscleGroup.lower,
+    'jambes': MuscleGroup.lower,
+    'legs': MuscleGroup.lower,
+  };
+
+  /// Détermine le groupe musculaire d'un muscle par son nom
+  MuscleGroup _getMuscleGroup(String muscleName) {
+    final normalized = muscleName.toLowerCase().trim();
+    return _muscleGroupMapping[normalized] ?? MuscleGroup.upper;
+  }
 
   /// Récupère les exercices recommandés pour un utilisateur
   /// en fonction de son objectif principal et de son équipement
@@ -115,6 +168,114 @@ class RecommendationService {
       }).toList();
     } catch (e) {
       print('[RECOMMENDATION] Erreur: $e');
+      rethrow;
+    }
+  }
+
+  /// Récupère les exercices recommandés filtrés par groupe musculaire
+  Future<List<RecommendedExercise>> getRecommendedExercisesByMuscleGroup({
+    required int userId,
+    required MuscleGroup muscleGroup,
+    int? specificObjectiveId,
+    int limit = 10,
+  }) async {
+    try {
+      // 1. Récupérer l'objectif principal de l'utilisateur
+      int objectiveId;
+      if (specificObjectiveId != null) {
+        objectiveId = specificObjectiveId;
+      } else {
+        final userGoals = await (db.select(db.userGoal)
+              ..where((tbl) => tbl.userId.equals(userId))
+              ..orderBy([(t) => OrderingTerm.desc(t.weight)])
+              ..limit(1))
+            .get();
+
+        if (userGoals.isEmpty) {
+          throw Exception('Aucun objectif défini pour cet utilisateur');
+        }
+        objectiveId = userGoals.first.objectiveId;
+      }
+
+      // 2. Exécuter la requête de recommandation avec filtre par groupe musculaire
+      final query = '''
+        WITH user_eq AS (
+          SELECT equipment_id FROM user_equipment WHERE user_id = ?
+        ),
+        ex_ok_eq AS (
+          SELECT e.id
+          FROM exercise e
+          LEFT JOIN exercise_equipment ee ON ee.exercise_id = e.id
+          LEFT JOIN user_eq ue ON ue.equipment_id = ee.equipment_id
+          GROUP BY e.id
+          HAVING COUNT(ee.equipment_id) = COUNT(ue.equipment_id)
+        ),
+        ex_obj AS (
+          SELECT eo.exercise_id, eo.weight AS obj_weight
+          FROM exercise_objective eo
+          WHERE eo.objective_id = ?
+        ),
+        ex_main_muscle AS (
+          SELECT em.exercise_id, m.name AS muscle_name
+          FROM exercise_muscle em
+          JOIN muscle m ON m.id = em.muscle_id
+          WHERE em.weight = (
+            SELECT MAX(em2.weight)
+            FROM exercise_muscle em2
+            WHERE em2.exercise_id = em.exercise_id
+          )
+        )
+        SELECT e.id, e.name, e.type, e.difficulty, e.cardio,
+               COALESCE(ex_obj.obj_weight, 0) AS objective_affinity,
+               emm.muscle_name
+        FROM exercise e
+        JOIN ex_ok_eq k ON k.id = e.id
+        LEFT JOIN ex_obj ON ex_obj.exercise_id = e.id
+        LEFT JOIN ex_main_muscle emm ON emm.exercise_id = e.id
+        ORDER BY objective_affinity DESC, e.difficulty ASC;
+      ''';
+
+      final results = await db.customSelect(
+        query,
+        variables: [
+          Variable.withInt(userId),
+          Variable.withInt(objectiveId),
+        ],
+        readsFrom: {
+          db.exercise,
+          db.userEquipment,
+          db.exerciseEquipment,
+          db.exerciseObjective,
+          db.exerciseMuscle,
+          db.muscle,
+        },
+      ).get();
+
+      // 3. Filtrer par groupe musculaire
+      final filteredResults = results.where((row) {
+        final muscleName = row.readNullable<String>('muscle_name');
+        if (muscleName == null) return muscleGroup == MuscleGroup.full;
+
+        final exerciseMuscleGroup = _getMuscleGroup(muscleName);
+
+        if (muscleGroup == MuscleGroup.full) {
+          return true; // Full body inclut tous les exercices
+        }
+        return exerciseMuscleGroup == muscleGroup;
+      }).take(limit);
+
+      return filteredResults.map((row) {
+        return RecommendedExercise(
+          id: row.read<int>('id'),
+          name: row.read<String>('name'),
+          type: row.read<String>('type'),
+          difficulty: row.read<int>('difficulty'),
+          cardio: row.read<double>('cardio'),
+          objectiveAffinity: row.read<double>('objective_affinity'),
+        );
+      }).toList();
+    } catch (e) {
+      print('[RECOMMENDATION] Erreur filtrage groupe musculaire: $e');
       rethrow;
     }
   }

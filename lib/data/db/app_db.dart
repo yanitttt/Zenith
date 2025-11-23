@@ -352,7 +352,13 @@ class UserProgram extends Table {
   ],
 )
 class AppDb extends _$AppDb {
-  AppDb() : super(_openConnection());
+  final bool _isTest;
+
+  AppDb() : _isTest = false, super(_openConnection());
+
+  /// Constructeur pour les tests avec une base de données en mémoire
+  AppDb.forTesting(super.executor) : _isTest = true;
+
 
   /// Bump quand tu touches au schéma.
   @override
@@ -362,6 +368,9 @@ class AppDb extends _$AppDb {
   MigrationStrategy get migration => MigrationStrategy(
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
+      // Skip complex migrations for tests
+      if (_isTest) return;
+
       await _ensureAppUserSingletonColumnAndIndex(); // <<--- AJOUT CLEF
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 1');
@@ -378,9 +387,15 @@ class AppDb extends _$AppDb {
 
     onCreate: (m) async {
       await m.createAll();            // crée toutes les tables de @DriftDatabase
-      await _createAllIndexes();      // puis les index idempotents
+      // Skip index creation for tests (tables are fresh)
+      if (!_isTest) {
+        await _createAllIndexes();      // puis les index idempotents
+      }
     },
     onUpgrade: (m, from, to) async {
+      // Skip upgrades for tests
+      if (_isTest) return;
+
       await _ensureAppUserSingletonColumnAndIndex(); // assure colonne+index
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing('app_user', 'singleton', 'INTEGER NOT NULL DEFAULT 1');
