@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // ⬅️ +++
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:intl/date_symbol_data_local.dart';
 import 'data/db/app_db.dart';
 import 'core/prefs/app_prefs.dart';
 import 'ui/theme/app_theme.dart';
@@ -14,6 +14,8 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeDateFormatting('fr_FR', null);
 
   final db = AppDb();
   final sp = await SharedPreferences.getInstance();

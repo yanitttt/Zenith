@@ -8,6 +8,7 @@ import 'exercises_page.dart';
 import 'admin_page.dart';
 import 'workout_program_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'planning_page.dart';
 
 class RootShell extends StatefulWidget {
   final AppDb db;
@@ -47,7 +48,7 @@ class _RootShellState extends State<RootShell> {
 
     final pages = [
       DashboardPage(db: widget.db),
-      const _PlaceholderPage(title: 'Planning'),
+      const PlanningPage(),
       WorkoutProgramPage(db: widget.db, prefs: _prefs!),
       ExercisesPage(db: widget.db),
       AdminPage(db: widget.db, prefs: _prefs!),
@@ -78,14 +79,4 @@ class _RootShellState extends State<RootShell> {
   }
 }
 
-class _PlaceholderPage extends StatelessWidget {
-  final String title;
-  const _PlaceholderPage({required this.title});
 
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18)),
-    );
-  }
-}
