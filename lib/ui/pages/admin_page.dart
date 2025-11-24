@@ -98,9 +98,11 @@ class _AdminPageState extends State<AdminPage> {
               Row(
                 children: [
                   const Expanded(
+                    child: Padding(
+                      padding:  EdgeInsets.only(left: 18),
                     child: Text(
                       "Profil",
-                      textAlign: TextAlign.center,
+                      textAlign: TextAlign.left,
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
@@ -108,7 +110,7 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                     ),
                   ),
-
+                  ),
                   IconButton(
                     tooltip: 'Tester les notifications',
                     onPressed: () async {
