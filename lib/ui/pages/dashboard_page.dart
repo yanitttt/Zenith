@@ -3,6 +3,16 @@ import '../../data/db/app_db.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../data/repositories/exercise_repository.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bulle/bulle.dart';
+import '../widgets/calendar/calendar_card.dart';
+import '../widgets/progress/progress_card.dart';
+import '../widgets/favorites/favorites_card.dart';
+import '../widgets/stats/stats_card.dart';
+import '../../services/ImcService.dart';
+import '../../ui/pages/admin_page.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
+
 
 class DashboardPage extends StatefulWidget {
   final AppDb db;
@@ -19,10 +29,25 @@ class _DashboardPageState extends State<DashboardPage> {
   String _userName = "...";
   List<ExerciseData> _randomExercises = [];
   bool _isLoading = true;
+  double? _userWeight;
+  double? _userHeight;
+  double? _userIMC;
+  String _todayDate = "";
 
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting('fr_FR', null).then((_) {
+      Intl.defaultLocale = 'fr_FR';
+
+      final now = DateTime.now();
+      final formatter = DateFormat('EEEE d MMMM yyyy', 'fr_FR');
+
+      setState(() {
+        _todayDate = formatter.format(now);
+      });
+    });
+
     _userRepo = UserRepository(widget.db);
     _exerciseRepo = ExerciseRepository(widget.db);
     _loadDashboardData();
@@ -32,6 +57,19 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final user = await _userRepo.current();
       final prenom = user?.prenom?.trim() ?? "Athlète";
+
+      _userWeight = user?.weight;
+      _userHeight = user?.height;
+
+      if (_userWeight != null && _userHeight != null) {
+        final calc = IMCcalculator(
+          height: _userHeight!,
+          weight: _userWeight!,
+        );
+        final imc = calc.calculateIMC();
+        _userIMC = double.parse(imc.toStringAsFixed(2));
+      }
+
       final allExercises = await _exerciseRepo.all();
       allExercises.shuffle();
       final randomExercises = allExercises.take(4).toList();
@@ -44,6 +82,7 @@ class _DashboardPageState extends State<DashboardPage> {
         });
       }
     } catch (e) {
+      debugPrint('[DASHBOARD] Erreur: $e');
       if (mounted) {
         setState(() {
           _userName = "Athlète";
@@ -53,125 +92,128 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  double? _imc;
+  String? _imcCategory;
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF0A0F1A),
+      backgroundColor: AppTheme.scaffold,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        child: Container(
+//          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+//          decoration: BoxDecoration(
+          //color: AppTheme.surface,
+          //  border: Border.all(color: const Color(0xFF111111), width: 2),
+         // ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const SizedBox(height: 8),
+
+              /// ---- HEADER ----
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Text(
-                    "Séance",
-                    style: TextStyle(fontSize: 28, color: Colors.white, fontWeight: FontWeight.bold),
+                    "Bonjour $_userName !",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  Icon(Icons.settings, color: Colors.white, size: 26),
+                  SizedBox(height: 4),
+                  Text(
+                    "Prêt pour ta séance ?",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    _todayDate,
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.grey,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 8),
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // IMC + BMR buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _goldButton("IMC"),
-                  const SizedBox(width: 16),
-                  _goldButton("BMR"),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              Center(
-                child: Text(
-                  "objectif choisi",
-                  style: TextStyle(color: Colors.white70, fontSize: 16),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // List of generated exercises
+              /// ---- CONTENU SCROLLABLE ----
               Expanded(
-                child: Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Color(0xFF0F1624),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Color(0xFFD9BE77), width: 1.5),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          StatsBubble(
+                            title: "Exercice \n complétés",
+                            value: "8",
+                            icon: Icons.fitness_center,
+                            background: const Color(0xFF0A0F1F),
+                            border: Color(0xFFD9BE77), // doré
+                          ),
+
+                          StatsBubble(
+                            title: "Séances\ncomplétées",
+                            value: "2",
+                            icon: Icons.sports_gymnastics,
+                            background: Color(0xFF2C123A),
+                            border: Color(0xFFD9BE77),
+                          ),
+                        ],
+                      ),
+
+                      SizedBox(height: 20),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          StatsBubble(
+                            title: "Imc",
+                            value: _userIMC?.toString() ?? "--",
+                            icon: Icons.fitness_center,
+                            background: const Color(0xFF0A0F1F),
+                            border: Color(0xFFD9BE77), // doré
+                          ),
+
+                          StatsBubble(
+                            title: "Poids",
+                            value: _userWeight != null ? "${_userWeight!.toStringAsFixed(1)} kg" : "--",
+                            icon: Icons.sports_gymnastics,
+                            background: Color(0xFF2C123A),
+                            border: Color(0xFFD9BE77),
+                          ),
+                        ],
+                      ),
+
+                      /// favoris / exercices recommandés
+
+
+                      const SizedBox(height: 22),
+
+                      /// statistiques
+
+                    ],
                   ),
-                  child: _isLoading
-                      ? Center(child: CircularProgressIndicator(color: Colors.amber))
-                      : ListView.builder(
-                          itemCount: _randomExercises.length,
-                          itemBuilder: (context, index) {
-                            final exo = _randomExercises[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 12.0),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    backgroundColor: Colors.white,
-                                    radius: 22,
-                                    child: Icon(Icons.fitness_center, color: Colors.black),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Text(
-                                      exo.name,
-                                      style: TextStyle(color: Colors.white, fontSize: 16),
-                                    ),
-                                  ),
-                                  Icon(Icons.close, color: Color(0xFFD9BE77), size: 22),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
                 ),
               ),
-
-              const SizedBox(height: 16),
-
-              // Finish button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFD9BE77),
-                    foregroundColor: Colors.black,
-                    padding: EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text("Séance finie", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-              ),
-
-              const SizedBox(height: 16),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _goldButton(String label) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 26),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Color(0xFFD9BE77), width: 1.5),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(color: Color(0xFFD9BE77), fontSize: 16, fontWeight: FontWeight.bold),
       ),
     );
   }
