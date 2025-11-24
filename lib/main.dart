@@ -11,6 +11,7 @@ import 'ui/pages/onboarding/onboarding_flow.dart';
 import 'data/db/daos/user_dao.dart';
 import 'services/home_widget_service.dart';
 import 'services/notification_service.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,7 @@ void main() async {
   final sp = await SharedPreferences.getInstance();
   final prefs = AppPrefs(sp);
 
-  
+  await initializeDateFormatting('fr_FR', null);
 
   // Initialiser le widget avec les données
   final widgetService = HomeWidgetService(db);
