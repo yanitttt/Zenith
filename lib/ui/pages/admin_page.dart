@@ -1,7 +1,5 @@
 // lib/ui/pages/admin_page.dart
 import 'package:flutter/material.dart';
-import 'package:recommandation_mobile/data/db/daos/user_equipment_dao.dart';
-import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_training_day_dao.dart';
 import 'package:recommandation_mobile/ui/pages/onboarding/profile_basics_page.dart';
 import 'package:drift/drift.dart' show Value;
@@ -11,9 +9,7 @@ import '../theme/app_theme.dart';
 import '../../services/ImcService.dart';
 import 'onboarding/onboarding_flow.dart';
 import '../../core/prefs/app_prefs.dart';
-import 'edit_user_page.dart';
 import '../../services/notification_service.dart';
-import 'onboarding/profile_basics_page.dart';
 
 class AdminPage extends StatefulWidget {
   final AppDb db;
@@ -30,16 +26,12 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   late final UserDao _userDao;
-  late final UserGoalDao _goalDao;
-  late final UserEquipmentDao _equipmentDao;
   late final UserTrainingDayDao _trainingDayDao;
 
   @override
   void initState() {
     super.initState();
     _userDao = UserDao(widget.db);
-    _goalDao = UserGoalDao(widget.db);
-    _equipmentDao = UserEquipmentDao(widget.db);
     _trainingDayDao = UserTrainingDayDao(widget.db);
   }
 
@@ -244,14 +236,6 @@ class _UserCardState extends State<_UserCard> {
     return days[dayNum - 1];
   }
 
-  // ---------- helpers présentation ----------
-  String _fmtDate(DateTime d) {
-    final dd = d.day.toString().padLeft(2, '0');
-    final mm = d.month.toString().padLeft(2, '0');
-    final yy = d.year.toString();
-    return '$dd/$mm/$yy';
-  }
-
   int? _calcAge(DateTime? dob) {
     if (dob == null) return null;
     final now = DateTime.now();
@@ -290,23 +274,12 @@ class _UserCardState extends State<_UserCard> {
 
   @override
   Widget build(BuildContext context) {
-    final title = [
+    final fullName = [
       if ((widget.u.prenom ?? '').trim().isNotEmpty) widget.u.prenom!.trim(),
       if ((widget.u.nom ?? '').trim().isNotEmpty) widget.u.nom!.trim(),
     ].join(' ').trim();
 
-    final lines = <String>[];
-    lines.add('id=${widget.u.id}');
-    if (widget.u.level != null) lines.add('niveau=${widget.u.level}');
-    if (widget.u.weight != null) lines.add('poids=${widget.u.weight}kg');
-    if (widget.u.height != null) lines.add('taille=${widget.u.height}cm');
-    if (widget.u.metabolism != null && widget.u.metabolism!.trim().isNotEmpty) {
-      lines.add('métabolisme=${widget.u.metabolism}');
-    }
-    final subtitle = lines.join('  •  ');
-
     final age = _calcAge(widget.u.birthDate);
-    final birth = widget.u.birthDate != null ? _fmtDate(widget.u.birthDate!) : null;
     final genderLabel = _genderLabel(widget.u.gender);
     final genderIcon = _genderIcon(widget.u.gender);
 
@@ -319,385 +292,371 @@ class _UserCardState extends State<_UserCard> {
       imcCategory = calc.getIMCCategory();
     }
 
-    return Padding(
-  padding: const EdgeInsets.all(12),
-  child: Container(
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.black26,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Color(0xFFD9BE77), width: 2),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-//                    Text(
-//                      title.isEmpty ? '' : title,
-//                      maxLines: 1,
-//                      overflow: TextOverflow.ellipsis,
-//                      style: const TextStyle(
-//                        fontWeight: FontWeight.w800,
-//                        fontSize: 16,
-//                      ),
-//                    ),
-//                  const SizedBox(height: 4),
-//                  if (subtitle.isNotEmpty)
-//                    Text(
-//                      subtitle,
-//                      maxLines: 2,
-//                      overflow: TextOverflow.ellipsis,
-//                      style: const TextStyle(
-//                        color: Colors.white70,
-//                        fontSize: 12.5,
-//                        height: 1.2,
-//                      ),
-//                    ),
-                  const SizedBox(height: 8),
-
-                  // Chips infos: genre / naissance / âge / IMC
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A2E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFD9BE77),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          // En-tête du profil compact
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Color(0xFF0F0F1E),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Avatar simple
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFD9BE77),
+                  ),
+                  child: Icon(
+                    genderIcon,
+                    size: 28,
+                    color: const Color(0xFF0F0F1E),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Nom et infos
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
-                      // Prénom person_outline
-                      if ((widget.u.prenom ?? '').trim().isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.badge_outlined, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                widget.u.prenom!.trim(),
-                                style: const TextStyle(
-                                  fontSize: 18, // texte agrandi
-                                  fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      // Nom badge_outlined
-                      if ((widget.u.nom ?? '').trim().isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.badge_outlined, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                widget.u.nom!.trim(),
-                                style: const TextStyle(
-                                  fontSize: 18, // texte agrandi
-                                  fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-//Age
- 
-                      if (age != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.cake_outlined, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                '$age ans',
-                                style: const TextStyle(
-                                  fontSize: 18, // texte agrandi
-                                  fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),  
-
-                      //Taille height_outlined
-                      if (widget.u.height != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.height_outlined, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                '${widget.u.height} cm',
-                                style: const TextStyle(
-                                  fontSize: 18, // taille du texte agrandie
-                                  fontWeight: FontWeight.bold, // optionnel pour accentuer
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      // Genre
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(genderIcon, size: 18),
-                            const SizedBox(width: 6),
-                            Text(
-                              genderLabel,
-                              style: const TextStyle(
-                                fontSize: 18, // texte plus grand
-                                fontWeight: FontWeight.bold, // optionnel pour mettre en gras
-                              ),
-                            ),
-                          ],
+                      Text(
+                        fullName.isEmpty ? 'Utilisateur ${widget.u.id}' : fullName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                      // Poids monitor_weight_outlined
-                      if (widget.u.weight != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.monitor_weight_outlined, size: 18),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${widget.u.weight} kg',
-                                  style: const TextStyle(
-                                    fontSize: 18, // taille du texte agrandie
-                                    fontWeight: FontWeight.bold, // optionnel pour accentuer
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      // Niveau
-                      if ((widget.u.level ?? '').trim().isNotEmpty)
-                        Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.badge_outlined, size: 18),
-                                const SizedBox(width: 6),
-                                Text(
-                                  widget.u.level!.trim(),
-                                  style: const TextStyle(
-                                    fontSize: 18, // texte agrandi
-                                    fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      // Metabolisme
-                      if (widget.u.metabolism != null && widget.u.metabolism!.trim().isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.local_fire_department_outlined, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                widget.u.metabolism!.trim(),
-                                style: const TextStyle(
-                                  fontSize: 18, // texte agrandi
-                                  fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
-                                ),
-                              ),
-                            ],
-                          ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$genderLabel${age != null ? " • $age ans" : ""}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withOpacity(0.7),
                         ),
-
-
-                      // Date de naissance
-                     // if (birth != null)
-                       // _InfoChip(
-                         // icon: Icons.cake_outlined,
-                          //text: 'Né(e) le $birth',
-                        //),
-
-
-                     // IMC arrondi
-                      if (imcArrondi != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Color(0xFFD9BE77), width: 3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.chevron_right, size: 18),
-                              const SizedBox(width: 6),
-                              Text(
-                                'IMC : $imcArrondi => $imcCategory',
-                                style: const TextStyle(
-                                  fontSize: 18, // augmente ici la taille du texte
-                                  fontWeight: FontWeight.bold, // optionnel pour accentuer
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-
+                      ),
                     ],
                   ),
-                const SizedBox(height: 20),
-
-        // === BOUTON EDITER ===
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.gold,
-              foregroundColor: AppTheme.black,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed: () {
-  final parent = context.findAncestorStateOfType<_AdminPageState>()!;
-
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => ProfileBasicsPage(
-        // --- Valeurs pré-remplies ---
-        initialPrenom: widget.u.prenom ?? "",
-        initialNom: widget.u.nom ?? "",
-        initialBirthDate: widget.u.birthDate,
-        initialWeight: widget.u.weight,
-        initialHeight: widget.u.height,
-        initialGender: (widget.u.gender == "homme")
-            ? Gender.homme
-            : Gender.femme,
-
-        // --- Fonction quand l’utilisateur valide ---
-        onNext: ({
-          required String prenom,
-          required String nom,
-          required DateTime birthDate,
-          required double weight,
-          required double height,
-          required Gender gender,
-        }) async {
-          final updated = widget.u.copyWith(
-            prenom: Value(prenom),
-            nom: Value(nom),
-            birthDate: Value(birthDate),
-            weight: Value(weight),
-            height: Value(height),
-            gender: Value(gender == Gender.homme ? "homme" : "femme"),
-          );
-
-          await parent._userDao.updateOne(updated);
-
-          // Retour
-          Navigator.pop(context);
-        },
-      ),
-    ),
-  );
-},
-            child: const Text(
-              "Modifier le profil",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
           ),
-        ),
 
-        const SizedBox(height: 12),
+          // Section des statistiques compacte
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Grille 2x2 ou 2x3 pour les stats
+                Row(
+                  children: [
+                    if (widget.u.height != null)
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.height,
+                          label: 'Taille',
+                          value: '${widget.u.height}',
+                          unit: 'cm',
+                        ),
+                      ),
+                    if (widget.u.height != null && widget.u.weight != null)
+                      const SizedBox(width: 8),
+                    if (widget.u.weight != null)
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.monitor_weight,
+                          label: 'Poids',
+                          value: '${widget.u.weight}',
+                          unit: 'kg',
+                        ),
+                      ),
+                  ],
+                ),
 
-        // === JOURS D'ENTRAÎNEMENT ===
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2A2D5F),
-              foregroundColor: AppTheme.gold,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+                const SizedBox(height: 8),
+
+                // Deuxième ligne
+                Row(
+                  children: [
+                    if (imcArrondi != null)
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.analytics_outlined,
+                          label: 'IMC',
+                          value: '$imcArrondi',
+                          unit: imcCategory ?? '',
+                          isLarge: true,
+                        ),
+                      ),
+                    if (imcArrondi != null && widget.u.level != null)
+                      const SizedBox(width: 8),
+                    if (widget.u.level != null)
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.fitness_center,
+                          label: 'Niveau',
+                          value: widget.u.level!,
+                          unit: '',
+                        ),
+                      ),
+                  ],
+                ),
+
+                // Métabolisme sur une ligne si disponible
+                if (widget.u.metabolism != null && widget.u.metabolism!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _StatCard(
+                    icon: Icons.local_fire_department,
+                    label: 'Métabolisme',
+                    value: widget.u.metabolism!.trim(),
+                    unit: '',
+                    isWide: true,
+                  ),
+                ],
+
+                const SizedBox(height: 12),
+
+                // Boutons d'action compacts
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ModernButton(
+                        icon: Icons.edit_outlined,
+                        label: 'Modifier',
+                        isCompact: true,
+                        onPressed: () {
+                          final parent = context.findAncestorStateOfType<_AdminPageState>()!;
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => ProfileBasicsPage(
+                                initialPrenom: widget.u.prenom ?? "",
+                                initialNom: widget.u.nom ?? "",
+                                initialBirthDate: widget.u.birthDate,
+                                initialWeight: widget.u.weight,
+                                initialHeight: widget.u.height,
+                                initialGender: (widget.u.gender == "homme") ? Gender.homme : Gender.femme,
+                                onNext: ({
+                                  required String prenom,
+                                  required String nom,
+                                  required DateTime birthDate,
+                                  required double weight,
+                                  required double height,
+                                  required Gender gender,
+                                }) async {
+                                  final updated = widget.u.copyWith(
+                                    prenom: Value(prenom),
+                                    nom: Value(nom),
+                                    birthDate: Value(birthDate),
+                                    weight: Value(weight),
+                                    height: Value(height),
+                                    gender: Value(gender == Gender.homme ? "homme" : "femme"),
+                                  );
+                                  await parent._userDao.updateOne(updated);
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _ModernButton(
+                        icon: Icons.delete_outline,
+                        label: 'Supprimer',
+                        isCompact: true,
+                        isDanger: true,
+                        onPressed: widget.onDelete,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Bouton jours d'entraînement
+                _ModernButton(
+                  icon: Icons.calendar_today_outlined,
+                  label: _selectedDays.isEmpty
+                      ? "Jours d'entraînement"
+                      : _selectedDays.map(_getDayName).join(', '),
+                  isCompact: true,
+                  onPressed: _showTrainingDaysDialog,
+                ),
+              ],
             ),
-            onPressed: _showTrainingDaysDialog,
+          ),
+        ],
+      ),
+    );  }
+}
+
+// Widget pour les cartes de statistiques
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final String unit;
+  final bool isLarge;
+  final bool isWide;
+
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.unit,
+    this.isLarge = false,
+    this.isWide = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFD9BE77),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: const Color(0xFFD9BE77), size: 18),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (unit.isNotEmpty) ...[
+                const SizedBox(width: 3),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 1),
+                  child: Text(
+                    unit,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Widget pour les boutons compacts
+class _ModernButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isCompact;
+  final bool isDanger;
+
+  const _ModernButton({
+    required this.icon,
+    required this.label,
+    this.onPressed,
+    this.isCompact = false,
+    this.isDanger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final backgroundColor = isDanger
+        ? Colors.red.shade900.withOpacity(0.3)
+        : const Color(0xFF0F0F1E);
+    final borderColor = isDanger
+        ? Colors.red.shade700
+        : const Color(0xFFD9BE77);
+    final textColor = isDanger
+        ? Colors.red.shade300
+        : const Color(0xFFD9BE77);
+
+    return Container(
+      width: double.infinity,
+      height: isCompact ? 42 : 48,
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor, width: 1.5),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.calendar_today, size: 18),
+                Icon(icon, color: textColor, size: 18),
                 const SizedBox(width: 8),
-                Text(
-                  _selectedDays.isEmpty
-                    ? "Définir les jours d'entraînement"
-                    : "Jours : ${_selectedDays.map(_getDayName).join(', ')}",
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
           ),
         ),
-
-        const SizedBox(height: 12),
-
-        // === BOUTON SUPPRIMER ===
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red, width: 2),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed:()  {
-              if (widget.onDelete != null) {
-                widget.onDelete!();
-              }
-            } ,
-            child: const Text(
-              "Supprimer le profil",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      ],
-    ),
-  ),
-);  }
+      ),
+    );
+  }
 }
 
 // Widget de dialog pour sélectionner les jours d'entraînement
