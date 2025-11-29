@@ -4191,468 +4191,6 @@ class UserTrainingDayCompanion extends UpdateCompanion<UserTrainingDayData> {
   }
 }
 
-class $UserFeedbackTable extends UserFeedback
-    with TableInfo<$UserFeedbackTable, UserFeedbackData> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $UserFeedbackTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
-  @override
-  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
-    'user_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES app_user (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _exerciseIdMeta = const VerificationMeta(
-    'exerciseId',
-  );
-  @override
-  late final GeneratedColumn<int> exerciseId = GeneratedColumn<int>(
-    'exercise_id',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'REFERENCES exercise (id) ON DELETE CASCADE',
-    ),
-  );
-  static const VerificationMeta _likedMeta = const VerificationMeta('liked');
-  @override
-  late final GeneratedColumn<int> liked = GeneratedColumn<int>(
-    'liked',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _difficultMeta = const VerificationMeta(
-    'difficult',
-  );
-  @override
-  late final GeneratedColumn<int> difficult = GeneratedColumn<int>(
-    'difficult',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _pleasantMeta = const VerificationMeta(
-    'pleasant',
-  );
-  @override
-  late final GeneratedColumn<int> pleasant = GeneratedColumn<int>(
-    'pleasant',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _uselessMeta = const VerificationMeta(
-    'useless',
-  );
-  @override
-  late final GeneratedColumn<int> useless = GeneratedColumn<int>(
-    'useless',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultValue: const Constant(0),
-  );
-  static const VerificationMeta _tsMeta = const VerificationMeta('ts');
-  @override
-  late final GeneratedColumn<int> ts = GeneratedColumn<int>(
-    'ts',
-    aliasedName,
-    false,
-    type: DriftSqlType.int,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [
-    userId,
-    exerciseId,
-    liked,
-    difficult,
-    pleasant,
-    useless,
-    ts,
-  ];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'user_feedback';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<UserFeedbackData> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('user_id')) {
-      context.handle(
-        _userIdMeta,
-        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_userIdMeta);
-    }
-    if (data.containsKey('exercise_id')) {
-      context.handle(
-        _exerciseIdMeta,
-        exerciseId.isAcceptableOrUnknown(data['exercise_id']!, _exerciseIdMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_exerciseIdMeta);
-    }
-    if (data.containsKey('liked')) {
-      context.handle(
-        _likedMeta,
-        liked.isAcceptableOrUnknown(data['liked']!, _likedMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_likedMeta);
-    }
-    if (data.containsKey('difficult')) {
-      context.handle(
-        _difficultMeta,
-        difficult.isAcceptableOrUnknown(data['difficult']!, _difficultMeta),
-      );
-    }
-    if (data.containsKey('pleasant')) {
-      context.handle(
-        _pleasantMeta,
-        pleasant.isAcceptableOrUnknown(data['pleasant']!, _pleasantMeta),
-      );
-    }
-    if (data.containsKey('useless')) {
-      context.handle(
-        _uselessMeta,
-        useless.isAcceptableOrUnknown(data['useless']!, _uselessMeta),
-      );
-    }
-    if (data.containsKey('ts')) {
-      context.handle(_tsMeta, ts.isAcceptableOrUnknown(data['ts']!, _tsMeta));
-    } else if (isInserting) {
-      context.missing(_tsMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {userId, exerciseId, ts};
-  @override
-  UserFeedbackData map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return UserFeedbackData(
-      userId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}user_id'],
-          )!,
-      exerciseId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}exercise_id'],
-          )!,
-      liked:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}liked'],
-          )!,
-      difficult:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}difficult'],
-          )!,
-      pleasant:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}pleasant'],
-          )!,
-      useless:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}useless'],
-          )!,
-      ts:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}ts'],
-          )!,
-    );
-  }
-
-  @override
-  $UserFeedbackTable createAlias(String alias) {
-    return $UserFeedbackTable(attachedDatabase, alias);
-  }
-}
-
-class UserFeedbackData extends DataClass
-    implements Insertable<UserFeedbackData> {
-  final int userId;
-  final int exerciseId;
-  final int liked;
-  final int difficult;
-  final int pleasant;
-  final int useless;
-  final int ts;
-  const UserFeedbackData({
-    required this.userId,
-    required this.exerciseId,
-    required this.liked,
-    required this.difficult,
-    required this.pleasant,
-    required this.useless,
-    required this.ts,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['user_id'] = Variable<int>(userId);
-    map['exercise_id'] = Variable<int>(exerciseId);
-    map['liked'] = Variable<int>(liked);
-    map['difficult'] = Variable<int>(difficult);
-    map['pleasant'] = Variable<int>(pleasant);
-    map['useless'] = Variable<int>(useless);
-    map['ts'] = Variable<int>(ts);
-    return map;
-  }
-
-  UserFeedbackCompanion toCompanion(bool nullToAbsent) {
-    return UserFeedbackCompanion(
-      userId: Value(userId),
-      exerciseId: Value(exerciseId),
-      liked: Value(liked),
-      difficult: Value(difficult),
-      pleasant: Value(pleasant),
-      useless: Value(useless),
-      ts: Value(ts),
-    );
-  }
-
-  factory UserFeedbackData.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return UserFeedbackData(
-      userId: serializer.fromJson<int>(json['userId']),
-      exerciseId: serializer.fromJson<int>(json['exerciseId']),
-      liked: serializer.fromJson<int>(json['liked']),
-      difficult: serializer.fromJson<int>(json['difficult']),
-      pleasant: serializer.fromJson<int>(json['pleasant']),
-      useless: serializer.fromJson<int>(json['useless']),
-      ts: serializer.fromJson<int>(json['ts']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'userId': serializer.toJson<int>(userId),
-      'exerciseId': serializer.toJson<int>(exerciseId),
-      'liked': serializer.toJson<int>(liked),
-      'difficult': serializer.toJson<int>(difficult),
-      'pleasant': serializer.toJson<int>(pleasant),
-      'useless': serializer.toJson<int>(useless),
-      'ts': serializer.toJson<int>(ts),
-    };
-  }
-
-  UserFeedbackData copyWith({
-    int? userId,
-    int? exerciseId,
-    int? liked,
-    int? difficult,
-    int? pleasant,
-    int? useless,
-    int? ts,
-  }) => UserFeedbackData(
-    userId: userId ?? this.userId,
-    exerciseId: exerciseId ?? this.exerciseId,
-    liked: liked ?? this.liked,
-    difficult: difficult ?? this.difficult,
-    pleasant: pleasant ?? this.pleasant,
-    useless: useless ?? this.useless,
-    ts: ts ?? this.ts,
-  );
-  UserFeedbackData copyWithCompanion(UserFeedbackCompanion data) {
-    return UserFeedbackData(
-      userId: data.userId.present ? data.userId.value : this.userId,
-      exerciseId:
-          data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
-      liked: data.liked.present ? data.liked.value : this.liked,
-      difficult: data.difficult.present ? data.difficult.value : this.difficult,
-      pleasant: data.pleasant.present ? data.pleasant.value : this.pleasant,
-      useless: data.useless.present ? data.useless.value : this.useless,
-      ts: data.ts.present ? data.ts.value : this.ts,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('UserFeedbackData(')
-          ..write('userId: $userId, ')
-          ..write('exerciseId: $exerciseId, ')
-          ..write('liked: $liked, ')
-          ..write('difficult: $difficult, ')
-          ..write('pleasant: $pleasant, ')
-          ..write('useless: $useless, ')
-          ..write('ts: $ts')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode =>
-      Object.hash(userId, exerciseId, liked, difficult, pleasant, useless, ts);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is UserFeedbackData &&
-          other.userId == this.userId &&
-          other.exerciseId == this.exerciseId &&
-          other.liked == this.liked &&
-          other.difficult == this.difficult &&
-          other.pleasant == this.pleasant &&
-          other.useless == this.useless &&
-          other.ts == this.ts);
-}
-
-class UserFeedbackCompanion extends UpdateCompanion<UserFeedbackData> {
-  final Value<int> userId;
-  final Value<int> exerciseId;
-  final Value<int> liked;
-  final Value<int> difficult;
-  final Value<int> pleasant;
-  final Value<int> useless;
-  final Value<int> ts;
-  final Value<int> rowid;
-  const UserFeedbackCompanion({
-    this.userId = const Value.absent(),
-    this.exerciseId = const Value.absent(),
-    this.liked = const Value.absent(),
-    this.difficult = const Value.absent(),
-    this.pleasant = const Value.absent(),
-    this.useless = const Value.absent(),
-    this.ts = const Value.absent(),
-    this.rowid = const Value.absent(),
-  });
-  UserFeedbackCompanion.insert({
-    required int userId,
-    required int exerciseId,
-    required int liked,
-    this.difficult = const Value.absent(),
-    this.pleasant = const Value.absent(),
-    this.useless = const Value.absent(),
-    required int ts,
-    this.rowid = const Value.absent(),
-  }) : userId = Value(userId),
-       exerciseId = Value(exerciseId),
-       liked = Value(liked),
-       ts = Value(ts);
-  static Insertable<UserFeedbackData> custom({
-    Expression<int>? userId,
-    Expression<int>? exerciseId,
-    Expression<int>? liked,
-    Expression<int>? difficult,
-    Expression<int>? pleasant,
-    Expression<int>? useless,
-    Expression<int>? ts,
-    Expression<int>? rowid,
-  }) {
-    return RawValuesInsertable({
-      if (userId != null) 'user_id': userId,
-      if (exerciseId != null) 'exercise_id': exerciseId,
-      if (liked != null) 'liked': liked,
-      if (difficult != null) 'difficult': difficult,
-      if (pleasant != null) 'pleasant': pleasant,
-      if (useless != null) 'useless': useless,
-      if (ts != null) 'ts': ts,
-      if (rowid != null) 'rowid': rowid,
-    });
-  }
-
-  UserFeedbackCompanion copyWith({
-    Value<int>? userId,
-    Value<int>? exerciseId,
-    Value<int>? liked,
-    Value<int>? difficult,
-    Value<int>? pleasant,
-    Value<int>? useless,
-    Value<int>? ts,
-    Value<int>? rowid,
-  }) {
-    return UserFeedbackCompanion(
-      userId: userId ?? this.userId,
-      exerciseId: exerciseId ?? this.exerciseId,
-      liked: liked ?? this.liked,
-      difficult: difficult ?? this.difficult,
-      pleasant: pleasant ?? this.pleasant,
-      useless: useless ?? this.useless,
-      ts: ts ?? this.ts,
-      rowid: rowid ?? this.rowid,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (userId.present) {
-      map['user_id'] = Variable<int>(userId.value);
-    }
-    if (exerciseId.present) {
-      map['exercise_id'] = Variable<int>(exerciseId.value);
-    }
-    if (liked.present) {
-      map['liked'] = Variable<int>(liked.value);
-    }
-    if (difficult.present) {
-      map['difficult'] = Variable<int>(difficult.value);
-    }
-    if (pleasant.present) {
-      map['pleasant'] = Variable<int>(pleasant.value);
-    }
-    if (useless.present) {
-      map['useless'] = Variable<int>(useless.value);
-    }
-    if (ts.present) {
-      map['ts'] = Variable<int>(ts.value);
-    }
-    if (rowid.present) {
-      map['rowid'] = Variable<int>(rowid.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('UserFeedbackCompanion(')
-          ..write('userId: $userId, ')
-          ..write('exerciseId: $exerciseId, ')
-          ..write('liked: $liked, ')
-          ..write('difficult: $difficult, ')
-          ..write('pleasant: $pleasant, ')
-          ..write('useless: $useless, ')
-          ..write('ts: $ts, ')
-          ..write('rowid: $rowid')
-          ..write(')'))
-        .toString();
-  }
-}
-
 class $WorkoutProgramTable extends WorkoutProgram
     with TableInfo<$WorkoutProgramTable, WorkoutProgramData> {
   @override
@@ -5749,6 +5287,528 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
           ..write('programDayId: $programDayId, ')
           ..write('dateTs: $dateTs, ')
           ..write('durationMin: $durationMin')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserFeedbackTable extends UserFeedback
+    with TableInfo<$UserFeedbackTable, UserFeedbackData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserFeedbackTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES app_user (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _exerciseIdMeta = const VerificationMeta(
+    'exerciseId',
+  );
+  @override
+  late final GeneratedColumn<int> exerciseId = GeneratedColumn<int>(
+    'exercise_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES exercise (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<int> sessionId = GeneratedColumn<int>(
+    'session_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES session (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _likedMeta = const VerificationMeta('liked');
+  @override
+  late final GeneratedColumn<int> liked = GeneratedColumn<int>(
+    'liked',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _difficultMeta = const VerificationMeta(
+    'difficult',
+  );
+  @override
+  late final GeneratedColumn<int> difficult = GeneratedColumn<int>(
+    'difficult',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _pleasantMeta = const VerificationMeta(
+    'pleasant',
+  );
+  @override
+  late final GeneratedColumn<int> pleasant = GeneratedColumn<int>(
+    'pleasant',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _uselessMeta = const VerificationMeta(
+    'useless',
+  );
+  @override
+  late final GeneratedColumn<int> useless = GeneratedColumn<int>(
+    'useless',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _tsMeta = const VerificationMeta('ts');
+  @override
+  late final GeneratedColumn<int> ts = GeneratedColumn<int>(
+    'ts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    exerciseId,
+    sessionId,
+    liked,
+    difficult,
+    pleasant,
+    useless,
+    ts,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_feedback';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserFeedbackData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('exercise_id')) {
+      context.handle(
+        _exerciseIdMeta,
+        exerciseId.isAcceptableOrUnknown(data['exercise_id']!, _exerciseIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_exerciseIdMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    }
+    if (data.containsKey('liked')) {
+      context.handle(
+        _likedMeta,
+        liked.isAcceptableOrUnknown(data['liked']!, _likedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_likedMeta);
+    }
+    if (data.containsKey('difficult')) {
+      context.handle(
+        _difficultMeta,
+        difficult.isAcceptableOrUnknown(data['difficult']!, _difficultMeta),
+      );
+    }
+    if (data.containsKey('pleasant')) {
+      context.handle(
+        _pleasantMeta,
+        pleasant.isAcceptableOrUnknown(data['pleasant']!, _pleasantMeta),
+      );
+    }
+    if (data.containsKey('useless')) {
+      context.handle(
+        _uselessMeta,
+        useless.isAcceptableOrUnknown(data['useless']!, _uselessMeta),
+      );
+    }
+    if (data.containsKey('ts')) {
+      context.handle(_tsMeta, ts.isAcceptableOrUnknown(data['ts']!, _tsMeta));
+    } else if (isInserting) {
+      context.missing(_tsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId, exerciseId, ts};
+  @override
+  UserFeedbackData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserFeedbackData(
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}user_id'],
+          )!,
+      exerciseId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}exercise_id'],
+          )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_id'],
+      ),
+      liked:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}liked'],
+          )!,
+      difficult:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}difficult'],
+          )!,
+      pleasant:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}pleasant'],
+          )!,
+      useless:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}useless'],
+          )!,
+      ts:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}ts'],
+          )!,
+    );
+  }
+
+  @override
+  $UserFeedbackTable createAlias(String alias) {
+    return $UserFeedbackTable(attachedDatabase, alias);
+  }
+}
+
+class UserFeedbackData extends DataClass
+    implements Insertable<UserFeedbackData> {
+  final int userId;
+  final int exerciseId;
+  final int? sessionId;
+  final int liked;
+  final int difficult;
+  final int pleasant;
+  final int useless;
+  final int ts;
+  const UserFeedbackData({
+    required this.userId,
+    required this.exerciseId,
+    this.sessionId,
+    required this.liked,
+    required this.difficult,
+    required this.pleasant,
+    required this.useless,
+    required this.ts,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<int>(userId);
+    map['exercise_id'] = Variable<int>(exerciseId);
+    if (!nullToAbsent || sessionId != null) {
+      map['session_id'] = Variable<int>(sessionId);
+    }
+    map['liked'] = Variable<int>(liked);
+    map['difficult'] = Variable<int>(difficult);
+    map['pleasant'] = Variable<int>(pleasant);
+    map['useless'] = Variable<int>(useless);
+    map['ts'] = Variable<int>(ts);
+    return map;
+  }
+
+  UserFeedbackCompanion toCompanion(bool nullToAbsent) {
+    return UserFeedbackCompanion(
+      userId: Value(userId),
+      exerciseId: Value(exerciseId),
+      sessionId:
+          sessionId == null && nullToAbsent
+              ? const Value.absent()
+              : Value(sessionId),
+      liked: Value(liked),
+      difficult: Value(difficult),
+      pleasant: Value(pleasant),
+      useless: Value(useless),
+      ts: Value(ts),
+    );
+  }
+
+  factory UserFeedbackData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserFeedbackData(
+      userId: serializer.fromJson<int>(json['userId']),
+      exerciseId: serializer.fromJson<int>(json['exerciseId']),
+      sessionId: serializer.fromJson<int?>(json['sessionId']),
+      liked: serializer.fromJson<int>(json['liked']),
+      difficult: serializer.fromJson<int>(json['difficult']),
+      pleasant: serializer.fromJson<int>(json['pleasant']),
+      useless: serializer.fromJson<int>(json['useless']),
+      ts: serializer.fromJson<int>(json['ts']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<int>(userId),
+      'exerciseId': serializer.toJson<int>(exerciseId),
+      'sessionId': serializer.toJson<int?>(sessionId),
+      'liked': serializer.toJson<int>(liked),
+      'difficult': serializer.toJson<int>(difficult),
+      'pleasant': serializer.toJson<int>(pleasant),
+      'useless': serializer.toJson<int>(useless),
+      'ts': serializer.toJson<int>(ts),
+    };
+  }
+
+  UserFeedbackData copyWith({
+    int? userId,
+    int? exerciseId,
+    Value<int?> sessionId = const Value.absent(),
+    int? liked,
+    int? difficult,
+    int? pleasant,
+    int? useless,
+    int? ts,
+  }) => UserFeedbackData(
+    userId: userId ?? this.userId,
+    exerciseId: exerciseId ?? this.exerciseId,
+    sessionId: sessionId.present ? sessionId.value : this.sessionId,
+    liked: liked ?? this.liked,
+    difficult: difficult ?? this.difficult,
+    pleasant: pleasant ?? this.pleasant,
+    useless: useless ?? this.useless,
+    ts: ts ?? this.ts,
+  );
+  UserFeedbackData copyWithCompanion(UserFeedbackCompanion data) {
+    return UserFeedbackData(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      exerciseId:
+          data.exerciseId.present ? data.exerciseId.value : this.exerciseId,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      liked: data.liked.present ? data.liked.value : this.liked,
+      difficult: data.difficult.present ? data.difficult.value : this.difficult,
+      pleasant: data.pleasant.present ? data.pleasant.value : this.pleasant,
+      useless: data.useless.present ? data.useless.value : this.useless,
+      ts: data.ts.present ? data.ts.value : this.ts,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFeedbackData(')
+          ..write('userId: $userId, ')
+          ..write('exerciseId: $exerciseId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('liked: $liked, ')
+          ..write('difficult: $difficult, ')
+          ..write('pleasant: $pleasant, ')
+          ..write('useless: $useless, ')
+          ..write('ts: $ts')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    userId,
+    exerciseId,
+    sessionId,
+    liked,
+    difficult,
+    pleasant,
+    useless,
+    ts,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserFeedbackData &&
+          other.userId == this.userId &&
+          other.exerciseId == this.exerciseId &&
+          other.sessionId == this.sessionId &&
+          other.liked == this.liked &&
+          other.difficult == this.difficult &&
+          other.pleasant == this.pleasant &&
+          other.useless == this.useless &&
+          other.ts == this.ts);
+}
+
+class UserFeedbackCompanion extends UpdateCompanion<UserFeedbackData> {
+  final Value<int> userId;
+  final Value<int> exerciseId;
+  final Value<int?> sessionId;
+  final Value<int> liked;
+  final Value<int> difficult;
+  final Value<int> pleasant;
+  final Value<int> useless;
+  final Value<int> ts;
+  final Value<int> rowid;
+  const UserFeedbackCompanion({
+    this.userId = const Value.absent(),
+    this.exerciseId = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.liked = const Value.absent(),
+    this.difficult = const Value.absent(),
+    this.pleasant = const Value.absent(),
+    this.useless = const Value.absent(),
+    this.ts = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserFeedbackCompanion.insert({
+    required int userId,
+    required int exerciseId,
+    this.sessionId = const Value.absent(),
+    required int liked,
+    this.difficult = const Value.absent(),
+    this.pleasant = const Value.absent(),
+    this.useless = const Value.absent(),
+    required int ts,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       exerciseId = Value(exerciseId),
+       liked = Value(liked),
+       ts = Value(ts);
+  static Insertable<UserFeedbackData> custom({
+    Expression<int>? userId,
+    Expression<int>? exerciseId,
+    Expression<int>? sessionId,
+    Expression<int>? liked,
+    Expression<int>? difficult,
+    Expression<int>? pleasant,
+    Expression<int>? useless,
+    Expression<int>? ts,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (exerciseId != null) 'exercise_id': exerciseId,
+      if (sessionId != null) 'session_id': sessionId,
+      if (liked != null) 'liked': liked,
+      if (difficult != null) 'difficult': difficult,
+      if (pleasant != null) 'pleasant': pleasant,
+      if (useless != null) 'useless': useless,
+      if (ts != null) 'ts': ts,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserFeedbackCompanion copyWith({
+    Value<int>? userId,
+    Value<int>? exerciseId,
+    Value<int?>? sessionId,
+    Value<int>? liked,
+    Value<int>? difficult,
+    Value<int>? pleasant,
+    Value<int>? useless,
+    Value<int>? ts,
+    Value<int>? rowid,
+  }) {
+    return UserFeedbackCompanion(
+      userId: userId ?? this.userId,
+      exerciseId: exerciseId ?? this.exerciseId,
+      sessionId: sessionId ?? this.sessionId,
+      liked: liked ?? this.liked,
+      difficult: difficult ?? this.difficult,
+      pleasant: pleasant ?? this.pleasant,
+      useless: useless ?? this.useless,
+      ts: ts ?? this.ts,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (exerciseId.present) {
+      map['exercise_id'] = Variable<int>(exerciseId.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<int>(sessionId.value);
+    }
+    if (liked.present) {
+      map['liked'] = Variable<int>(liked.value);
+    }
+    if (difficult.present) {
+      map['difficult'] = Variable<int>(difficult.value);
+    }
+    if (pleasant.present) {
+      map['pleasant'] = Variable<int>(pleasant.value);
+    }
+    if (useless.present) {
+      map['useless'] = Variable<int>(useless.value);
+    }
+    if (ts.present) {
+      map['ts'] = Variable<int>(ts.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserFeedbackCompanion(')
+          ..write('userId: $userId, ')
+          ..write('exerciseId: $exerciseId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('liked: $liked, ')
+          ..write('difficult: $difficult, ')
+          ..write('pleasant: $pleasant, ')
+          ..write('useless: $useless, ')
+          ..write('ts: $ts, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -7262,10 +7322,10 @@ abstract class _$AppDb extends GeneratedDatabase {
   late final $UserTrainingDayTable userTrainingDay = $UserTrainingDayTable(
     this,
   );
-  late final $UserFeedbackTable userFeedback = $UserFeedbackTable(this);
   late final $WorkoutProgramTable workoutProgram = $WorkoutProgramTable(this);
   late final $ProgramDayTable programDay = $ProgramDayTable(this);
   late final $SessionTable session = $SessionTable(this);
+  late final $UserFeedbackTable userFeedback = $UserFeedbackTable(this);
   late final $SessionExerciseTable sessionExercise = $SessionExerciseTable(
     this,
   );
@@ -7290,10 +7350,10 @@ abstract class _$AppDb extends GeneratedDatabase {
     userEquipment,
     userGoal,
     userTrainingDay,
-    userFeedback,
     workoutProgram,
     programDay,
     session,
+    userFeedback,
     sessionExercise,
     programDayExercise,
     userProgram,
@@ -7400,20 +7460,6 @@ abstract class _$AppDb extends GeneratedDatabase {
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
-        'app_user',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('user_feedback', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
-        'exercise',
-        limitUpdateKind: UpdateKind.delete,
-      ),
-      result: [TableUpdate('user_feedback', kind: UpdateKind.delete)],
-    ),
-    WritePropagation(
-      on: TableUpdateQuery.onTableName(
         'objective',
         limitUpdateKind: UpdateKind.delete,
       ),
@@ -7439,6 +7485,27 @@ abstract class _$AppDb extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('session', kind: UpdateKind.update)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'app_user',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('user_feedback', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'exercise',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('user_feedback', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'session',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('user_feedback', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -11840,24 +11907,6 @@ final class $$AppUserTableReferences
     );
   }
 
-  static MultiTypedResultKey<$UserFeedbackTable, List<UserFeedbackData>>
-  _userFeedbackRefsTable(_$AppDb db) => MultiTypedResultKey.fromTable(
-    db.userFeedback,
-    aliasName: $_aliasNameGenerator(db.appUser.id, db.userFeedback.userId),
-  );
-
-  $$UserFeedbackTableProcessedTableManager get userFeedbackRefs {
-    final manager = $$UserFeedbackTableTableManager(
-      $_db,
-      $_db.userFeedback,
-    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_userFeedbackRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
   static MultiTypedResultKey<$SessionTable, List<SessionData>>
   _sessionRefsTable(_$AppDb db) => MultiTypedResultKey.fromTable(
     db.session,
@@ -11871,6 +11920,24 @@ final class $$AppUserTableReferences
     ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_sessionRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$UserFeedbackTable, List<UserFeedbackData>>
+  _userFeedbackRefsTable(_$AppDb db) => MultiTypedResultKey.fromTable(
+    db.userFeedback,
+    aliasName: $_aliasNameGenerator(db.appUser.id, db.userFeedback.userId),
+  );
+
+  $$UserFeedbackTableProcessedTableManager get userFeedbackRefs {
+    final manager = $$UserFeedbackTableTableManager(
+      $_db,
+      $_db.userFeedback,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userFeedbackRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -12036,31 +12103,6 @@ class $$AppUserTableFilterComposer extends Composer<_$AppDb, $AppUserTable> {
     return f(composer);
   }
 
-  Expression<bool> userFeedbackRefs(
-    Expression<bool> Function($$UserFeedbackTableFilterComposer f) f,
-  ) {
-    final $$UserFeedbackTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.userFeedback,
-      getReferencedColumn: (t) => t.userId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$UserFeedbackTableFilterComposer(
-            $db: $db,
-            $table: $db.userFeedback,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<bool> sessionRefs(
     Expression<bool> Function($$SessionTableFilterComposer f) f,
   ) {
@@ -12077,6 +12119,31 @@ class $$AppUserTableFilterComposer extends Composer<_$AppDb, $AppUserTable> {
           }) => $$SessionTableFilterComposer(
             $db: $db,
             $table: $db.session,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> userFeedbackRefs(
+    Expression<bool> Function($$UserFeedbackTableFilterComposer f) f,
+  ) {
+    final $$UserFeedbackTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userFeedback,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFeedbackTableFilterComposer(
+            $db: $db,
+            $table: $db.userFeedback,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12296,31 +12363,6 @@ class $$AppUserTableAnnotationComposer
     return f(composer);
   }
 
-  Expression<T> userFeedbackRefs<T extends Object>(
-    Expression<T> Function($$UserFeedbackTableAnnotationComposer a) f,
-  ) {
-    final $$UserFeedbackTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.userFeedback,
-      getReferencedColumn: (t) => t.userId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$UserFeedbackTableAnnotationComposer(
-            $db: $db,
-            $table: $db.userFeedback,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
   Expression<T> sessionRefs<T extends Object>(
     Expression<T> Function($$SessionTableAnnotationComposer a) f,
   ) {
@@ -12337,6 +12379,31 @@ class $$AppUserTableAnnotationComposer
           }) => $$SessionTableAnnotationComposer(
             $db: $db,
             $table: $db.session,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> userFeedbackRefs<T extends Object>(
+    Expression<T> Function($$UserFeedbackTableAnnotationComposer a) f,
+  ) {
+    final $$UserFeedbackTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userFeedback,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFeedbackTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFeedback,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12389,8 +12456,8 @@ class $$AppUserTableTableManager
             bool userEquipmentRefs,
             bool userGoalRefs,
             bool userTrainingDayRefs,
-            bool userFeedbackRefs,
             bool sessionRefs,
+            bool userFeedbackRefs,
             bool userProgramRefs,
           })
         > {
@@ -12471,8 +12538,8 @@ class $$AppUserTableTableManager
             userEquipmentRefs = false,
             userGoalRefs = false,
             userTrainingDayRefs = false,
-            userFeedbackRefs = false,
             sessionRefs = false,
+            userFeedbackRefs = false,
             userProgramRefs = false,
           }) {
             return PrefetchHooks(
@@ -12481,8 +12548,8 @@ class $$AppUserTableTableManager
                 if (userEquipmentRefs) db.userEquipment,
                 if (userGoalRefs) db.userGoal,
                 if (userTrainingDayRefs) db.userTrainingDay,
-                if (userFeedbackRefs) db.userFeedback,
                 if (sessionRefs) db.session,
+                if (userFeedbackRefs) db.userFeedback,
                 if (userProgramRefs) db.userProgram,
               ],
               addJoins: null,
@@ -12551,27 +12618,6 @@ class $$AppUserTableTableManager
                               referencedItems.where((e) => e.userId == item.id),
                       typedResults: items,
                     ),
-                  if (userFeedbackRefs)
-                    await $_getPrefetchedData<
-                      AppUserData,
-                      $AppUserTable,
-                      UserFeedbackData
-                    >(
-                      currentTable: table,
-                      referencedTable: $$AppUserTableReferences
-                          ._userFeedbackRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
-                              $$AppUserTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).userFeedbackRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) =>
-                              referencedItems.where((e) => e.userId == item.id),
-                      typedResults: items,
-                    ),
                   if (sessionRefs)
                     await $_getPrefetchedData<
                       AppUserData,
@@ -12588,6 +12634,27 @@ class $$AppUserTableTableManager
                                 table,
                                 p0,
                               ).sessionRefs,
+                      referencedItemsForCurrentItem:
+                          (item, referencedItems) =>
+                              referencedItems.where((e) => e.userId == item.id),
+                      typedResults: items,
+                    ),
+                  if (userFeedbackRefs)
+                    await $_getPrefetchedData<
+                      AppUserData,
+                      $AppUserTable,
+                      UserFeedbackData
+                    >(
+                      currentTable: table,
+                      referencedTable: $$AppUserTableReferences
+                          ._userFeedbackRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$AppUserTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userFeedbackRefs,
                       referencedItemsForCurrentItem:
                           (item, referencedItems) =>
                               referencedItems.where((e) => e.userId == item.id),
@@ -12638,8 +12705,8 @@ typedef $$AppUserTableProcessedTableManager =
         bool userEquipmentRefs,
         bool userGoalRefs,
         bool userTrainingDayRefs,
-        bool userFeedbackRefs,
         bool sessionRefs,
+        bool userFeedbackRefs,
         bool userProgramRefs,
       })
     >;
@@ -13645,453 +13712,6 @@ typedef $$UserTrainingDayTableProcessedTableManager =
       (UserTrainingDayData, $$UserTrainingDayTableReferences),
       UserTrainingDayData,
       PrefetchHooks Function({bool userId})
-    >;
-typedef $$UserFeedbackTableCreateCompanionBuilder =
-    UserFeedbackCompanion Function({
-      required int userId,
-      required int exerciseId,
-      required int liked,
-      Value<int> difficult,
-      Value<int> pleasant,
-      Value<int> useless,
-      required int ts,
-      Value<int> rowid,
-    });
-typedef $$UserFeedbackTableUpdateCompanionBuilder =
-    UserFeedbackCompanion Function({
-      Value<int> userId,
-      Value<int> exerciseId,
-      Value<int> liked,
-      Value<int> difficult,
-      Value<int> pleasant,
-      Value<int> useless,
-      Value<int> ts,
-      Value<int> rowid,
-    });
-
-final class $$UserFeedbackTableReferences
-    extends BaseReferences<_$AppDb, $UserFeedbackTable, UserFeedbackData> {
-  $$UserFeedbackTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static $AppUserTable _userIdTable(_$AppDb db) => db.appUser.createAlias(
-    $_aliasNameGenerator(db.userFeedback.userId, db.appUser.id),
-  );
-
-  $$AppUserTableProcessedTableManager get userId {
-    final $_column = $_itemColumn<int>('user_id')!;
-
-    final manager = $$AppUserTableTableManager(
-      $_db,
-      $_db.appUser,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-
-  static $ExerciseTable _exerciseIdTable(_$AppDb db) => db.exercise.createAlias(
-    $_aliasNameGenerator(db.userFeedback.exerciseId, db.exercise.id),
-  );
-
-  $$ExerciseTableProcessedTableManager get exerciseId {
-    final $_column = $_itemColumn<int>('exercise_id')!;
-
-    final manager = $$ExerciseTableTableManager(
-      $_db,
-      $_db.exercise,
-    ).filter((f) => f.id.sqlEquals($_column));
-    final item = $_typedResult.readTableOrNull(_exerciseIdTable($_db));
-    if (item == null) return manager;
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: [item]),
-    );
-  }
-}
-
-class $$UserFeedbackTableFilterComposer
-    extends Composer<_$AppDb, $UserFeedbackTable> {
-  $$UserFeedbackTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get liked => $composableBuilder(
-    column: $table.liked,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get difficult => $composableBuilder(
-    column: $table.difficult,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get pleasant => $composableBuilder(
-    column: $table.pleasant,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get useless => $composableBuilder(
-    column: $table.useless,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<int> get ts => $composableBuilder(
-    column: $table.ts,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  $$AppUserTableFilterComposer get userId {
-    final $$AppUserTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.userId,
-      referencedTable: $db.appUser,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AppUserTableFilterComposer(
-            $db: $db,
-            $table: $db.appUser,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$ExerciseTableFilterComposer get exerciseId {
-    final $$ExerciseTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.exerciseId,
-      referencedTable: $db.exercise,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ExerciseTableFilterComposer(
-            $db: $db,
-            $table: $db.exercise,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$UserFeedbackTableOrderingComposer
-    extends Composer<_$AppDb, $UserFeedbackTable> {
-  $$UserFeedbackTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get liked => $composableBuilder(
-    column: $table.liked,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get difficult => $composableBuilder(
-    column: $table.difficult,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get pleasant => $composableBuilder(
-    column: $table.pleasant,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get useless => $composableBuilder(
-    column: $table.useless,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<int> get ts => $composableBuilder(
-    column: $table.ts,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  $$AppUserTableOrderingComposer get userId {
-    final $$AppUserTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.userId,
-      referencedTable: $db.appUser,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AppUserTableOrderingComposer(
-            $db: $db,
-            $table: $db.appUser,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$ExerciseTableOrderingComposer get exerciseId {
-    final $$ExerciseTableOrderingComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.exerciseId,
-      referencedTable: $db.exercise,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ExerciseTableOrderingComposer(
-            $db: $db,
-            $table: $db.exercise,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$UserFeedbackTableAnnotationComposer
-    extends Composer<_$AppDb, $UserFeedbackTable> {
-  $$UserFeedbackTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get liked =>
-      $composableBuilder(column: $table.liked, builder: (column) => column);
-
-  GeneratedColumn<int> get difficult =>
-      $composableBuilder(column: $table.difficult, builder: (column) => column);
-
-  GeneratedColumn<int> get pleasant =>
-      $composableBuilder(column: $table.pleasant, builder: (column) => column);
-
-  GeneratedColumn<int> get useless =>
-      $composableBuilder(column: $table.useless, builder: (column) => column);
-
-  GeneratedColumn<int> get ts =>
-      $composableBuilder(column: $table.ts, builder: (column) => column);
-
-  $$AppUserTableAnnotationComposer get userId {
-    final $$AppUserTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.userId,
-      referencedTable: $db.appUser,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$AppUserTableAnnotationComposer(
-            $db: $db,
-            $table: $db.appUser,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-
-  $$ExerciseTableAnnotationComposer get exerciseId {
-    final $$ExerciseTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.exerciseId,
-      referencedTable: $db.exercise,
-      getReferencedColumn: (t) => t.id,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$ExerciseTableAnnotationComposer(
-            $db: $db,
-            $table: $db.exercise,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return composer;
-  }
-}
-
-class $$UserFeedbackTableTableManager
-    extends
-        RootTableManager<
-          _$AppDb,
-          $UserFeedbackTable,
-          UserFeedbackData,
-          $$UserFeedbackTableFilterComposer,
-          $$UserFeedbackTableOrderingComposer,
-          $$UserFeedbackTableAnnotationComposer,
-          $$UserFeedbackTableCreateCompanionBuilder,
-          $$UserFeedbackTableUpdateCompanionBuilder,
-          (UserFeedbackData, $$UserFeedbackTableReferences),
-          UserFeedbackData,
-          PrefetchHooks Function({bool userId, bool exerciseId})
-        > {
-  $$UserFeedbackTableTableManager(_$AppDb db, $UserFeedbackTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer:
-              () => $$UserFeedbackTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$UserFeedbackTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () =>
-                  $$UserFeedbackTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> userId = const Value.absent(),
-                Value<int> exerciseId = const Value.absent(),
-                Value<int> liked = const Value.absent(),
-                Value<int> difficult = const Value.absent(),
-                Value<int> pleasant = const Value.absent(),
-                Value<int> useless = const Value.absent(),
-                Value<int> ts = const Value.absent(),
-                Value<int> rowid = const Value.absent(),
-              }) => UserFeedbackCompanion(
-                userId: userId,
-                exerciseId: exerciseId,
-                liked: liked,
-                difficult: difficult,
-                pleasant: pleasant,
-                useless: useless,
-                ts: ts,
-                rowid: rowid,
-              ),
-          createCompanionCallback:
-              ({
-                required int userId,
-                required int exerciseId,
-                required int liked,
-                Value<int> difficult = const Value.absent(),
-                Value<int> pleasant = const Value.absent(),
-                Value<int> useless = const Value.absent(),
-                required int ts,
-                Value<int> rowid = const Value.absent(),
-              }) => UserFeedbackCompanion.insert(
-                userId: userId,
-                exerciseId: exerciseId,
-                liked: liked,
-                difficult: difficult,
-                pleasant: pleasant,
-                useless: useless,
-                ts: ts,
-                rowid: rowid,
-              ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$UserFeedbackTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
-          prefetchHooksCallback: ({userId = false, exerciseId = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (userId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.userId,
-                            referencedTable: $$UserFeedbackTableReferences
-                                ._userIdTable(db),
-                            referencedColumn:
-                                $$UserFeedbackTableReferences
-                                    ._userIdTable(db)
-                                    .id,
-                          )
-                          as T;
-                }
-                if (exerciseId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.exerciseId,
-                            referencedTable: $$UserFeedbackTableReferences
-                                ._exerciseIdTable(db),
-                            referencedColumn:
-                                $$UserFeedbackTableReferences
-                                    ._exerciseIdTable(db)
-                                    .id,
-                          )
-                          as T;
-                }
-
-                return state;
-              },
-              getPrefetchedDataCallback: (items) async {
-                return [];
-              },
-            );
-          },
-        ),
-      );
-}
-
-typedef $$UserFeedbackTableProcessedTableManager =
-    ProcessedTableManager<
-      _$AppDb,
-      $UserFeedbackTable,
-      UserFeedbackData,
-      $$UserFeedbackTableFilterComposer,
-      $$UserFeedbackTableOrderingComposer,
-      $$UserFeedbackTableAnnotationComposer,
-      $$UserFeedbackTableCreateCompanionBuilder,
-      $$UserFeedbackTableUpdateCompanionBuilder,
-      (UserFeedbackData, $$UserFeedbackTableReferences),
-      UserFeedbackData,
-      PrefetchHooks Function({bool userId, bool exerciseId})
     >;
 typedef $$WorkoutProgramTableCreateCompanionBuilder =
     WorkoutProgramCompanion Function({
@@ -15201,6 +14821,24 @@ final class $$SessionTableReferences
     );
   }
 
+  static MultiTypedResultKey<$UserFeedbackTable, List<UserFeedbackData>>
+  _userFeedbackRefsTable(_$AppDb db) => MultiTypedResultKey.fromTable(
+    db.userFeedback,
+    aliasName: $_aliasNameGenerator(db.session.id, db.userFeedback.sessionId),
+  );
+
+  $$UserFeedbackTableProcessedTableManager get userFeedbackRefs {
+    final manager = $$UserFeedbackTableTableManager(
+      $_db,
+      $_db.userFeedback,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userFeedbackRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$SessionExerciseTable, List<SessionExerciseData>>
   _sessionExerciseRefsTable(_$AppDb db) => MultiTypedResultKey.fromTable(
     db.sessionExercise,
@@ -15292,6 +14930,31 @@ class $$SessionTableFilterComposer extends Composer<_$AppDb, $SessionTable> {
           ),
     );
     return composer;
+  }
+
+  Expression<bool> userFeedbackRefs(
+    Expression<bool> Function($$UserFeedbackTableFilterComposer f) f,
+  ) {
+    final $$UserFeedbackTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userFeedback,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFeedbackTableFilterComposer(
+            $db: $db,
+            $table: $db.userFeedback,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 
   Expression<bool> sessionExerciseRefs(
@@ -15456,6 +15119,31 @@ class $$SessionTableAnnotationComposer
     return composer;
   }
 
+  Expression<T> userFeedbackRefs<T extends Object>(
+    Expression<T> Function($$UserFeedbackTableAnnotationComposer a) f,
+  ) {
+    final $$UserFeedbackTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userFeedback,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFeedbackTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFeedback,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> sessionExerciseRefs<T extends Object>(
     Expression<T> Function($$SessionExerciseTableAnnotationComposer a) f,
   ) {
@@ -15498,6 +15186,7 @@ class $$SessionTableTableManager
           PrefetchHooks Function({
             bool userId,
             bool programDayId,
+            bool userFeedbackRefs,
             bool sessionExerciseRefs,
           })
         > {
@@ -15553,11 +15242,13 @@ class $$SessionTableTableManager
           prefetchHooksCallback: ({
             userId = false,
             programDayId = false,
+            userFeedbackRefs = false,
             sessionExerciseRefs = false,
           }) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
+                if (userFeedbackRefs) db.userFeedback,
                 if (sessionExerciseRefs) db.sessionExercise,
               ],
               addJoins: <
@@ -15606,6 +15297,28 @@ class $$SessionTableTableManager
               },
               getPrefetchedDataCallback: (items) async {
                 return [
+                  if (userFeedbackRefs)
+                    await $_getPrefetchedData<
+                      SessionData,
+                      $SessionTable,
+                      UserFeedbackData
+                    >(
+                      currentTable: table,
+                      referencedTable: $$SessionTableReferences
+                          ._userFeedbackRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$SessionTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userFeedbackRefs,
+                      referencedItemsForCurrentItem:
+                          (item, referencedItems) => referencedItems.where(
+                            (e) => e.sessionId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
                   if (sessionExerciseRefs)
                     await $_getPrefetchedData<
                       SessionData,
@@ -15651,8 +15364,567 @@ typedef $$SessionTableProcessedTableManager =
       PrefetchHooks Function({
         bool userId,
         bool programDayId,
+        bool userFeedbackRefs,
         bool sessionExerciseRefs,
       })
+    >;
+typedef $$UserFeedbackTableCreateCompanionBuilder =
+    UserFeedbackCompanion Function({
+      required int userId,
+      required int exerciseId,
+      Value<int?> sessionId,
+      required int liked,
+      Value<int> difficult,
+      Value<int> pleasant,
+      Value<int> useless,
+      required int ts,
+      Value<int> rowid,
+    });
+typedef $$UserFeedbackTableUpdateCompanionBuilder =
+    UserFeedbackCompanion Function({
+      Value<int> userId,
+      Value<int> exerciseId,
+      Value<int?> sessionId,
+      Value<int> liked,
+      Value<int> difficult,
+      Value<int> pleasant,
+      Value<int> useless,
+      Value<int> ts,
+      Value<int> rowid,
+    });
+
+final class $$UserFeedbackTableReferences
+    extends BaseReferences<_$AppDb, $UserFeedbackTable, UserFeedbackData> {
+  $$UserFeedbackTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $AppUserTable _userIdTable(_$AppDb db) => db.appUser.createAlias(
+    $_aliasNameGenerator(db.userFeedback.userId, db.appUser.id),
+  );
+
+  $$AppUserTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<int>('user_id')!;
+
+    final manager = $$AppUserTableTableManager(
+      $_db,
+      $_db.appUser,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ExerciseTable _exerciseIdTable(_$AppDb db) => db.exercise.createAlias(
+    $_aliasNameGenerator(db.userFeedback.exerciseId, db.exercise.id),
+  );
+
+  $$ExerciseTableProcessedTableManager get exerciseId {
+    final $_column = $_itemColumn<int>('exercise_id')!;
+
+    final manager = $$ExerciseTableTableManager(
+      $_db,
+      $_db.exercise,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_exerciseIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $SessionTable _sessionIdTable(_$AppDb db) => db.session.createAlias(
+    $_aliasNameGenerator(db.userFeedback.sessionId, db.session.id),
+  );
+
+  $$SessionTableProcessedTableManager? get sessionId {
+    final $_column = $_itemColumn<int>('session_id');
+    if ($_column == null) return null;
+    final manager = $$SessionTableTableManager(
+      $_db,
+      $_db.session,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$UserFeedbackTableFilterComposer
+    extends Composer<_$AppDb, $UserFeedbackTable> {
+  $$UserFeedbackTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get liked => $composableBuilder(
+    column: $table.liked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get difficult => $composableBuilder(
+    column: $table.difficult,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pleasant => $composableBuilder(
+    column: $table.pleasant,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get useless => $composableBuilder(
+    column: $table.useless,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ts => $composableBuilder(
+    column: $table.ts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AppUserTableFilterComposer get userId {
+    final $$AppUserTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.appUser,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppUserTableFilterComposer(
+            $db: $db,
+            $table: $db.appUser,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ExerciseTableFilterComposer get exerciseId {
+    final $$ExerciseTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.exerciseId,
+      referencedTable: $db.exercise,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExerciseTableFilterComposer(
+            $db: $db,
+            $table: $db.exercise,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SessionTableFilterComposer get sessionId {
+    final $$SessionTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.session,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SessionTableFilterComposer(
+            $db: $db,
+            $table: $db.session,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserFeedbackTableOrderingComposer
+    extends Composer<_$AppDb, $UserFeedbackTable> {
+  $$UserFeedbackTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get liked => $composableBuilder(
+    column: $table.liked,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get difficult => $composableBuilder(
+    column: $table.difficult,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pleasant => $composableBuilder(
+    column: $table.pleasant,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get useless => $composableBuilder(
+    column: $table.useless,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ts => $composableBuilder(
+    column: $table.ts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AppUserTableOrderingComposer get userId {
+    final $$AppUserTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.appUser,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppUserTableOrderingComposer(
+            $db: $db,
+            $table: $db.appUser,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ExerciseTableOrderingComposer get exerciseId {
+    final $$ExerciseTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.exerciseId,
+      referencedTable: $db.exercise,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExerciseTableOrderingComposer(
+            $db: $db,
+            $table: $db.exercise,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SessionTableOrderingComposer get sessionId {
+    final $$SessionTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.session,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SessionTableOrderingComposer(
+            $db: $db,
+            $table: $db.session,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserFeedbackTableAnnotationComposer
+    extends Composer<_$AppDb, $UserFeedbackTable> {
+  $$UserFeedbackTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get liked =>
+      $composableBuilder(column: $table.liked, builder: (column) => column);
+
+  GeneratedColumn<int> get difficult =>
+      $composableBuilder(column: $table.difficult, builder: (column) => column);
+
+  GeneratedColumn<int> get pleasant =>
+      $composableBuilder(column: $table.pleasant, builder: (column) => column);
+
+  GeneratedColumn<int> get useless =>
+      $composableBuilder(column: $table.useless, builder: (column) => column);
+
+  GeneratedColumn<int> get ts =>
+      $composableBuilder(column: $table.ts, builder: (column) => column);
+
+  $$AppUserTableAnnotationComposer get userId {
+    final $$AppUserTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.appUser,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppUserTableAnnotationComposer(
+            $db: $db,
+            $table: $db.appUser,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ExerciseTableAnnotationComposer get exerciseId {
+    final $$ExerciseTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.exerciseId,
+      referencedTable: $db.exercise,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ExerciseTableAnnotationComposer(
+            $db: $db,
+            $table: $db.exercise,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$SessionTableAnnotationComposer get sessionId {
+    final $$SessionTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.session,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SessionTableAnnotationComposer(
+            $db: $db,
+            $table: $db.session,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserFeedbackTableTableManager
+    extends
+        RootTableManager<
+          _$AppDb,
+          $UserFeedbackTable,
+          UserFeedbackData,
+          $$UserFeedbackTableFilterComposer,
+          $$UserFeedbackTableOrderingComposer,
+          $$UserFeedbackTableAnnotationComposer,
+          $$UserFeedbackTableCreateCompanionBuilder,
+          $$UserFeedbackTableUpdateCompanionBuilder,
+          (UserFeedbackData, $$UserFeedbackTableReferences),
+          UserFeedbackData,
+          PrefetchHooks Function({bool userId, bool exerciseId, bool sessionId})
+        > {
+  $$UserFeedbackTableTableManager(_$AppDb db, $UserFeedbackTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () => $$UserFeedbackTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$UserFeedbackTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer:
+              () =>
+                  $$UserFeedbackTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> userId = const Value.absent(),
+                Value<int> exerciseId = const Value.absent(),
+                Value<int?> sessionId = const Value.absent(),
+                Value<int> liked = const Value.absent(),
+                Value<int> difficult = const Value.absent(),
+                Value<int> pleasant = const Value.absent(),
+                Value<int> useless = const Value.absent(),
+                Value<int> ts = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserFeedbackCompanion(
+                userId: userId,
+                exerciseId: exerciseId,
+                sessionId: sessionId,
+                liked: liked,
+                difficult: difficult,
+                pleasant: pleasant,
+                useless: useless,
+                ts: ts,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int userId,
+                required int exerciseId,
+                Value<int?> sessionId = const Value.absent(),
+                required int liked,
+                Value<int> difficult = const Value.absent(),
+                Value<int> pleasant = const Value.absent(),
+                Value<int> useless = const Value.absent(),
+                required int ts,
+                Value<int> rowid = const Value.absent(),
+              }) => UserFeedbackCompanion.insert(
+                userId: userId,
+                exerciseId: exerciseId,
+                sessionId: sessionId,
+                liked: liked,
+                difficult: difficult,
+                pleasant: pleasant,
+                useless: useless,
+                ts: ts,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$UserFeedbackTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: ({
+            userId = false,
+            exerciseId = false,
+            sessionId = false,
+          }) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                T extends TableManagerState<
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic
+                >
+              >(state) {
+                if (userId) {
+                  state =
+                      state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.userId,
+                            referencedTable: $$UserFeedbackTableReferences
+                                ._userIdTable(db),
+                            referencedColumn:
+                                $$UserFeedbackTableReferences
+                                    ._userIdTable(db)
+                                    .id,
+                          )
+                          as T;
+                }
+                if (exerciseId) {
+                  state =
+                      state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.exerciseId,
+                            referencedTable: $$UserFeedbackTableReferences
+                                ._exerciseIdTable(db),
+                            referencedColumn:
+                                $$UserFeedbackTableReferences
+                                    ._exerciseIdTable(db)
+                                    .id,
+                          )
+                          as T;
+                }
+                if (sessionId) {
+                  state =
+                      state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.sessionId,
+                            referencedTable: $$UserFeedbackTableReferences
+                                ._sessionIdTable(db),
+                            referencedColumn:
+                                $$UserFeedbackTableReferences
+                                    ._sessionIdTable(db)
+                                    .id,
+                          )
+                          as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$UserFeedbackTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDb,
+      $UserFeedbackTable,
+      UserFeedbackData,
+      $$UserFeedbackTableFilterComposer,
+      $$UserFeedbackTableOrderingComposer,
+      $$UserFeedbackTableAnnotationComposer,
+      $$UserFeedbackTableCreateCompanionBuilder,
+      $$UserFeedbackTableUpdateCompanionBuilder,
+      (UserFeedbackData, $$UserFeedbackTableReferences),
+      UserFeedbackData,
+      PrefetchHooks Function({bool userId, bool exerciseId, bool sessionId})
     >;
 typedef $$SessionExerciseTableCreateCompanionBuilder =
     SessionExerciseCompanion Function({
@@ -17181,14 +17453,14 @@ class $AppDbManager {
       $$UserGoalTableTableManager(_db, _db.userGoal);
   $$UserTrainingDayTableTableManager get userTrainingDay =>
       $$UserTrainingDayTableTableManager(_db, _db.userTrainingDay);
-  $$UserFeedbackTableTableManager get userFeedback =>
-      $$UserFeedbackTableTableManager(_db, _db.userFeedback);
   $$WorkoutProgramTableTableManager get workoutProgram =>
       $$WorkoutProgramTableTableManager(_db, _db.workoutProgram);
   $$ProgramDayTableTableManager get programDay =>
       $$ProgramDayTableTableManager(_db, _db.programDay);
   $$SessionTableTableManager get session =>
       $$SessionTableTableManager(_db, _db.session);
+  $$UserFeedbackTableTableManager get userFeedback =>
+      $$UserFeedbackTableTableManager(_db, _db.userFeedback);
   $$SessionExerciseTableTableManager get sessionExercise =>
       $$SessionExerciseTableTableManager(_db, _db.sessionExercise);
   $$ProgramDayExerciseTableTableManager get programDayExercise =>
