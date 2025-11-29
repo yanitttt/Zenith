@@ -18,7 +18,7 @@ class ObjectivesPage extends StatefulWidget {
 
 class _ObjectivesPageState extends State<ObjectivesPage> {
   List<ObjectiveData> _objectives = [];
-  Set<int> _selectedObjectiveIds = {};
+  int? _selectedObjectiveId;
   bool _loading = true;
   bool _submitting = false;
 
@@ -50,16 +50,16 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
 
   void _toggleObjective(int id) {
     setState(() {
-      if (_selectedObjectiveIds.contains(id)) {
-        _selectedObjectiveIds.remove(id);
-      } else {
-        _selectedObjectiveIds.add(id);
+      if (_selectedObjectiveId == null) {
+        _selectedObjectiveId = id;      
+        } else {
+          _selectedObjectiveId = id;
       }
     });
   }
 
   Future<void> _handleNext() async {
-    if (_selectedObjectiveIds.isEmpty) {
+    if (_selectedObjectiveId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Sélectionne au moins un objectif'),
@@ -70,7 +70,7 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
 
     setState(() => _submitting = true);
     try {
-      await widget.onNext(_selectedObjectiveIds.toList());
+      await widget.onNext([_selectedObjectiveId!]);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -90,7 +90,7 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
                 child: Column(
                   children: [
                     Text(
-                      'Tes objectifs',
+                      'Ton objectif',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -99,7 +99,7 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
                     ),
                     SizedBox(height: 6),
                     Text(
-                      'Choisis ce que tu veux atteindre',
+                      'Choisis ce que tu veux atteindre en priorité',
                       style: TextStyle(color: Colors.white60, fontSize: 14),
                     ),
                   ],
@@ -125,7 +125,7 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
                             itemBuilder: (context, index) {
                               final objective = _objectives[index];
                               final isSelected =
-                                  _selectedObjectiveIds.contains(objective.id);
+                                  _selectedObjectiveId == objective.id;
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12),
                                 child: _objectiveCard(
@@ -198,14 +198,6 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (objective.code.isNotEmpty)
-                    Text(
-                      objective.code,
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
                 ],
               ),
             ),

@@ -254,6 +254,8 @@ class UserFeedback extends Table {
       integer().named('user_id').references(AppUser, #id, onDelete: KeyAction.cascade)();
   IntColumn get exerciseId =>
       integer().named('exercise_id').references(Exercise, #id, onDelete: KeyAction.cascade)();
+  IntColumn get sessionId =>
+      integer().named('session_id').references(Session, #id, onDelete: KeyAction.cascade).nullable()();
   IntColumn get liked => integer().named('liked')(); // 0/1
   IntColumn get difficult => integer().named('difficult').withDefault(const Constant(0))();
   IntColumn get pleasant => integer().named('pleasant').withDefault(const Constant(0))();
@@ -372,7 +374,7 @@ class AppDb extends _$AppDb {
 
   /// Bump quand tu touches au schéma.
   @override
-  int get schemaVersion => 36;
+  int get schemaVersion => 37;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -397,6 +399,10 @@ class AppDb extends _$AppDb {
       }
       // Créer la table user_training_day si manquante
       await _ensureUserTrainingDayTable();
+      // Ajouter session_id à la table user_feedback si manquante
+      if (await _tableExists('user_feedback')) {
+        await _addColumnIfMissing('user_feedback', 'session_id', 'INTEGER REFERENCES session(id) ON DELETE CASCADE');
+      }
       await customStatement('PRAGMA foreign_keys = ON;');
     },
 
@@ -433,6 +439,11 @@ class AppDb extends _$AppDb {
 
       await _ensureExerciseRelationTable();
       await _ensureUserTrainingDayTable();
+
+      // Ajouter session_id à la table user_feedback si manquante
+      if (await _tableExists('user_feedback')) {
+        await _addColumnIfMissing('user_feedback', 'session_id', 'INTEGER REFERENCES session(id) ON DELETE CASCADE');
+      }
 
       // On évite toute magie sur tables existantes (source d'erreurs).
       // On ne crée que les INDEX manquants, de façon idempotente.

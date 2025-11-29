@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
 
@@ -9,6 +10,10 @@ class RecommendedExercise {
   final double cardio;
   final double objectiveAffinity;
 
+  // Nouvelles propriétés pour l'adaptation
+  double performanceAdjustment;
+  double feedbackAdjustment;
+
   RecommendedExercise({
     required this.id,
     required this.name,
@@ -16,17 +21,29 @@ class RecommendedExercise {
     required this.difficulty,
     required this.cardio,
     required this.objectiveAffinity,
+    this.performanceAdjustment = 0.0,
+    this.feedbackAdjustment = 0.0,
   });
 
   double get score {
     // Score basé sur l'affinité avec l'objectif
-    // On peut ajuster cette formule selon les besoins
     double baseScore = objectiveAffinity;
 
     // Bonus pour la difficulté adaptée (difficulté moyenne = meilleure)
     double difficultyBonus = 1.0 - ((difficulty - 3).abs() / 5.0) * 0.2;
 
-    return baseScore * difficultyBonus;
+    // Ajustement basé sur les performances passées
+    // performanceAdjustment: -1.0 à +1.0
+    // Si trop difficile (RPE élevé): négatif
+    // Si trop facile (RPE faible + progression): positif
+    double performanceMultiplier = 1.0 + performanceAdjustment;
+
+    // Ajustement basé sur les feedbacks
+    // feedbackAdjustment: -1.0 à +1.0
+    // Si feedbacks négatifs: réduire le score
+    double feedbackMultiplier = 1.0 + feedbackAdjustment;
+
+    return baseScore * difficultyBonus * performanceMultiplier * feedbackMultiplier;
   }
 }
 
@@ -156,7 +173,7 @@ class RecommendationService {
         },
       ).get();
 
-      return results.map((row) {
+      final exercises = results.map((row) {
         return RecommendedExercise(
           id: row.read<int>('id'),
           name: row.read<String>('name'),
@@ -166,6 +183,12 @@ class RecommendationService {
           objectiveAffinity: row.read<double>('objective_affinity'),
         );
       }).toList();
+
+      // Appliquer les ajustements adaptatifs basés sur les performances et feedbacks
+      return await _applyAdaptiveAdjustments(
+        userId: userId,
+        exercises: exercises,
+      );
     } catch (e) {
       print('[RECOMMENDATION] Erreur: $e');
       rethrow;
@@ -264,7 +287,7 @@ class RecommendationService {
         return exerciseMuscleGroup == muscleGroup;
       }).take(limit);
 
-      return filteredResults.map((row) {
+      final exercises = filteredResults.map((row) {
         return RecommendedExercise(
           id: row.read<int>('id'),
           name: row.read<String>('name'),
@@ -274,6 +297,12 @@ class RecommendationService {
           objectiveAffinity: row.read<double>('objective_affinity'),
         );
       }).toList();
+
+      // Appliquer les ajustements adaptatifs basés sur les performances et feedbacks
+      return await _applyAdaptiveAdjustments(
+        userId: userId,
+        exercises: exercises,
+      );
     } catch (e) {
       print('[RECOMMENDATION] Erreur filtrage groupe musculaire: $e');
       rethrow;
@@ -300,17 +329,22 @@ class RecommendationService {
     final polyExercises = exercises.where((e) => e.type == 'poly').toList();
     final isoExercises = exercises.where((e) => e.type == 'iso').toList();
 
+    // Mélanger les listes pour varier les séances
+    final random = Random();
+    polyExercises.shuffle(random);
+    isoExercises.shuffle(random);
+
     // Créer une séance équilibrée (60% poly, 40% iso)
     final List<RecommendedExercise> workout = [];
     final int polyCount = (totalExercises * 0.6).round();
     final int isoCount = totalExercises - polyCount;
 
-    // Ajouter les exercices poly
+    // Ajouter les exercices poly (maintenant mélangés)
     for (int i = 0; i < polyCount && i < polyExercises.length; i++) {
       workout.add(polyExercises[i]);
     }
 
-    // Ajouter les exercices iso
+    // Ajouter les exercices iso (maintenant mélangés)
     for (int i = 0; i < isoCount && i < isoExercises.length; i++) {
       workout.add(isoExercises[i]);
     }
@@ -319,6 +353,7 @@ class RecommendationService {
     while (workout.length < totalExercises && workout.length < exercises.length) {
       final remaining = exercises.where((e) => !workout.contains(e)).toList();
       if (remaining.isEmpty) break;
+      remaining.shuffle(random); // Mélanger aussi les exercices restants
       workout.add(remaining.first);
     }
 
@@ -341,5 +376,172 @@ class RecommendationService {
         .get();
 
     return objectives;
+  }
+
+  /// Analyse les performances passées pour un exercice et calcule un ajustement
+  /// Retourne une valeur entre -1.0 (trop difficile) et +1.0 (trop facile)
+  Future<double> _calculatePerformanceAdjustment({
+    required int userId,
+    required int exerciseId,
+  }) async {
+    // Récupérer les 5 dernières sessions avec cet exercice
+    final query = '''
+      SELECT se.sets, se.reps, se.load, se.rpe, s.date_ts
+      FROM session_exercise se
+      JOIN session s ON s.id = se.session_id
+      WHERE s.user_id = ? AND se.exercise_id = ?
+      ORDER BY s.date_ts DESC
+      LIMIT 5
+    ''';
+
+    final results = await db.customSelect(
+      query,
+      variables: [
+        Variable.withInt(userId),
+        Variable.withInt(exerciseId),
+      ],
+      readsFrom: {db.session, db.sessionExercise},
+    ).get();
+
+    if (results.isEmpty) {
+      return 0.0; // Pas d'historique = neutre
+    }
+
+    // Calculer le RPE moyen
+    double totalRpe = 0;
+    int rpeCount = 0;
+    for (final row in results) {
+      final rpe = row.read<double?>('rpe');
+      if (rpe != null) {
+        totalRpe += rpe;
+        rpeCount++;
+      }
+    }
+
+    if (rpeCount == 0) return 0.0;
+
+    final avgRpe = totalRpe / rpeCount;
+
+    // Analyser la tendance de la charge (progression)
+    double loadTrend = 0.0;
+    if (results.length >= 3) {
+      final firstLoad = results.last.read<double?>('load') ?? 0;
+      final lastLoad = results.first.read<double?>('load') ?? 0;
+
+      if (firstLoad > 0) {
+        loadTrend = (lastLoad - firstLoad) / firstLoad;
+      }
+    }
+
+    // Calcul de l'ajustement basé sur le RPE
+    double adjustment = 0.0;
+
+    if (avgRpe > 8.5) {
+      // Trop difficile : ajustement négatif (-0.3 à -0.5)
+      adjustment = -0.5;
+    } else if (avgRpe > 7.5) {
+      // Difficile mais gérable : léger ajustement négatif
+      adjustment = -0.2;
+    } else if (avgRpe < 5.5) {
+      // Trop facile : ajustement positif (+0.3 à +0.5)
+      adjustment = 0.5;
+    } else if (avgRpe < 6.5) {
+      // Facile : léger ajustement positif
+      adjustment = 0.2;
+    } else {
+      // RPE dans la zone optimale (6.5-7.5)
+      // Si progression, légèrement positif
+      if (loadTrend > 0.1) {
+        adjustment = 0.1;
+      }
+    }
+
+    // Ajustement bonus si bonne progression même avec RPE élevé
+    if (loadTrend > 0.2 && avgRpe < 8.0) {
+      adjustment += 0.2;
+    }
+
+    return adjustment.clamp(-1.0, 1.0);
+  }
+
+  /// Analyse les feedbacks pour un exercice et calcule un ajustement
+  /// Retourne une valeur entre -1.0 (feedbacks très négatifs) et +0.5 (feedbacks positifs)
+  Future<double> _calculateFeedbackAdjustment({
+    required int userId,
+    required int exerciseId,
+  }) async {
+    // Récupérer les feedbacks récents (derniers 30 jours)
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final thirtyDaysTs = thirtyDaysAgo.millisecondsSinceEpoch ~/ 1000;
+
+    final feedbacks = await (db.select(db.userFeedback)
+          ..where((tbl) =>
+              tbl.userId.equals(userId) &
+              tbl.exerciseId.equals(exerciseId) &
+              tbl.ts.isBiggerOrEqualValue(thirtyDaysTs)))
+        .get();
+
+    if (feedbacks.isEmpty) {
+      return 0.0; // Pas de feedback = neutre
+    }
+
+    double adjustment = 0.0;
+    int totalFeedbacks = feedbacks.length;
+
+    for (final feedback in feedbacks) {
+      // Si l'utilisateur a aimé l'exercice : bonus
+      if (feedback.liked == 1) {
+        adjustment += 0.3;
+      } else if (feedback.liked == 0) {
+        adjustment -= 0.2;
+      }
+
+      // Pénalités pour les feedbacks négatifs
+      if (feedback.difficult == 1) {
+        adjustment -= 0.2;
+      }
+      if (feedback.useless == 1) {
+        adjustment -= 0.4; // Forte pénalité si jugé inutile
+      }
+
+      // Bonus si plaisant
+      if (feedback.pleasant == 1) {
+        adjustment += 0.1;
+      }
+    }
+
+    // Moyenne par feedback
+    adjustment /= totalFeedbacks;
+
+    return adjustment.clamp(-1.0, 0.5);
+  }
+
+  /// Applique les ajustements de performance et feedback aux exercices recommandés
+  Future<List<RecommendedExercise>> _applyAdaptiveAdjustments({
+    required int userId,
+    required List<RecommendedExercise> exercises,
+  }) async {
+    for (var exercise in exercises) {
+      // Calculer les ajustements pour chaque exercice
+      final performanceAdj = await _calculatePerformanceAdjustment(
+        userId: userId,
+        exerciseId: exercise.id,
+      );
+
+      final feedbackAdj = await _calculateFeedbackAdjustment(
+        userId: userId,
+        exerciseId: exercise.id,
+      );
+
+      // Appliquer les ajustements
+      exercise.performanceAdjustment = performanceAdj;
+      exercise.feedbackAdjustment = feedbackAdj;
+    }
+
+    // Re-trier selon les nouveaux scores
+    exercises.sort((a, b) => b.score.compareTo(a.score));
+
+    return exercises;
   }
 }

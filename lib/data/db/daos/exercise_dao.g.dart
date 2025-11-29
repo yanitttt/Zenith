@@ -8,5 +8,9 @@ mixin _$ExerciseDaoMixin on DatabaseAccessor<AppDb> {
   $MuscleTable get muscle => attachedDatabase.muscle;
   $ExerciseMuscleTable get exerciseMuscle => attachedDatabase.exerciseMuscle;
   $AppUserTable get appUser => attachedDatabase.appUser;
+  $ObjectiveTable get objective => attachedDatabase.objective;
+  $WorkoutProgramTable get workoutProgram => attachedDatabase.workoutProgram;
+  $ProgramDayTable get programDay => attachedDatabase.programDay;
+  $SessionTable get session => attachedDatabase.session;
   $UserFeedbackTable get userFeedback => attachedDatabase.userFeedback;
 }

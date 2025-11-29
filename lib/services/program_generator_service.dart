@@ -1,5 +1,8 @@
+import 'dart:math';
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import '../data/db/app_db.dart';
+import '../data/db/daos/user_training_day_dao.dart';
 import 'recommendation_service.dart';
 
 class ProgramDaySession {
@@ -7,12 +10,14 @@ class ProgramDaySession {
   final int dayOrder;
   final String dayName;
   final List<ProgramExerciseDetail> exercises;
+  final DateTime? scheduledDate;
 
   ProgramDaySession({
     required this.programDayId,
     required this.dayOrder,
     required this.dayName,
     required this.exercises,
+    this.scheduledDate,
   });
 }
 
@@ -26,6 +31,7 @@ class ProgramExerciseDetail {
   final String? repsSuggestion;
   final int? restSuggestionSec;
   final TrainingModalityData? modality;
+  final DateTime? scheduledDate;
 
   ProgramExerciseDetail({
     required this.exerciseId,
@@ -37,15 +43,59 @@ class ProgramExerciseDetail {
     this.repsSuggestion,
     this.restSuggestionSec,
     this.modality,
+    this.scheduledDate,
   });
 }
 
 class ProgramGeneratorService {
   final AppDb db;
   final RecommendationService recommendationService;
+  final UserTrainingDayDao trainingDayDao;
 
   ProgramGeneratorService(this.db)
-      : recommendationService = RecommendationService(db);
+      : recommendationService = RecommendationService(db),
+        trainingDayDao = UserTrainingDayDao(db);
+
+  /// Calcule les prochaines dates d'entraînement pour l'utilisateur
+  /// Retourne une liste de dates futures basée sur les jours d'entraînement définis
+  Future<List<DateTime>> _calculateTrainingDates({
+    required int userId,
+    required int numberOfDays,
+  }) async {
+    final List<DateTime> scheduledDates = [];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Récupérer les jours d'entraînement de l'utilisateur (1-7, où 1=Lundi)
+    final userTrainingDays = await trainingDayDao.getDayNumbersForUser(userId);
+
+    if (userTrainingDays.isEmpty) {
+      // Si aucun jour défini, générer tous les 2 jours
+      for (int i = 0; i < numberOfDays; i++) {
+        scheduledDates.add(today.add(Duration(days: (i * 2) + 1)));
+      }
+      return scheduledDates;
+    }
+
+    // Trier les jours d'entraînement
+    final sortedDays = List<int>.from(userTrainingDays)..sort();
+
+    // Générer les dates futures
+    DateTime currentDate = today;
+
+    while (scheduledDates.length < numberOfDays) {
+      currentDate = currentDate.add(const Duration(days: 1));
+
+      // weekday retourne 1=Lundi, 7=Dimanche (comme notre système)
+      final currentWeekday = currentDate.weekday;
+
+      if (sortedDays.contains(currentWeekday)) {
+        scheduledDates.add(currentDate);
+      }
+    }
+
+    return scheduledDates;
+  }
 
   /// Génère un programme complet pour l'utilisateur
   /// Retourne l'ID du programme créé
@@ -129,39 +179,46 @@ class ProgramGeneratorService {
     // Configuration des séances selon le nombre de jours par semaine
     final List<Map<String, dynamic>> dayConfigs = _getDayConfigurations(daysPerWeek);
 
+    // Calculer les dates futures pour chaque séance
+    final scheduledDates = await _calculateTrainingDates(
+      userId: userId,
+      numberOfDays: daysPerWeek,
+    );
+
     for (int day = 0; day < daysPerWeek; day++) {
       final config = dayConfigs[day];
       final MuscleGroup muscleGroup = config['muscleGroup'];
       final String dayName = config['name'];
+      final DateTime scheduledDate = scheduledDates[day];
 
       // Récupérer les exercices pour ce groupe musculaire
-      final exercises = await recommendationService.getRecommendedExercisesByMuscleGroup(
+      var exercises = await recommendationService.getRecommendedExercisesByMuscleGroup(
         userId: userId,
         muscleGroup: muscleGroup,
         specificObjectiveId: objectiveId,
-        limit: 20,
+        limit: 30, // Augmenté pour avoir plus de choix
       );
 
-      if (exercises.isEmpty) {
-        print('[PROGRAM] Aucun exercice trouvé pour $dayName, utilisation du fallback');
-        // Fallback: récupérer tous les exercices
-        final fallbackExercises = await recommendationService.getRecommendedExercises(
+      // Si pas assez d'exercices (moins de 10), compléter avec des exercices généraux
+      if (exercises.length < 10) {
+        print('[PROGRAM] Seulement ${exercises.length} exercices pour $dayName, complément avec exercices généraux');
+        final generalExercises = await recommendationService.getRecommendedExercises(
           userId: userId,
           specificObjectiveId: objectiveId,
-          limit: 20,
+          limit: 30,
         );
-        if (fallbackExercises.isEmpty) {
-          throw Exception('Aucun exercice disponible pour générer un programme');
-        }
-        await _createProgramDay(
-          programId: programId,
-          dayId: day,
-          dayName: dayName,
-          exercises: fallbackExercises,
-          userLevel: userLevel,
-          objectiveId: objectiveId,
-        );
-        continue;
+
+        // Ajouter les exercices généraux qui ne sont pas déjà dans la liste
+        final exerciseIds = exercises.map((e) => e.id).toSet();
+        final additionalExercises = generalExercises
+            .where((e) => !exerciseIds.contains(e.id))
+            .toList();
+
+        exercises = [...exercises, ...additionalExercises];
+      }
+
+      if (exercises.isEmpty) {
+        throw Exception('Aucun exercice disponible pour générer un programme');
       }
 
       await _createProgramDay(
@@ -171,6 +228,7 @@ class ProgramGeneratorService {
         exercises: exercises,
         userLevel: userLevel,
         objectiveId: objectiveId,
+        scheduledDate: scheduledDate,
       );
     }
   }
@@ -229,6 +287,7 @@ class ProgramGeneratorService {
     required List<RecommendedExercise> exercises,
     required String userLevel,
     required int objectiveId,
+    required DateTime scheduledDate,
   }) async {
     // Créer le jour
     final programDayId = await db.into(db.programDay).insert(
@@ -243,15 +302,20 @@ class ProgramGeneratorService {
     final polyExercises = exercises.where((e) => e.type == 'poly').toList();
     final isoExercises = exercises.where((e) => e.type == 'iso').toList();
 
+    // Mélanger les listes pour varier les programmes à chaque génération
+    final random = Random();
+    polyExercises.shuffle(random);
+    isoExercises.shuffle(random);
+
     // Sélectionner 6 exercices pour ce jour (4 poly, 2 iso)
     final dayExercises = <RecommendedExercise>[];
 
-    // Ajouter jusqu'à 4 exercices poly
+    // Ajouter jusqu'à 4 exercices poly (maintenant mélangés)
     for (int i = 0; i < 4 && i < polyExercises.length; i++) {
       dayExercises.add(polyExercises[i]);
     }
 
-    // Ajouter jusqu'à 2 exercices iso
+    // Ajouter jusqu'à 2 exercices iso (maintenant mélangés)
     for (int i = 0; i < 2 && i < isoExercises.length; i++) {
       dayExercises.add(isoExercises[i]);
     }
@@ -259,6 +323,7 @@ class ProgramGeneratorService {
     // Si on n'a pas assez d'exercices, compléter avec les exercices restants
     if (dayExercises.length < 6) {
       final remaining = exercises.where((e) => !dayExercises.contains(e)).toList();
+      remaining.shuffle(random); // Mélanger aussi les exercices restants
       for (int i = 0; dayExercises.length < 6 && i < remaining.length; i++) {
         dayExercises.add(remaining[i]);
       }
@@ -289,6 +354,7 @@ class ProgramGeneratorService {
               repsSuggestion: Value(suggestions['reps']),
               restSuggestionSec: Value(suggestions['rest']),
               notes: Value(suggestions['notes']),
+              scheduledDate: Value(scheduledDate),
             ),
           );
     }
@@ -407,11 +473,14 @@ class ProgramGeneratorService {
 
     for (final day in days) {
       final exercises = await _getProgramDayExercises(day.id);
+      // Prendre la date du premier exercice (tous les exercices d'un jour ont la même date)
+      final scheduledDate = exercises.isNotEmpty ? exercises.first.scheduledDate : null;
       sessions.add(ProgramDaySession(
         programDayId: day.id,
         dayOrder: day.dayOrder,
         dayName: day.name,
         exercises: exercises,
+        scheduledDate: scheduledDate,
       ));
     }
 
@@ -449,6 +518,7 @@ class ProgramGeneratorService {
         repsSuggestion: programEx.repsSuggestion,
         restSuggestionSec: programEx.restSuggestionSec,
         modality: modality,
+        scheduledDate: programEx.scheduledDate,
       ));
     }
 
@@ -472,5 +542,184 @@ class ProgramGeneratorService {
       objectiveId: objectiveId,
       daysPerWeek: daysPerWeek,
     );
+  }
+
+  /// Régénère uniquement les jours futurs du programme (non complétés)
+  /// en prenant en compte les nouvelles performances de l'utilisateur
+  Future<void> regenerateFutureDays({
+    required int userId,
+    required int programId,
+  }) async {
+    debugPrint('[PROGRAM_REGEN] Début régénération des jours futurs pour programme $programId');
+
+    // 1. Récupérer tous les jours du programme
+    final allDays = await (db.select(db.programDay)
+          ..where((tbl) => tbl.programId.equals(programId))
+          ..orderBy([(t) => OrderingTerm.asc(t.dayOrder)]))
+        .get();
+
+    if (allDays.isEmpty) {
+      debugPrint('[PROGRAM_REGEN] Aucun jour trouvé pour ce programme');
+      return;
+    }
+
+    // 2. Identifier les jours complétés (ceux qui ont une session complétée)
+    final completedDayIds = <int>[];
+    for (final day in allDays) {
+      final session = await (db.select(db.session)
+            ..where((tbl) =>
+                tbl.programDayId.equals(day.id) &
+                tbl.durationMin.isNotNull())
+            ..limit(1))
+          .getSingleOrNull();
+
+      if (session != null) {
+        completedDayIds.add(day.id);
+        debugPrint('[PROGRAM_REGEN] Jour ${day.dayOrder} (${day.name}) est complété');
+      }
+    }
+
+    // 3. Identifier les jours futurs (non complétés)
+    final futureDays = allDays.where((d) => !completedDayIds.contains(d.id)).toList();
+
+    if (futureDays.isEmpty) {
+      debugPrint('[PROGRAM_REGEN] Tous les jours sont complétés, rien à régénérer');
+      return;
+    }
+
+    debugPrint('[PROGRAM_REGEN] ${futureDays.length} jours à régénérer');
+
+    // 4. Récupérer les infos du programme et de l'utilisateur
+    final program = await (db.select(db.workoutProgram)
+          ..where((tbl) => tbl.id.equals(programId)))
+        .getSingle();
+
+    final user = await (db.select(db.appUser)
+          ..where((tbl) => tbl.id.equals(userId)))
+        .getSingle();
+
+    final objectiveId = program.objectiveId ?? 1;
+    final userLevel = user.level ?? 'intermediaire';
+
+    // 5. Calculer les nouvelles dates pour les jours futurs
+    final scheduledDates = await _calculateTrainingDates(
+      userId: userId,
+      numberOfDays: futureDays.length,
+    );
+
+    // 6. Régénérer chaque jour futur
+    for (int i = 0; i < futureDays.length; i++) {
+      final day = futureDays[i];
+      final scheduledDate = scheduledDates[i];
+
+      debugPrint('[PROGRAM_REGEN] Régénération jour ${day.dayOrder} (${day.name})');
+
+      // Supprimer les exercices existants pour ce jour
+      await (db.delete(db.programDayExercise)
+            ..where((tbl) => tbl.programDayId.equals(day.id)))
+          .go();
+
+      // Déterminer le groupe musculaire pour ce jour
+      MuscleGroup muscleGroup;
+      if (day.name.toLowerCase().contains('haut')) {
+        muscleGroup = MuscleGroup.upper;
+      } else if (day.name.toLowerCase().contains('bas')) {
+        muscleGroup = MuscleGroup.lower;
+      } else {
+        muscleGroup = MuscleGroup.full;
+      }
+
+      // Récupérer les exercices recommandés AVEC les ajustements adaptatifs
+      var exercises = await recommendationService.getRecommendedExercisesByMuscleGroup(
+        userId: userId,
+        muscleGroup: muscleGroup,
+        specificObjectiveId: objectiveId,
+        limit: 30,
+      );
+
+      // Si pas assez d'exercices, compléter avec des exercices généraux
+      if (exercises.length < 10) {
+        debugPrint('[PROGRAM_REGEN] Complément avec exercices généraux');
+        final generalExercises = await recommendationService.getRecommendedExercises(
+          userId: userId,
+          specificObjectiveId: objectiveId,
+          limit: 30,
+        );
+
+        final exerciseIds = exercises.map((e) => e.id).toSet();
+        final additionalExercises = generalExercises
+            .where((e) => !exerciseIds.contains(e.id))
+            .toList();
+
+        exercises = [...exercises, ...additionalExercises];
+      }
+
+      if (exercises.isEmpty) {
+        debugPrint('[PROGRAM_REGEN] ERREUR: Aucun exercice disponible');
+        continue;
+      }
+
+      // Séparer par type
+      final polyExercises = exercises.where((e) => e.type == 'poly').toList();
+      final isoExercises = exercises.where((e) => e.type == 'iso').toList();
+
+      // Mélanger les listes
+      final random = Random();
+      polyExercises.shuffle(random);
+      isoExercises.shuffle(random);
+
+      // Sélectionner 6 exercices pour ce jour (4 poly, 2 iso)
+      final dayExercises = <RecommendedExercise>[];
+
+      for (int j = 0; j < 4 && j < polyExercises.length; j++) {
+        dayExercises.add(polyExercises[j]);
+      }
+
+      for (int j = 0; j < 2 && j < isoExercises.length; j++) {
+        dayExercises.add(isoExercises[j]);
+      }
+
+      // Compléter si nécessaire
+      if (dayExercises.length < 6) {
+        final remaining = exercises.where((e) => !dayExercises.contains(e)).toList();
+        remaining.shuffle(random);
+        for (int j = 0; dayExercises.length < 6 && j < remaining.length; j++) {
+          dayExercises.add(remaining[j]);
+        }
+      }
+
+      // Ajouter les exercices au jour
+      for (int position = 0; position < dayExercises.length; position++) {
+        final exercise = dayExercises[position];
+        final suggestions = _getSuggestionsForExercise(
+          exercise: exercise,
+          userLevel: userLevel,
+          position: position,
+        );
+
+        final modality = await _getModalityForExercise(
+          objectiveId: objectiveId,
+          userLevel: userLevel,
+        );
+
+        await db.into(db.programDayExercise).insert(
+              ProgramDayExerciseCompanion(
+                programDayId: Value(day.id),
+                exerciseId: Value(exercise.id),
+                position: Value(position + 1),
+                modalityId: Value(modality?.id),
+                setsSuggestion: Value(suggestions['sets'] as String),
+                repsSuggestion: Value(suggestions['reps'] as String),
+                restSuggestionSec: Value(suggestions['rest'] as int),
+                notes: Value(suggestions['notes'] as String?),
+                scheduledDate: Value(scheduledDate),
+              ),
+            );
+      }
+
+      debugPrint('[PROGRAM_REGEN] Jour ${day.dayOrder} régénéré avec ${dayExercises.length} exercices');
+    }
+
+    debugPrint('[PROGRAM_REGEN] Régénération terminée avec succès');
   }
 }
