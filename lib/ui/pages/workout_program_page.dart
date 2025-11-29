@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
 import '../../services/program_generator_service.dart';
@@ -210,15 +211,48 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       ),
     );
 
-    // Si la session est terminée, recharger le programme
+    // Si la session est terminée, régénérer les jours futurs et recharger
     if (result == true && mounted) {
+      // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Séance enregistrée avec succès !'),
           backgroundColor: AppTheme.gold,
         ),
       );
-      // Recharger pour mettre à jour l'état de complétion
+
+      // Régénérer les jours futurs du programme avec les nouvelles performances
+      if (_currentProgram != null) {
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Adaptation du programme en cours...'),
+              backgroundColor: Colors.blue,
+              duration: Duration(seconds: 2),
+            ),
+          );
+
+          await _programService.regenerateFutureDays(
+            userId: userId,
+            programId: _currentProgram!.id,
+          );
+
+          debugPrint('[WORKOUT_PROGRAM] Jours futurs régénérés avec succès');
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Programme adapté à tes performances !'),
+              backgroundColor: AppTheme.gold,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } catch (e) {
+          debugPrint('[WORKOUT_PROGRAM] Erreur régénération: $e');
+          // Ne pas afficher d'erreur à l'utilisateur, on recharge juste le programme
+        }
+      }
+
+      // Recharger pour mettre à jour l'état de complétion et les nouveaux exercices
       await _loadProgram();
     }
   }
@@ -320,9 +354,25 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
+  String _formatScheduledDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final sessionDate = DateTime(date.year, date.month, date.day);
+
+    if (sessionDate == today) {
+      return "Aujourd'hui";
+    } else if (sessionDate == tomorrow) {
+      return 'Demain';
+    } else {
+      final formatter = DateFormat('EEE dd MMM', 'fr_FR');
+      return formatter.format(date);
+    }
+  }
+
   Widget _buildDaySelector() {
     return Container(
-      height: 70,
+      height: 90,
       margin: const EdgeInsets.symmetric(horizontal: 24),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -375,6 +425,16 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                         ],
                       ],
                     ),
+                    if (day.scheduledDate != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatScheduledDate(day.scheduledDate!),
+                        style: TextStyle(
+                          color: isSelected ? Colors.black87 : Colors.white60,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -412,6 +472,23 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+                    if (currentDay.scheduledDate != null && !isCompleted) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today, color: AppTheme.gold, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Prévue le ${_formatScheduledDate(currentDay.scheduledDate!)}',
+                            style: const TextStyle(
+                              color: AppTheme.gold,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if (isCompleted && completedSession != null) ...[
                       const SizedBox(height: 4),
                       Text(
