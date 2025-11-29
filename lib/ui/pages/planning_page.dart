@@ -6,14 +6,14 @@ import 'package:recommandation_mobile/data/db/app_db.dart';
 import 'package:recommandation_mobile/services/planning_service.dart';
 
 class PlanningPage extends StatefulWidget {
-  const PlanningPage({super.key});
+  final AppDb db;
+  const PlanningPage({super.key, required this.db});
 
   @override
   State<PlanningPage> createState() => _PlanningPageState();
 }
 
 class _PlanningPageState extends State<PlanningPage> {
-  final AppDb db = AppDb();
   late PlanningService _service;
 
   // COULEURS
@@ -34,7 +34,7 @@ class _PlanningPageState extends State<PlanningPage> {
   void initState() {
     super.initState();
     initializeDateFormatting('fr_FR', null);
-    _service = PlanningService(db);
+    _service = PlanningService(widget.db);
     
     final now = DateTime.now();
     _startOfWeek = now.subtract(Duration(days: now.weekday - 1));
@@ -44,7 +44,7 @@ class _PlanningPageState extends State<PlanningPage> {
   }
 
   Future<void> _initData() async {
-    final user = await db.select(db.appUser).getSingleOrNull();
+    final user = await widget.db.select(widget.db.appUser).getSingleOrNull();
     if (user != null) {
       _currentUserId = user.id;
     } else {
@@ -130,7 +130,7 @@ class _PlanningPageState extends State<PlanningPage> {
     final ts = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day).millisecondsSinceEpoch ~/ 1000;
 
     // Pas de colonne 'name' ici, on laisse faire le service qui mettra "Séance Libre"
-    await db.into(db.session).insert(SessionCompanion.insert(
+    await widget.db.into(widget.db.session).insert(SessionCompanion.insert(
       userId: _currentUserId!,
       programDayId: const drift.Value(null),
       dateTs: ts,

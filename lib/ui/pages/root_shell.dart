@@ -48,7 +48,7 @@ class _RootShellState extends State<RootShell> {
 
     final pages = [
       DashboardPage(db: widget.db),
-      const PlanningPage(),
+      PlanningPage(db: widget.db),
       WorkoutProgramPage(db: widget.db, prefs: _prefs!),
       ExercisesPage(db: widget.db),
       AdminPage(db: widget.db, prefs: _prefs!),

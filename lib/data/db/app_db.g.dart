@@ -6106,6 +6106,18 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _scheduledDateMeta = const VerificationMeta(
+    'scheduledDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduledDate =
+      GeneratedColumn<DateTime>(
+        'scheduled_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -6117,6 +6129,7 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
     repsSuggestion,
     restSuggestionSec,
     notes,
+    scheduledDate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -6199,6 +6212,15 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
         notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
       );
     }
+    if (data.containsKey('scheduled_date')) {
+      context.handle(
+        _scheduledDateMeta,
+        scheduledDate.isAcceptableOrUnknown(
+          data['scheduled_date']!,
+          _scheduledDateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -6248,6 +6270,10 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
       ),
+      scheduledDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_date'],
+      ),
     );
   }
 
@@ -6268,6 +6294,7 @@ class ProgramDayExerciseData extends DataClass
   final String? repsSuggestion;
   final int? restSuggestionSec;
   final String? notes;
+  final DateTime? scheduledDate;
   const ProgramDayExerciseData({
     required this.id,
     required this.programDayId,
@@ -6278,6 +6305,7 @@ class ProgramDayExerciseData extends DataClass
     this.repsSuggestion,
     this.restSuggestionSec,
     this.notes,
+    this.scheduledDate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6300,6 +6328,9 @@ class ProgramDayExerciseData extends DataClass
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || scheduledDate != null) {
+      map['scheduled_date'] = Variable<DateTime>(scheduledDate);
     }
     return map;
   }
@@ -6328,6 +6359,10 @@ class ProgramDayExerciseData extends DataClass
               : Value(restSuggestionSec),
       notes:
           notes == null && nullToAbsent ? const Value.absent() : Value(notes),
+      scheduledDate:
+          scheduledDate == null && nullToAbsent
+              ? const Value.absent()
+              : Value(scheduledDate),
     );
   }
 
@@ -6346,6 +6381,7 @@ class ProgramDayExerciseData extends DataClass
       repsSuggestion: serializer.fromJson<String?>(json['repsSuggestion']),
       restSuggestionSec: serializer.fromJson<int?>(json['restSuggestionSec']),
       notes: serializer.fromJson<String?>(json['notes']),
+      scheduledDate: serializer.fromJson<DateTime?>(json['scheduledDate']),
     );
   }
   @override
@@ -6361,6 +6397,7 @@ class ProgramDayExerciseData extends DataClass
       'repsSuggestion': serializer.toJson<String?>(repsSuggestion),
       'restSuggestionSec': serializer.toJson<int?>(restSuggestionSec),
       'notes': serializer.toJson<String?>(notes),
+      'scheduledDate': serializer.toJson<DateTime?>(scheduledDate),
     };
   }
 
@@ -6374,6 +6411,7 @@ class ProgramDayExerciseData extends DataClass
     Value<String?> repsSuggestion = const Value.absent(),
     Value<int?> restSuggestionSec = const Value.absent(),
     Value<String?> notes = const Value.absent(),
+    Value<DateTime?> scheduledDate = const Value.absent(),
   }) => ProgramDayExerciseData(
     id: id ?? this.id,
     programDayId: programDayId ?? this.programDayId,
@@ -6389,6 +6427,8 @@ class ProgramDayExerciseData extends DataClass
             ? restSuggestionSec.value
             : this.restSuggestionSec,
     notes: notes.present ? notes.value : this.notes,
+    scheduledDate:
+        scheduledDate.present ? scheduledDate.value : this.scheduledDate,
   );
   ProgramDayExerciseData copyWithCompanion(ProgramDayExerciseCompanion data) {
     return ProgramDayExerciseData(
@@ -6415,6 +6455,10 @@ class ProgramDayExerciseData extends DataClass
               ? data.restSuggestionSec.value
               : this.restSuggestionSec,
       notes: data.notes.present ? data.notes.value : this.notes,
+      scheduledDate:
+          data.scheduledDate.present
+              ? data.scheduledDate.value
+              : this.scheduledDate,
     );
   }
 
@@ -6429,7 +6473,8 @@ class ProgramDayExerciseData extends DataClass
           ..write('setsSuggestion: $setsSuggestion, ')
           ..write('repsSuggestion: $repsSuggestion, ')
           ..write('restSuggestionSec: $restSuggestionSec, ')
-          ..write('notes: $notes')
+          ..write('notes: $notes, ')
+          ..write('scheduledDate: $scheduledDate')
           ..write(')'))
         .toString();
   }
@@ -6445,6 +6490,7 @@ class ProgramDayExerciseData extends DataClass
     repsSuggestion,
     restSuggestionSec,
     notes,
+    scheduledDate,
   );
   @override
   bool operator ==(Object other) =>
@@ -6458,7 +6504,8 @@ class ProgramDayExerciseData extends DataClass
           other.setsSuggestion == this.setsSuggestion &&
           other.repsSuggestion == this.repsSuggestion &&
           other.restSuggestionSec == this.restSuggestionSec &&
-          other.notes == this.notes);
+          other.notes == this.notes &&
+          other.scheduledDate == this.scheduledDate);
 }
 
 class ProgramDayExerciseCompanion
@@ -6472,6 +6519,7 @@ class ProgramDayExerciseCompanion
   final Value<String?> repsSuggestion;
   final Value<int?> restSuggestionSec;
   final Value<String?> notes;
+  final Value<DateTime?> scheduledDate;
   const ProgramDayExerciseCompanion({
     this.id = const Value.absent(),
     this.programDayId = const Value.absent(),
@@ -6482,6 +6530,7 @@ class ProgramDayExerciseCompanion
     this.repsSuggestion = const Value.absent(),
     this.restSuggestionSec = const Value.absent(),
     this.notes = const Value.absent(),
+    this.scheduledDate = const Value.absent(),
   });
   ProgramDayExerciseCompanion.insert({
     this.id = const Value.absent(),
@@ -6493,6 +6542,7 @@ class ProgramDayExerciseCompanion
     this.repsSuggestion = const Value.absent(),
     this.restSuggestionSec = const Value.absent(),
     this.notes = const Value.absent(),
+    this.scheduledDate = const Value.absent(),
   }) : programDayId = Value(programDayId),
        exerciseId = Value(exerciseId),
        position = Value(position);
@@ -6506,6 +6556,7 @@ class ProgramDayExerciseCompanion
     Expression<String>? repsSuggestion,
     Expression<int>? restSuggestionSec,
     Expression<String>? notes,
+    Expression<DateTime>? scheduledDate,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -6517,6 +6568,7 @@ class ProgramDayExerciseCompanion
       if (repsSuggestion != null) 'reps_suggestion': repsSuggestion,
       if (restSuggestionSec != null) 'rest_suggestion_sec': restSuggestionSec,
       if (notes != null) 'notes': notes,
+      if (scheduledDate != null) 'scheduled_date': scheduledDate,
     });
   }
 
@@ -6530,6 +6582,7 @@ class ProgramDayExerciseCompanion
     Value<String?>? repsSuggestion,
     Value<int?>? restSuggestionSec,
     Value<String?>? notes,
+    Value<DateTime?>? scheduledDate,
   }) {
     return ProgramDayExerciseCompanion(
       id: id ?? this.id,
@@ -6541,6 +6594,7 @@ class ProgramDayExerciseCompanion
       repsSuggestion: repsSuggestion ?? this.repsSuggestion,
       restSuggestionSec: restSuggestionSec ?? this.restSuggestionSec,
       notes: notes ?? this.notes,
+      scheduledDate: scheduledDate ?? this.scheduledDate,
     );
   }
 
@@ -6574,6 +6628,9 @@ class ProgramDayExerciseCompanion
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
+    if (scheduledDate.present) {
+      map['scheduled_date'] = Variable<DateTime>(scheduledDate.value);
+    }
     return map;
   }
 
@@ -6588,7 +6645,8 @@ class ProgramDayExerciseCompanion
           ..write('setsSuggestion: $setsSuggestion, ')
           ..write('repsSuggestion: $repsSuggestion, ')
           ..write('restSuggestionSec: $restSuggestionSec, ')
-          ..write('notes: $notes')
+          ..write('notes: $notes, ')
+          ..write('scheduledDate: $scheduledDate')
           ..write(')'))
         .toString();
   }
@@ -15461,6 +15519,7 @@ typedef $$ProgramDayExerciseTableCreateCompanionBuilder =
       Value<String?> repsSuggestion,
       Value<int?> restSuggestionSec,
       Value<String?> notes,
+      Value<DateTime?> scheduledDate,
     });
 typedef $$ProgramDayExerciseTableUpdateCompanionBuilder =
     ProgramDayExerciseCompanion Function({
@@ -15473,6 +15532,7 @@ typedef $$ProgramDayExerciseTableUpdateCompanionBuilder =
       Value<String?> repsSuggestion,
       Value<int?> restSuggestionSec,
       Value<String?> notes,
+      Value<DateTime?> scheduledDate,
     });
 
 final class $$ProgramDayExerciseTableReferences
@@ -15590,6 +15650,11 @@ class $$ProgramDayExerciseTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<DateTime> get scheduledDate => $composableBuilder(
+    column: $table.scheduledDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ProgramDayTableFilterComposer get programDayId {
     final $$ProgramDayTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -15699,6 +15764,11 @@ class $$ProgramDayExerciseTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get scheduledDate => $composableBuilder(
+    column: $table.scheduledDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ProgramDayTableOrderingComposer get programDayId {
     final $$ProgramDayTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -15801,6 +15871,11 @@ class $$ProgramDayExerciseTableAnnotationComposer
 
   GeneratedColumn<String> get notes =>
       $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get scheduledDate => $composableBuilder(
+    column: $table.scheduledDate,
+    builder: (column) => column,
+  );
 
   $$ProgramDayTableAnnotationComposer get programDayId {
     final $$ProgramDayTableAnnotationComposer composer = $composerBuilder(
@@ -15924,6 +15999,7 @@ class $$ProgramDayExerciseTableTableManager
                 Value<String?> repsSuggestion = const Value.absent(),
                 Value<int?> restSuggestionSec = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<DateTime?> scheduledDate = const Value.absent(),
               }) => ProgramDayExerciseCompanion(
                 id: id,
                 programDayId: programDayId,
@@ -15934,6 +16010,7 @@ class $$ProgramDayExerciseTableTableManager
                 repsSuggestion: repsSuggestion,
                 restSuggestionSec: restSuggestionSec,
                 notes: notes,
+                scheduledDate: scheduledDate,
               ),
           createCompanionCallback:
               ({
@@ -15946,6 +16023,7 @@ class $$ProgramDayExerciseTableTableManager
                 Value<String?> repsSuggestion = const Value.absent(),
                 Value<int?> restSuggestionSec = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
+                Value<DateTime?> scheduledDate = const Value.absent(),
               }) => ProgramDayExerciseCompanion.insert(
                 id: id,
                 programDayId: programDayId,
@@ -15956,6 +16034,7 @@ class $$ProgramDayExerciseTableTableManager
                 repsSuggestion: repsSuggestion,
                 restSuggestionSec: restSuggestionSec,
                 notes: notes,
+                scheduledDate: scheduledDate,
               ),
           withReferenceMapper:
               (p0) =>

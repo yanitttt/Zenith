@@ -314,6 +314,7 @@ class ProgramDayExercise extends Table {
   TextColumn get repsSuggestion => text().named('reps_suggestion').nullable()();
   IntColumn get restSuggestionSec => integer().named('rest_suggestion_sec').nullable()();
   TextColumn get notes => text().named('notes').nullable()();
+  DateTimeColumn get scheduledDate => dateTime().named('scheduled_date').nullable()();
 }
 
 class UserProgram extends Table {
@@ -362,7 +363,7 @@ class AppDb extends _$AppDb {
 
   /// Bump quand tu touches au schéma.
   @override
-  int get schemaVersion => 34;
+  int get schemaVersion => 35;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -380,6 +381,10 @@ class AppDb extends _$AppDb {
       // Ajouter program_day_id à la table session si manquante
       if (await _tableExists('session')) {
         await _addColumnIfMissing('session', 'program_day_id', 'INTEGER REFERENCES program_day(id) ON DELETE SET NULL');
+      }
+      // Ajouter scheduled_date à la table program_day_exercise si manquante
+      if (await _tableExists('program_day_exercise')) {
+        await _addColumnIfMissing('program_day_exercise', 'scheduled_date', 'INTEGER');
       }
       await customStatement('PRAGMA foreign_keys = ON;');
     },
@@ -408,6 +413,11 @@ class AppDb extends _$AppDb {
       // Ajouter program_day_id à la table session si manquante
       if (await _tableExists('session')) {
         await _addColumnIfMissing('session', 'program_day_id', 'INTEGER REFERENCES program_day(id) ON DELETE SET NULL');
+      }
+
+      // Ajouter scheduled_date à la table program_day_exercise si manquante
+      if (await _tableExists('program_day_exercise')) {
+        await _addColumnIfMissing('program_day_exercise', 'scheduled_date', 'INTEGER');
       }
 
       await _ensureExerciseRelationTable();
