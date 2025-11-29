@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:recommandation_mobile/data/db/daos/user_equipment_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_training_day_dao.dart';
+import 'package:recommandation_mobile/ui/pages/onboarding/profile_basics_page.dart';
+import 'package:drift/drift.dart' show Value;
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
 import '../theme/app_theme.dart';
@@ -11,6 +13,7 @@ import 'onboarding/onboarding_flow.dart';
 import '../../core/prefs/app_prefs.dart';
 import 'edit_user_page.dart';
 import '../../services/notification_service.dart';
+import 'onboarding/profile_basics_page.dart';
 
 class AdminPage extends StatefulWidget {
   final AppDb db;
@@ -592,16 +595,47 @@ class _UserCardState extends State<_UserCard> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed: () {
+  final parent = context.findAncestorStateOfType<_AdminPageState>()!;
+
   Navigator.of(context).push(
-  MaterialPageRoute(
-    builder: (_) => EditProfilePage(
-      user: widget.u,
-      userDao: context.findAncestorStateOfType<_AdminPageState>()!._userDao,
-      goalDao: context.findAncestorStateOfType<_AdminPageState>()!._goalDao,
-      equipmentDao: context.findAncestorStateOfType<_AdminPageState>()!._equipmentDao,
+    MaterialPageRoute(
+      builder: (_) => ProfileBasicsPage(
+        // --- Valeurs pré-remplies ---
+        initialPrenom: widget.u.prenom ?? "",
+        initialNom: widget.u.nom ?? "",
+        initialBirthDate: widget.u.birthDate,
+        initialWeight: widget.u.weight,
+        initialHeight: widget.u.height,
+        initialGender: (widget.u.gender == "homme")
+            ? Gender.homme
+            : Gender.femme,
+
+        // --- Fonction quand l’utilisateur valide ---
+        onNext: ({
+          required String prenom,
+          required String nom,
+          required DateTime birthDate,
+          required double weight,
+          required double height,
+          required Gender gender,
+        }) async {
+          final updated = widget.u.copyWith(
+            prenom: Value(prenom),
+            nom: Value(nom),
+            birthDate: Value(birthDate),
+            weight: Value(weight),
+            height: Value(height),
+            gender: Value(gender == Gender.homme ? "homme" : "femme"),
+          );
+
+          await parent._userDao.updateOne(updated);
+
+          // Retour
+          Navigator.pop(context);
+        },
+      ),
     ),
-  ),
-);
+  );
 },
             child: const Text(
               "Modifier le profil",

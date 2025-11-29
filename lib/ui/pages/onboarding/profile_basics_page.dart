@@ -14,7 +14,23 @@ class ProfileBasicsPage extends StatefulWidget {
     required Gender gender,
   }) onNext;
 
-  const ProfileBasicsPage({super.key, required this.onNext});
+  final String initialPrenom;
+  final String initialNom;
+  final DateTime? initialBirthDate;
+  final double? initialWeight;
+  final double? initialHeight;
+  final Gender? initialGender;
+
+  const ProfileBasicsPage({
+    super.key,
+    required this.onNext,
+    this.initialPrenom = "",
+    this.initialNom = "",
+    this.initialBirthDate,
+    this.initialWeight,
+    this.initialHeight,
+    this.initialGender,
+  });
 
   @override
   State<ProfileBasicsPage> createState() => _ProfileBasicsPageState();
@@ -34,10 +50,17 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
   @override
   void initState() {
     super.initState();
-    _prenom = TextEditingController();
-    _nom = TextEditingController();
-    _weight = TextEditingController();
-    _height = TextEditingController();
+    _prenom = TextEditingController(text: widget.initialPrenom);
+    _nom = TextEditingController(text: widget.initialNom);
+    _weight = TextEditingController(
+    text: widget.initialWeight?.toString() ?? "",
+  );
+    _height = TextEditingController(
+    text: widget.initialHeight?.toString() ?? "",
+  );
+
+  _dob = widget.initialBirthDate;
+  _gender = widget.initialGender;
   }
 
   @override
@@ -230,7 +253,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
 
                         // Poids et Taille
                         const Text(
-                          'Mesures',
+                          'Poids et taille',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
