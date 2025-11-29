@@ -1,18 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../data/repositories/user_repository.dart';
-import '../../data/repositories/exercise_repository.dart';
+import '../../services/dashboard_service.dart';
 import '../theme/app_theme.dart';
-import '../widgets/bulle/bulle.dart';
-import '../widgets/calendar/calendar_card.dart';
-import '../widgets/progress/progress_card.dart';
-import '../widgets/favorites/favorites_card.dart';
-import '../widgets/stats/stats_card.dart';
-import '../../services/ImcService.dart';
-import '../../ui/pages/admin_page.dart';
+import '../widgets/charts/weekly_bar_chart.dart';
+import '../widgets/charts/muscle_pie_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-
 
 class DashboardPage extends StatefulWidget {
   final AppDb db;
@@ -24,32 +18,34 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   late final UserRepository _userRepo;
-  late final ExerciseRepository _exerciseRepo;
+  late final DashboardService _dashboardService;
 
   String _userName = "...";
-  List<ExerciseData> _randomExercises = [];
   bool _isLoading = true;
-  double? _userWeight;
-  double? _userHeight;
-  double? _userIMC;
   String _todayDate = "";
+  int? _userId;
+
+  // Metrics
+  int _streakWeeks = 0;
+  double _volumeVariation = 0.0;
+  double _efficiency = 0.0;
+  Map<String, int> _weeklyAttendance = {};
+  List<MuscleStat> _muscleStats = [];
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('fr_FR', null).then((_) {
       Intl.defaultLocale = 'fr_FR';
-
       final now = DateTime.now();
-      final formatter = DateFormat('EEEE d MMMM yyyy', 'fr_FR');
-
+      final formatter = DateFormat('d MMM', 'fr_FR');
       setState(() {
         _todayDate = formatter.format(now);
       });
     });
 
     _userRepo = UserRepository(widget.db);
-    _exerciseRepo = ExerciseRepository(widget.db);
+    _dashboardService = DashboardService(widget.db);
     _loadDashboardData();
   }
 
@@ -57,29 +53,33 @@ class _DashboardPageState extends State<DashboardPage> {
     try {
       final user = await _userRepo.current();
       final prenom = user?.prenom?.trim() ?? "Athlète";
+      _userId = user?.id;
 
-      _userWeight = user?.weight;
-      _userHeight = user?.height;
+      if (_userId != null) {
+        final streak = await _dashboardService.getCurrentStreakWeeks(_userId!);
+        final variation = await _dashboardService.getVolumeVariationPercentage(_userId!);
+        final efficiency = await _dashboardService.getTrainingEfficiency(_userId!);
+        final weeklyAttendance = await _dashboardService.getAssiduiteSemaine(_userId!);
+        final muscleStats = await _dashboardService.getRepartitionMusculaire(_userId!);
 
-      if (_userWeight != null && _userHeight != null) {
-        final calc = IMCcalculator(
-          height: _userHeight!,
-          weight: _userWeight!,
-        );
-        final imc = calc.calculateIMC();
-        _userIMC = double.parse(imc.toStringAsFixed(2));
-      }
-
-      final allExercises = await _exerciseRepo.all();
-      allExercises.shuffle();
-      final randomExercises = allExercises.take(4).toList();
-
-      if (mounted) {
-        setState(() {
-          _userName = prenom;
-          _randomExercises = randomExercises;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _userName = prenom;
+            _streakWeeks = streak;
+            _volumeVariation = variation;
+            _efficiency = efficiency;
+            _weeklyAttendance = weeklyAttendance;
+            _muscleStats = muscleStats;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _userName = prenom;
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       debugPrint('[DASHBOARD] Erreur: $e');
@@ -92,128 +92,231 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  double? _imc;
-  String? _imcCategory;
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.scaffold,
       body: SafeArea(
-        child: Container(
-//          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-//          decoration: BoxDecoration(
-          //color: AppTheme.surface,
-          //  border: Border.all(color: const Color(0xFF111111), width: 2),
-         // ),
-          child: Column(
-            children: [
-              const SizedBox(height: 8),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator(color: AppTheme.gold))
+            : Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    /// HEADER COMPACT
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Bonjour $_userName",
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const Text(
+                              "Prêt à tout casser ?",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color.fromRGBO(217, 190, 119, 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color.fromRGBO(217, 190, 119, 0.3)),
+                          ),
+                          child: Text(
+                            _todayDate,
+                            style: const TextStyle(
+                              color: AppTheme.gold,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
 
-              /// ---- HEADER ----
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    "Bonjour $_userName !",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 16),
+
+                    /// TOP ROW - KEY METRICS (3 Cards)
+                    SizedBox(
+                      height: 100,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildCompactStatCard(
+                              "Série",
+                              "$_streakWeeks sem.",
+                              Icons.local_fire_department,
+                              Colors.orangeAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildCompactStatCard(
+                              "Progression",
+                              "${_volumeVariation > 0 ? '+' : ''}$_volumeVariation%",
+                              _volumeVariation >= 0 ? Icons.trending_up : Icons.trending_down,
+                              _volumeVariation >= 0 ? Colors.greenAccent : Colors.redAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildCompactStatCard(
+                              "Intensité",
+                              "$_efficiency kg/min",
+                              Icons.speed,
+                              Colors.blueAccent,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Prêt pour ta séance ?",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
+
+                    const SizedBox(height: 16),
+
+                    /// MIDDLE - WEEKLY CHART (Expanded)
+                    Expanded(
+                      flex: 3,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E1E1E),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Activité Semaine",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Expanded(
+                              child: _weeklyAttendance.isNotEmpty
+                                  ? WeeklyBarChart(weeklyData: _weeklyAttendance)
+                                  : const Center(child: Text("Aucune donnée", style: TextStyle(color: Colors.grey))),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    _todayDate,
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
+
+                    const SizedBox(height: 16),
+
+                    /// BOTTOM - PIE CHART & SUMMARY (Expanded)
+                    Expanded(
+                      flex: 2,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E1E1E),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
+                              ),
+                              child: _muscleStats.isNotEmpty
+                                  ? MusclePieChart(muscleStats: _muscleStats)
+                                  : const Center(child: Text("Pas de données", style: TextStyle(color: Colors.grey))),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.gold,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.emoji_events, color: Colors.black, size: 32),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    "Focus",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _muscleStats.isNotEmpty ? _muscleStats.first.muscleName : "--",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 8),
-                ],
+                  ],
+                ),
               ),
+      ),
+    );
+  }
 
-              const SizedBox(height: 16),
-
-              /// ---- CONTENU SCROLLABLE ----
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          StatsBubble(
-                            title: "Exercice \n complétés",
-                            value: "8",
-                            icon: Icons.fitness_center,
-                            background: const Color(0xFF0A0F1F),
-                            border: Color(0xFFD9BE77), // doré
-                          ),
-
-                          StatsBubble(
-                            title: "Séances\ncomplétées",
-                            value: "2",
-                            icon: Icons.sports_gymnastics,
-                            background: Color(0xFF2C123A),
-                            border: Color(0xFFD9BE77),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: 20),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          StatsBubble(
-                            title: "Imc",
-                            value: _userIMC?.toString() ?? "--",
-                            icon: Icons.fitness_center,
-                            background: const Color(0xFF0A0F1F),
-                            border: Color(0xFFD9BE77), // doré
-                          ),
-
-                          StatsBubble(
-                            title: "Poids",
-                            value: _userWeight != null ? "${_userWeight!.toStringAsFixed(1)} kg" : "--",
-                            icon: Icons.sports_gymnastics,
-                            background: Color(0xFF2C123A),
-                            border: Color(0xFFD9BE77),
-                          ),
-                        ],
-                      ),
-
-                      /// favoris / exercices recommandés
-
-
-                      const SizedBox(height: 22),
-
-                      /// statistiques
-
-                    ],
-                  ),
+  Widget _buildCompactStatCard(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(icon, color: color, size: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 11,
                 ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

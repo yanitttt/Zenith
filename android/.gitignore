@@ -15,3 +15,5 @@ key.properties
 
 # Ignorer tous les fichiers Markdown
 *.md
+/claude
+/.claude

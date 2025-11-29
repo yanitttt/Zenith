@@ -1,5 +1,7 @@
 // lib/ui/pages/admin_page.dart
 import 'package:flutter/material.dart';
+import 'package:recommandation_mobile/data/db/daos/user_equipment_dao.dart';
+import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
 import '../theme/app_theme.dart';
@@ -24,11 +26,15 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   late final UserDao _userDao;
+  late final UserGoalDao _goalDao;
+  late final UserEquipmentDao _equipmentDao;
 
   @override
   void initState() {
     super.initState();
     _userDao = UserDao(widget.db);
+    _goalDao = UserGoalDao(widget.db);
+    _equipmentDao = UserEquipmentDao(widget.db);
   }
 
   Future<void> _confirmAndDelete(int userId) async {
@@ -547,6 +553,8 @@ class _UserCard extends StatelessWidget {
     builder: (_) => EditProfilePage(
       user: u,
       userDao: context.findAncestorStateOfType<_AdminPageState>()!._userDao,
+      goalDao: context.findAncestorStateOfType<_AdminPageState>()!._goalDao,
+      equipmentDao: context.findAncestorStateOfType<_AdminPageState>()!._equipmentDao,
     ),
   ),
 );

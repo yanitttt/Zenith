@@ -1,0 +1,41 @@
+AVANT FeedBack :
+
+-- Objectif principal : :obj_id ; utilisateur : :uid
+WITH user_eq AS (
+  SELECT equipment_id FROM user_equipment WHERE user_id = :uid
+),
+ex_ok_eq AS (
+  -- exercice ok si (a) ne demande aucun matériel non dispo, ou (b) il n’a pas de contrainte d’équipement
+  SELECT e.id
+  FROM exercise e
+  LEFT JOIN exercise_equipment ee ON ee.exercise_id = e.id
+  LEFT JOIN user_eq ue ON ue.equipment_id = ee.equipment_id
+  GROUP BY e.id
+  HAVING COUNT(ee.equipment_id) = COUNT(ue.equipment_id)  -- tout ce qui est requis est dispo
+),
+ex_obj AS (
+  SELECT eo.exercise_id, eo.weight AS obj_weight
+  FROM exercise_objective eo
+  WHERE eo.objective_id = :obj_id
+)
+SELECT e.id, e.name, e.type, e.difficulty, e.cardio,
+       COALESCE(ex_obj.obj_weight, 0) AS objective_affinity
+FROM exercise e
+JOIN ex_ok_eq k ON k.id = e.id
+LEFT JOIN ex_obj ON ex_obj.exercise_id = e.id;
+
+Comment interpréter les colonnes
+objective_affinity = affinité exercice ↔ objectif demandé (ici hypertrophie).
+
+
+Pompes (0.6), Rowing (0.7), Tractions (0.8), Curl (0.6) : bons candidats hypertrophie.
+
+
+Corde (9) et Gainage (11) n’ont pas d’affinité hypertrophie renseignée → 0.0. Ça ne veut pas dire “interdits”, juste neutres pour cet objectif (tu pourras les remonter si tu ajoutes un terme “cardio”/“core” dans ton score).
+
+
+difficulty et type te servent à adapter au niveau (ex. débutant/Inter/Avancé) et à équilibrer poly vs iso.
+
+
+cardio est utile si tu intègres un terme “brûlage/conditioning” dans le score.
+

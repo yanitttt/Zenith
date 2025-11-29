@@ -260,4 +260,104 @@ class DashboardService {
 
     return result.read<double?>('max_load') ?? 0.0;
   }
+  // =================================================================
+  // G. METRIQUES AVANCEES & COMPLEXES - NOUVEAU
+  // =================================================================
+
+  /// 1. Variation du Volume (vs Semaine Précédente) en %
+  /// Retourne un pourcentage (ex: 15.5 pour +15.5%, -10.0 pour -10%)
+  Future<double> getVolumeVariationPercentage(int userId) async {
+    final now = DateTime.now();
+    
+    // Semaine actuelle
+    final startCurrentWeek = now.subtract(Duration(days: now.weekday - 1));
+    final startCurrentWeekTs = DateTime(startCurrentWeek.year, startCurrentWeek.month, startCurrentWeek.day).millisecondsSinceEpoch ~/ 1000;
+    
+    // Semaine précédente
+    final startLastWeek = startCurrentWeek.subtract(const Duration(days: 7));
+    final endLastWeek = startCurrentWeek.subtract(const Duration(seconds: 1));
+    
+    final startLastWeekTs = DateTime(startLastWeek.year, startLastWeek.month, startLastWeek.day).millisecondsSinceEpoch ~/ 1000;
+    final endLastWeekTs = DateTime(endLastWeek.year, endLastWeek.month, endLastWeek.day, 23, 59, 59).millisecondsSinceEpoch ~/ 1000;
+
+    // Volume Semaine Actuelle
+    final volCurrent = await getVolumeTotalSemaine(userId);
+
+    // Volume Semaine Précédente
+    final resultLast = await db.customSelect(
+      '''
+      SELECT SUM(se.sets * se.reps * se.load) as total_vol 
+      FROM session_exercise se
+      JOIN session s ON se.session_id = s.id
+      WHERE s.user_id = ? AND s.date_ts >= ? AND s.date_ts <= ?
+      ''',
+      variables: [Variable.withInt(userId), Variable.withInt(startLastWeekTs), Variable.withInt(endLastWeekTs)],
+      readsFrom: {db.session, db.sessionExercise},
+    ).getSingle();
+
+    final volLast = resultLast.read<double?>('total_vol') ?? 0.0;
+
+    if (volLast == 0) {
+      return volCurrent > 0 ? 100.0 : 0.0; // Si on passe de 0 à X, c'est 100% de gain (ou infini, mais on met 100 pour l'UI)
+    }
+
+    final variation = ((volCurrent - volLast) / volLast) * 100;
+    return double.parse(variation.toStringAsFixed(1));
+  }
+
+  /// 2. Streak (Semaines consécutives avec au moins 1 séance)
+  Future<int> getCurrentStreakWeeks(int userId) async {
+    int streak = 0;
+    final now = DateTime.now();
+    // On commence à vérifier à partir de la semaine dernière (car la semaine courante peut être en cours)
+    // Si l'utilisateur a fait une séance cette semaine, ça compte pour le streak actuel.
+    
+    // Vérifions d'abord cette semaine
+    final sessionsThisWeek = await getSessionsRealiseesSemaine(userId);
+    if (sessionsThisWeek > 0) {
+      streak++;
+    }
+
+    // Remonter dans le temps semaine par semaine
+    // On commence à -1 semaine
+    int weeksBack = 1;
+    while (true) {
+      final d = now.subtract(Duration(days: 7 * weeksBack));
+      // Début de cette semaine là
+      final startOfWeek = d.subtract(Duration(days: d.weekday - 1));
+      final startTs = DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day).millisecondsSinceEpoch ~/ 1000;
+      final endTs = startTs + (7 * 24 * 3600) - 1;
+
+      final result = await db.customSelect(
+        'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
+        variables: [Variable.withInt(userId), Variable.withInt(startTs), Variable.withInt(endTs)],
+        readsFrom: {db.session},
+      ).getSingle();
+
+      final count = result.read<int>('cnt');
+      if (count > 0) {
+        streak++;
+        weeksBack++;
+      } else {
+        // Streak brisé
+        break;
+      }
+      
+      // Sécurité pour pas boucler à l'infini si bug
+      if (weeksBack > 520) break; // 10 ans
+    }
+
+    return streak;
+  }
+
+  /// 3. Efficacité d'entraînement (Volume / Minute) cette semaine
+  Future<double> getTrainingEfficiency(int userId) async {
+    final vol = await getVolumeTotalSemaine(userId);
+    final duration = await getDureeTotaleSemaine(userId);
+
+    if (duration == 0) return 0.0;
+    
+    final eff = vol / duration;
+    return double.parse(eff.toStringAsFixed(1));
+  }
 }
