@@ -5,10 +5,15 @@ import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
 import '../../services/ImcService.dart';
+import 'package:recommandation_mobile/ui/pages/onboarding/objectives_page.dart'; 
+import 'package:recommandation_mobile/ui/pages/onboarding/equipment_page.dart';
+
+const Color _goldColor = Colors.amber;
 
 class EditProfilePage extends StatefulWidget {
   final AppUserData user;
   final UserDao userDao;
+  final AppDb db;
   final UserGoalDao goalDao;
   final UserEquipmentDao equipmentDao;
 
@@ -16,6 +21,7 @@ class EditProfilePage extends StatefulWidget {
     super.key,
     required this.user,
     required this.userDao,
+    required this.db,
     required this.goalDao,
     required this.equipmentDao,
   });
@@ -75,7 +81,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return null;
   }
 
-  Future<void> _loadGoalsAndEquipment() async {
+    Future<void> _loadGoalsAndEquipment() async {
     // Tous les objectifs et équipements disponibles
     allObjectives = await widget.goalDao.allObjectivesList();
     allEquipments = await widget.equipmentDao.allEquipmentList();
@@ -91,6 +97,46 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     setState(() {});
   }
+
+// Méthode de navigation vers la page Objectives
+  Future<void> _navigateToObjectivesPage() async {
+  final updatedGoals = await Navigator.of(context).push<List<int>>(
+    MaterialPageRoute(
+      builder: (context) => ObjectivesPage(
+        db: widget.db, 
+        initialGoalIds: selectedGoalId != null ? [selectedGoalId!] : [], 
+      ),
+    ),
+  );
+
+  if (updatedGoals != null) {
+    setState(() {
+      selectedGoalId = updatedGoals.isNotEmpty ? updatedGoals.first : null;
+    });
+    await widget.goalDao.replace(widget.user.id!, updatedGoals); 
+  }
+}
+
+// Méthode de navigation vers la page Équipements
+Future<void> _navigateToEquipmentPage() async {
+  final updatedEquipment = await Navigator.of(context).push<List<int>>(
+    MaterialPageRoute(
+      builder: (context) => EquipmentPage(
+        db: widget.db, 
+        initialEquipmentIds: selectedEquipmentIds, 
+      ),
+    ),
+  );
+
+  if (updatedEquipment != null) {
+    setState(() {
+
+      selectedEquipmentIds = updatedEquipment;
+    });
+
+    await widget.equipmentDao.replace(widget.user.id!, updatedEquipment);
+  }
+}
 
   double get currentIMC {
     final h = double.tryParse(tailleCtrl.text);
@@ -257,12 +303,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             const SizedBox(height: 20),
             // Sélection des objectifs
-            _selectGoal(),
+            ListTile(
+              leading: const Icon(Icons.sports_gymnastics, color: _goldColor),
+              title: const Text("Modifier l'objectif", style: TextStyle(color: Colors.white)),
+              subtitle: Text(
+                selectedGoalId != null 
+                    ? allObjectives.firstWhere((o) => o.id == selectedGoalId).name 
+                    : "Non défini",
+                style: const TextStyle(color: Colors.white70),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white),
+              onTap: _navigateToObjectivesPage,
+            ),
+            Divider(color: Colors.grey.shade800),
 
             const SizedBox(height: 20),
 
             // Sélection des équipements
-            _multiSelectEquipment(),
+            ListTile(
+              leading: const Icon(Icons.fitness_center, color: _goldColor),
+              title: const Text("Modifier l'équipement", style: TextStyle(color: Colors.white)),
+              subtitle: Text(
+                "${selectedEquipmentIds.length} équipement(s) sélectionné(s)",
+                style: const TextStyle(color: Colors.white70),
+              ),
+              trailing: const Icon(Icons.chevron_right, color: Colors.white),
+              onTap: _navigateToEquipmentPage,
+            ),
+            Divider(color: Colors.grey.shade800),
 
             const SizedBox(height: 30),
 

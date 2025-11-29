@@ -81,6 +81,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                                     builder: (_) =>
                                         ObjectivesPage(
                                           db: widget.db,
+                                          initialGoalIds: [],
                                           onNext: (objectiveIds) async {
                                             _objectiveIds = objectiveIds;
                                             if (!mounted) return;
@@ -89,6 +90,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                                                   builder: (_) =>
                                                       EquipmentPage(
                                                         db: widget.db,
+                                                        initialEquipmentIds: [],
                                                         onNext: (
                                                             equipmentIds) async {
                                                           _equipmentIds =
