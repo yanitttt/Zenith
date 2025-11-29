@@ -17,3 +17,4 @@ key.properties
 *.md
 /claude
 /.claude
+.claude
