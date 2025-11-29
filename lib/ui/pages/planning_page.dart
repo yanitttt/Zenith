@@ -30,6 +30,8 @@ class _PlanningPageState extends State<PlanningPage> {
   Set<int> _joursAvecActivite = {};
   bool _isLoading = true;
 
+  ScrollController? _scrollController;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +47,26 @@ class _PlanningPageState extends State<PlanningPage> {
     );
 
     _initData();
+  }
+
+  void _ensureScrollController() {
+    if (_scrollController != null) return;
+
+    final now = DateTime.now();
+    // Calcul de la position de défilement pour centrer le jour actuel
+    // Item width (65) + Separator (12) = 77
+    final dayIndex = now.weekday - 1; // 0 for Monday, 6 for Sunday
+    final double initialOffset = (dayIndex * 77.0);
+
+    _scrollController = ScrollController(
+      initialScrollOffset: initialOffset > 50 ? initialOffset - 50 : 0,
+    );
+  }
+
+  @override
+  void dispose() {
+    _scrollController?.dispose();
+    super.dispose();
   }
 
   Future<void> _initData() async {
@@ -87,6 +109,15 @@ class _PlanningPageState extends State<PlanningPage> {
   void _changeWeek(int offset) {
     setState(() {
       _startOfWeek = _startOfWeek.add(Duration(days: 7 * offset));
+      // Reset scroll quand on change de semaine manuellement
+      _ensureScrollController();
+      if (_scrollController!.hasClients) {
+        _scrollController!.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
     _chargerDonnees();
   }
@@ -122,6 +153,17 @@ class _PlanningPageState extends State<PlanningPage> {
           _startOfWeek.month,
           _startOfWeek.day,
         );
+
+        // Scroll vers le jour sélectionné
+        _ensureScrollController();
+        final dayIndex = picked.weekday - 1;
+        if (_scrollController!.hasClients) {
+          _scrollController!.animateTo(
+            (dayIndex * 77.0) - 50,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+          );
+        }
       });
       _chargerDonnees();
     }
@@ -257,6 +299,7 @@ class _PlanningPageState extends State<PlanningPage> {
 
   @override
   Widget build(BuildContext context) {
+    _ensureScrollController();
     return Scaffold(
       backgroundColor: kBackground,
       body: SafeArea(
@@ -321,6 +364,7 @@ class _PlanningPageState extends State<PlanningPage> {
                     child: SizedBox(
                       height: 70,
                       child: ListView.separated(
+                        controller: _scrollController,
                         scrollDirection: Axis.horizontal,
                         itemCount: 7,
                         separatorBuilder: (_, __) => const SizedBox(width: 12),

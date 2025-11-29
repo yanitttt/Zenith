@@ -91,14 +91,21 @@ class PlanningService {
         db.programDay,
         db.programDay.id.equalsExp(db.programDayExercise.programDayId),
       ),
+      // Jointure pour vérifier si le programme est actif
+      innerJoin(
+        db.userProgram,
+        db.userProgram.programId.equalsExp(db.programDay.programId),
+      ),
     ]);
 
-    // Filtre sur la date exacte
+    // Filtre sur la date exacte ET programme actif
     queryScheduled.where(
       db.programDayExercise.scheduledDate.isBetweenValues(
-        startOfDay,
-        endOfDay.subtract(const Duration(seconds: 1)),
-      ),
+            startOfDay,
+            endOfDay.subtract(const Duration(seconds: 1)),
+          ) &
+          db.userProgram.userId.equals(userId) &
+          db.userProgram.isActive.equals(1),
     );
 
     final rowsScheduled = await queryScheduled.get();
@@ -157,16 +164,31 @@ class PlanningService {
       daysSet.add(date.weekday);
     }
 
-    // 2. Jours avec séances prévues
-    final scheduled =
-        await (db.select(db.programDayExercise)..where(
-          (e) => e.scheduledDate.isBetweenValues(
+    // 2. Jours avec séances prévues (UNIQUEMENT PROGRAMMES ACTIFS)
+    final query = db.select(db.programDayExercise).join([
+      innerJoin(
+        db.programDay,
+        db.programDay.id.equalsExp(db.programDayExercise.programDayId),
+      ),
+      innerJoin(
+        db.userProgram,
+        db.userProgram.programId.equalsExp(db.programDay.programId),
+      ),
+    ]);
+
+    query.where(
+      db.programDayExercise.scheduledDate.isBetweenValues(
             startOfWeek,
             endOfWeek.subtract(const Duration(seconds: 1)),
-          ),
-        )).get();
+          ) &
+          db.userProgram.userId.equals(userId) &
+          db.userProgram.isActive.equals(1),
+    );
 
-    for (final e in scheduled) {
+    final scheduledRows = await query.get();
+
+    for (final row in scheduledRows) {
+      final e = row.readTable(db.programDayExercise);
       if (e.scheduledDate != null) {
         daysSet.add(e.scheduledDate!.weekday);
       }

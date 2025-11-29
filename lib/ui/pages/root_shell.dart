@@ -21,6 +21,7 @@ class RootShell extends StatefulWidget {
 class _RootShellState extends State<RootShell> {
   int _index = 0;
   AppPrefs? _prefs;
+  Key _planningKey = UniqueKey();
 
   @override
   void initState() {
@@ -40,15 +41,13 @@ class _RootShellState extends State<RootShell> {
     if (_prefs == null) {
       return const Scaffold(
         backgroundColor: AppTheme.scaffold,
-        body: Center(
-          child: CircularProgressIndicator(color: AppTheme.gold),
-        ),
+        body: Center(child: CircularProgressIndicator(color: AppTheme.gold)),
       );
     }
 
     final pages = [
       DashboardPage(db: widget.db),
-      PlanningPage(db: widget.db),
+      PlanningPage(key: _planningKey, db: widget.db),
       WorkoutProgramPage(db: widget.db, prefs: _prefs!),
       ExercisesPage(db: widget.db),
       AdminPage(db: widget.db, prefs: _prefs!),
@@ -64,19 +63,23 @@ class _RootShellState extends State<RootShell> {
 
     return Scaffold(
       backgroundColor: AppTheme.scaffold,
-      body: SafeArea(
-        child: IndexedStack(index: _index, children: pages),
-      ),
+      body: SafeArea(child: IndexedStack(index: _index, children: pages)),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         child: BottomNavBar(
           currentIndex: _index,
-          onTap: (i) => setState(() => _index = i),
+          onTap: (i) {
+            setState(() {
+              _index = i;
+              if (i == 1) {
+                // Force le rechargement du planning
+                _planningKey = UniqueKey();
+              }
+            });
+          },
           items: items,
         ),
       ),
     );
   }
 }
-
-
