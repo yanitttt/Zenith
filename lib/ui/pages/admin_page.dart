@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:recommandation_mobile/data/db/daos/user_equipment_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
+import 'package:recommandation_mobile/data/db/daos/user_training_day_dao.dart';
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
 import '../theme/app_theme.dart';
@@ -28,6 +29,7 @@ class _AdminPageState extends State<AdminPage> {
   late final UserDao _userDao;
   late final UserGoalDao _goalDao;
   late final UserEquipmentDao _equipmentDao;
+  late final UserTrainingDayDao _trainingDayDao;
 
   @override
   void initState() {
@@ -35,6 +37,7 @@ class _AdminPageState extends State<AdminPage> {
     _userDao = UserDao(widget.db);
     _goalDao = UserGoalDao(widget.db);
     _equipmentDao = UserEquipmentDao(widget.db);
+    _trainingDayDao = UserTrainingDayDao(widget.db);
   }
 
   Future<void> _confirmAndDelete(int userId) async {
@@ -187,7 +190,7 @@ class _AdminPageState extends State<AdminPage> {
   }
 }
 
-class _UserCard extends StatelessWidget {
+class _UserCard extends StatefulWidget {
   final AppUserData u;
   final VoidCallback? onDelete;
 
@@ -196,6 +199,47 @@ class _UserCard extends StatelessWidget {
     this.onDelete,
     Key? key,
   }) : super(key: key);
+
+  @override
+  State<_UserCard> createState() => _UserCardState();
+}
+
+class _UserCardState extends State<_UserCard> {
+  List<int> _selectedDays = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrainingDays();
+  }
+
+  Future<void> _loadTrainingDays() async {
+    final dao = context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
+    final days = await dao.getDayNumbersForUser(widget.u.id);
+    if (mounted) {
+      setState(() => _selectedDays = days);
+    }
+  }
+
+  Future<void> _showTrainingDaysDialog() async {
+    final tempSelected = List<int>.from(_selectedDays);
+
+    final result = await showDialog<List<int>>(
+      context: context,
+      builder: (ctx) => _TrainingDaysDialog(selectedDays: tempSelected),
+    );
+
+    if (result != null) {
+      final dao = context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
+      await dao.replace(widget.u.id, result);
+      setState(() => _selectedDays = result);
+    }
+  }
+
+  String _getDayName(int dayNum) {
+    const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+    return days[dayNum - 1];
+  }
 
   // ---------- helpers présentation ----------
   String _fmtDate(DateTime d) {
@@ -244,29 +288,29 @@ class _UserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = [
-      if ((u.prenom ?? '').trim().isNotEmpty) u.prenom!.trim(),
-      if ((u.nom ?? '').trim().isNotEmpty) u.nom!.trim(),
+      if ((widget.u.prenom ?? '').trim().isNotEmpty) widget.u.prenom!.trim(),
+      if ((widget.u.nom ?? '').trim().isNotEmpty) widget.u.nom!.trim(),
     ].join(' ').trim();
 
     final lines = <String>[];
-    lines.add('id=${u.id}');
-    if (u.level != null) lines.add('niveau=${u.level}');
-    if (u.weight != null) lines.add('poids=${u.weight}kg');
-    if (u.height != null) lines.add('taille=${u.height}cm');
-    if (u.metabolism != null && u.metabolism!.trim().isNotEmpty) {
-      lines.add('métabolisme=${u.metabolism}');
+    lines.add('id=${widget.u.id}');
+    if (widget.u.level != null) lines.add('niveau=${widget.u.level}');
+    if (widget.u.weight != null) lines.add('poids=${widget.u.weight}kg');
+    if (widget.u.height != null) lines.add('taille=${widget.u.height}cm');
+    if (widget.u.metabolism != null && widget.u.metabolism!.trim().isNotEmpty) {
+      lines.add('métabolisme=${widget.u.metabolism}');
     }
     final subtitle = lines.join('  •  ');
 
-    final age = _calcAge(u.birthDate);
-    final birth = u.birthDate != null ? _fmtDate(u.birthDate!) : null;
-    final genderLabel = _genderLabel(u.gender);
-    final genderIcon = _genderIcon(u.gender);
+    final age = _calcAge(widget.u.birthDate);
+    final birth = widget.u.birthDate != null ? _fmtDate(widget.u.birthDate!) : null;
+    final genderLabel = _genderLabel(widget.u.gender);
+    final genderIcon = _genderIcon(widget.u.gender);
 
     double? imcArrondi;
     String? imcCategory;
-    if (u.height != null && u.weight != null) {
-      final calc = IMCcalculator(height: u.height!, weight: u.weight!);
+    if (widget.u.height != null && widget.u.weight != null) {
+      final calc = IMCcalculator(height: widget.u.height!, weight: widget.u.weight!);
       final imc = calc.calculateIMC();
       imcArrondi = double.parse(imc.toStringAsFixed(2));
       imcCategory = calc.getIMCCategory();
@@ -314,7 +358,7 @@ class _UserCard extends StatelessWidget {
                     children: [
 
                       // Prénom person_outline
-                      if ((u.prenom ?? '').trim().isNotEmpty)
+                      if ((widget.u.prenom ?? '').trim().isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
@@ -327,7 +371,7 @@ class _UserCard extends StatelessWidget {
                               const Icon(Icons.badge_outlined, size: 18),
                               const SizedBox(width: 6),
                               Text(
-                                u.prenom!.trim(),
+                                widget.u.prenom!.trim(),
                                 style: const TextStyle(
                                   fontSize: 18, // texte agrandi
                                   fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
@@ -338,7 +382,7 @@ class _UserCard extends StatelessWidget {
                         ),
 
                       // Nom badge_outlined
-                      if ((u.nom ?? '').trim().isNotEmpty)
+                      if ((widget.u.nom ?? '').trim().isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
@@ -351,7 +395,7 @@ class _UserCard extends StatelessWidget {
                               const Icon(Icons.badge_outlined, size: 18),
                               const SizedBox(width: 6),
                               Text(
-                                u.nom!.trim(),
+                                widget.u.nom!.trim(),
                                 style: const TextStyle(
                                   fontSize: 18, // texte agrandi
                                   fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
@@ -386,7 +430,7 @@ class _UserCard extends StatelessWidget {
                         ),  
 
                       //Taille height_outlined
-                      if (u.height != null)
+                      if (widget.u.height != null)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
@@ -399,7 +443,7 @@ class _UserCard extends StatelessWidget {
                               const Icon(Icons.height_outlined, size: 18),
                               const SizedBox(width: 6),
                               Text(
-                                '${u.height} cm',
+                                '${widget.u.height} cm',
                                 style: const TextStyle(
                                   fontSize: 18, // taille du texte agrandie
                                   fontWeight: FontWeight.bold, // optionnel pour accentuer
@@ -431,7 +475,7 @@ class _UserCard extends StatelessWidget {
                         ),
                       ),
                       // Poids monitor_weight_outlined
-                      if (u.weight != null)
+                      if (widget.u.weight != null)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                             decoration: BoxDecoration(
@@ -444,7 +488,7 @@ class _UserCard extends StatelessWidget {
                                 const Icon(Icons.monitor_weight_outlined, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '${u.weight} kg',
+                                  '${widget.u.weight} kg',
                                   style: const TextStyle(
                                     fontSize: 18, // taille du texte agrandie
                                     fontWeight: FontWeight.bold, // optionnel pour accentuer
@@ -454,7 +498,7 @@ class _UserCard extends StatelessWidget {
                             ),
                           ),
                       // Niveau
-                      if ((u.level ?? '').trim().isNotEmpty)
+                      if ((widget.u.level ?? '').trim().isNotEmpty)
                         Container(
                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                             decoration: BoxDecoration(
@@ -467,7 +511,7 @@ class _UserCard extends StatelessWidget {
                                 const Icon(Icons.badge_outlined, size: 18),
                                 const SizedBox(width: 6),
                                 Text(
-                                  u.level!.trim(),
+                                  widget.u.level!.trim(),
                                   style: const TextStyle(
                                     fontSize: 18, // texte agrandi
                                     fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
@@ -477,7 +521,7 @@ class _UserCard extends StatelessWidget {
                             ),
                           ),
                       // Metabolisme
-                      if (u.metabolism != null && u.metabolism!.trim().isNotEmpty)
+                      if (widget.u.metabolism != null && widget.u.metabolism!.trim().isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                           decoration: BoxDecoration(
@@ -490,7 +534,7 @@ class _UserCard extends StatelessWidget {
                               const Icon(Icons.local_fire_department_outlined, size: 18),
                               const SizedBox(width: 6),
                               Text(
-                                u.metabolism!.trim(),
+                                widget.u.metabolism!.trim(),
                                 style: const TextStyle(
                                   fontSize: 18, // texte agrandi
                                   fontWeight: FontWeight.bold, // optionnel pour plus de visibilité
@@ -551,7 +595,7 @@ class _UserCard extends StatelessWidget {
   Navigator.of(context).push(
   MaterialPageRoute(
     builder: (_) => EditProfilePage(
-      user: u,
+      user: widget.u,
       userDao: context.findAncestorStateOfType<_AdminPageState>()!._userDao,
       goalDao: context.findAncestorStateOfType<_AdminPageState>()!._goalDao,
       equipmentDao: context.findAncestorStateOfType<_AdminPageState>()!._equipmentDao,
@@ -568,6 +612,34 @@ class _UserCard extends StatelessWidget {
 
         const SizedBox(height: 12),
 
+        // === JOURS D'ENTRAÎNEMENT ===
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF2A2D5F),
+              foregroundColor: AppTheme.gold,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            onPressed: _showTrainingDaysDialog,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.calendar_today, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  _selectedDays.isEmpty
+                    ? "Définir les jours d'entraînement"
+                    : "Jours : ${_selectedDays.map(_getDayName).join(', ')}",
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
         // === BOUTON SUPPRIMER ===
         SizedBox(
           width: double.infinity,
@@ -578,8 +650,8 @@ class _UserCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed:()  {
-              if (onDelete != null) {
-                onDelete!();
+              if (widget.onDelete != null) {
+                widget.onDelete!();
               }
             } ,
             child: const Text(
@@ -592,4 +664,154 @@ class _UserCard extends StatelessWidget {
     ),
   ),
 );  }
+}
+
+// Widget de dialog pour sélectionner les jours d'entraînement
+class _TrainingDaysDialog extends StatefulWidget {
+  final List<int> selectedDays;
+
+  const _TrainingDaysDialog({required this.selectedDays});
+
+  @override
+  State<_TrainingDaysDialog> createState() => _TrainingDaysDialogState();
+}
+
+class _TrainingDaysDialogState extends State<_TrainingDaysDialog> {
+  late List<int> _tempSelected;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelected = List.from(widget.selectedDays);
+  }
+
+  void _toggleDay(int dayNum) {
+    setState(() {
+      if (_tempSelected.contains(dayNum)) {
+        _tempSelected.remove(dayNum);
+      } else {
+        _tempSelected.add(dayNum);
+      }
+      _tempSelected.sort();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const dayNames = [
+      'Lundi',
+      'Mardi',
+      'Mercredi',
+      'Jeudi',
+      'Vendredi',
+      'Samedi',
+      'Dimanche',
+    ];
+
+    return Dialog(
+      backgroundColor: const Color(0xFF020216),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFFD9BE77), width: 2),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, color: Color(0xFFD9BE77), size: 24),
+                const SizedBox(width: 12),
+                const Text(
+                  'Jours d\'entraînement',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFD9BE77),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Sélectionnez les jours où vous souhaitez vous entraîner',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            ...List.generate(7, (index) {
+              final dayNum = index + 1;
+              final isSelected = _tempSelected.contains(dayNum);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: InkWell(
+                  onTap: () => _toggleDay(dayNum),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isSelected ? const Color(0xFFD9BE77).withOpacity(0.2) : Colors.transparent,
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFFD9BE77) : Colors.white24,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isSelected ? Icons.check_circle : Icons.circle_outlined,
+                          color: isSelected ? const Color(0xFFD9BE77) : Colors.white54,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          dayNames[index],
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? Colors.white : Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                      side: const BorderSide(color: Colors.white24),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Annuler', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFD9BE77),
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => Navigator.pop(context, _tempSelected),
+                    child: const Text('Valider', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

@@ -3968,6 +3968,229 @@ class UserGoalCompanion extends UpdateCompanion<UserGoalData> {
   }
 }
 
+class $UserTrainingDayTable extends UserTrainingDay
+    with TableInfo<$UserTrainingDayTable, UserTrainingDayData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserTrainingDayTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES app_user (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _dayOfWeekMeta = const VerificationMeta(
+    'dayOfWeek',
+  );
+  @override
+  late final GeneratedColumn<int> dayOfWeek = GeneratedColumn<int>(
+    'day_of_week',
+    aliasedName,
+    false,
+    check: () => ComparableExpr(dayOfWeek).isBetweenValues(1, 7),
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [userId, dayOfWeek];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_training_day';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserTrainingDayData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('day_of_week')) {
+      context.handle(
+        _dayOfWeekMeta,
+        dayOfWeek.isAcceptableOrUnknown(data['day_of_week']!, _dayOfWeekMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayOfWeekMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId, dayOfWeek};
+  @override
+  UserTrainingDayData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserTrainingDayData(
+      userId:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}user_id'],
+          )!,
+      dayOfWeek:
+          attachedDatabase.typeMapping.read(
+            DriftSqlType.int,
+            data['${effectivePrefix}day_of_week'],
+          )!,
+    );
+  }
+
+  @override
+  $UserTrainingDayTable createAlias(String alias) {
+    return $UserTrainingDayTable(attachedDatabase, alias);
+  }
+}
+
+class UserTrainingDayData extends DataClass
+    implements Insertable<UserTrainingDayData> {
+  final int userId;
+  final int dayOfWeek;
+  const UserTrainingDayData({required this.userId, required this.dayOfWeek});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<int>(userId);
+    map['day_of_week'] = Variable<int>(dayOfWeek);
+    return map;
+  }
+
+  UserTrainingDayCompanion toCompanion(bool nullToAbsent) {
+    return UserTrainingDayCompanion(
+      userId: Value(userId),
+      dayOfWeek: Value(dayOfWeek),
+    );
+  }
+
+  factory UserTrainingDayData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserTrainingDayData(
+      userId: serializer.fromJson<int>(json['userId']),
+      dayOfWeek: serializer.fromJson<int>(json['dayOfWeek']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<int>(userId),
+      'dayOfWeek': serializer.toJson<int>(dayOfWeek),
+    };
+  }
+
+  UserTrainingDayData copyWith({int? userId, int? dayOfWeek}) =>
+      UserTrainingDayData(
+        userId: userId ?? this.userId,
+        dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      );
+  UserTrainingDayData copyWithCompanion(UserTrainingDayCompanion data) {
+    return UserTrainingDayData(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      dayOfWeek: data.dayOfWeek.present ? data.dayOfWeek.value : this.dayOfWeek,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserTrainingDayData(')
+          ..write('userId: $userId, ')
+          ..write('dayOfWeek: $dayOfWeek')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(userId, dayOfWeek);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserTrainingDayData &&
+          other.userId == this.userId &&
+          other.dayOfWeek == this.dayOfWeek);
+}
+
+class UserTrainingDayCompanion extends UpdateCompanion<UserTrainingDayData> {
+  final Value<int> userId;
+  final Value<int> dayOfWeek;
+  final Value<int> rowid;
+  const UserTrainingDayCompanion({
+    this.userId = const Value.absent(),
+    this.dayOfWeek = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  UserTrainingDayCompanion.insert({
+    required int userId,
+    required int dayOfWeek,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       dayOfWeek = Value(dayOfWeek);
+  static Insertable<UserTrainingDayData> custom({
+    Expression<int>? userId,
+    Expression<int>? dayOfWeek,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (dayOfWeek != null) 'day_of_week': dayOfWeek,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  UserTrainingDayCompanion copyWith({
+    Value<int>? userId,
+    Value<int>? dayOfWeek,
+    Value<int>? rowid,
+  }) {
+    return UserTrainingDayCompanion(
+      userId: userId ?? this.userId,
+      dayOfWeek: dayOfWeek ?? this.dayOfWeek,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (dayOfWeek.present) {
+      map['day_of_week'] = Variable<int>(dayOfWeek.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserTrainingDayCompanion(')
+          ..write('userId: $userId, ')
+          ..write('dayOfWeek: $dayOfWeek, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $UserFeedbackTable extends UserFeedback
     with TableInfo<$UserFeedbackTable, UserFeedbackData> {
   @override
@@ -7036,6 +7259,9 @@ abstract class _$AppDb extends GeneratedDatabase {
   late final $AppUserTable appUser = $AppUserTable(this);
   late final $UserEquipmentTable userEquipment = $UserEquipmentTable(this);
   late final $UserGoalTable userGoal = $UserGoalTable(this);
+  late final $UserTrainingDayTable userTrainingDay = $UserTrainingDayTable(
+    this,
+  );
   late final $UserFeedbackTable userFeedback = $UserFeedbackTable(this);
   late final $WorkoutProgramTable workoutProgram = $WorkoutProgramTable(this);
   late final $ProgramDayTable programDay = $ProgramDayTable(this);
@@ -7063,6 +7289,7 @@ abstract class _$AppDb extends GeneratedDatabase {
     appUser,
     userEquipment,
     userGoal,
+    userTrainingDay,
     userFeedback,
     workoutProgram,
     programDay,
@@ -7163,6 +7390,13 @@ abstract class _$AppDb extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('user_goal', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'app_user',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('user_training_day', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -11586,6 +11820,26 @@ final class $$AppUserTableReferences
     );
   }
 
+  static MultiTypedResultKey<$UserTrainingDayTable, List<UserTrainingDayData>>
+  _userTrainingDayRefsTable(_$AppDb db) => MultiTypedResultKey.fromTable(
+    db.userTrainingDay,
+    aliasName: $_aliasNameGenerator(db.appUser.id, db.userTrainingDay.userId),
+  );
+
+  $$UserTrainingDayTableProcessedTableManager get userTrainingDayRefs {
+    final manager = $$UserTrainingDayTableTableManager(
+      $_db,
+      $_db.userTrainingDay,
+    ).filter((f) => f.userId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _userTrainingDayRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$UserFeedbackTable, List<UserFeedbackData>>
   _userFeedbackRefsTable(_$AppDb db) => MultiTypedResultKey.fromTable(
     db.userFeedback,
@@ -11748,6 +12002,31 @@ class $$AppUserTableFilterComposer extends Composer<_$AppDb, $AppUserTable> {
           }) => $$UserGoalTableFilterComposer(
             $db: $db,
             $table: $db.userGoal,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> userTrainingDayRefs(
+    Expression<bool> Function($$UserTrainingDayTableFilterComposer f) f,
+  ) {
+    final $$UserTrainingDayTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userTrainingDay,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserTrainingDayTableFilterComposer(
+            $db: $db,
+            $table: $db.userTrainingDay,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -11992,6 +12271,31 @@ class $$AppUserTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> userTrainingDayRefs<T extends Object>(
+    Expression<T> Function($$UserTrainingDayTableAnnotationComposer a) f,
+  ) {
+    final $$UserTrainingDayTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userTrainingDay,
+      getReferencedColumn: (t) => t.userId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserTrainingDayTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userTrainingDay,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> userFeedbackRefs<T extends Object>(
     Expression<T> Function($$UserFeedbackTableAnnotationComposer a) f,
   ) {
@@ -12084,6 +12388,7 @@ class $$AppUserTableTableManager
           PrefetchHooks Function({
             bool userEquipmentRefs,
             bool userGoalRefs,
+            bool userTrainingDayRefs,
             bool userFeedbackRefs,
             bool sessionRefs,
             bool userProgramRefs,
@@ -12165,6 +12470,7 @@ class $$AppUserTableTableManager
           prefetchHooksCallback: ({
             userEquipmentRefs = false,
             userGoalRefs = false,
+            userTrainingDayRefs = false,
             userFeedbackRefs = false,
             sessionRefs = false,
             userProgramRefs = false,
@@ -12174,6 +12480,7 @@ class $$AppUserTableTableManager
               explicitlyWatchedTables: [
                 if (userEquipmentRefs) db.userEquipment,
                 if (userGoalRefs) db.userGoal,
+                if (userTrainingDayRefs) db.userTrainingDay,
                 if (userFeedbackRefs) db.userFeedback,
                 if (sessionRefs) db.session,
                 if (userProgramRefs) db.userProgram,
@@ -12218,6 +12525,27 @@ class $$AppUserTableTableManager
                                 table,
                                 p0,
                               ).userGoalRefs,
+                      referencedItemsForCurrentItem:
+                          (item, referencedItems) =>
+                              referencedItems.where((e) => e.userId == item.id),
+                      typedResults: items,
+                    ),
+                  if (userTrainingDayRefs)
+                    await $_getPrefetchedData<
+                      AppUserData,
+                      $AppUserTable,
+                      UserTrainingDayData
+                    >(
+                      currentTable: table,
+                      referencedTable: $$AppUserTableReferences
+                          ._userTrainingDayRefsTable(db),
+                      managerFromTypedResult:
+                          (p0) =>
+                              $$AppUserTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userTrainingDayRefs,
                       referencedItemsForCurrentItem:
                           (item, referencedItems) =>
                               referencedItems.where((e) => e.userId == item.id),
@@ -12309,6 +12637,7 @@ typedef $$AppUserTableProcessedTableManager =
       PrefetchHooks Function({
         bool userEquipmentRefs,
         bool userGoalRefs,
+        bool userTrainingDayRefs,
         bool userFeedbackRefs,
         bool sessionRefs,
         bool userProgramRefs,
@@ -13041,6 +13370,281 @@ typedef $$UserGoalTableProcessedTableManager =
       (UserGoalData, $$UserGoalTableReferences),
       UserGoalData,
       PrefetchHooks Function({bool userId, bool objectiveId})
+    >;
+typedef $$UserTrainingDayTableCreateCompanionBuilder =
+    UserTrainingDayCompanion Function({
+      required int userId,
+      required int dayOfWeek,
+      Value<int> rowid,
+    });
+typedef $$UserTrainingDayTableUpdateCompanionBuilder =
+    UserTrainingDayCompanion Function({
+      Value<int> userId,
+      Value<int> dayOfWeek,
+      Value<int> rowid,
+    });
+
+final class $$UserTrainingDayTableReferences
+    extends
+        BaseReferences<_$AppDb, $UserTrainingDayTable, UserTrainingDayData> {
+  $$UserTrainingDayTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $AppUserTable _userIdTable(_$AppDb db) => db.appUser.createAlias(
+    $_aliasNameGenerator(db.userTrainingDay.userId, db.appUser.id),
+  );
+
+  $$AppUserTableProcessedTableManager get userId {
+    final $_column = $_itemColumn<int>('user_id')!;
+
+    final manager = $$AppUserTableTableManager(
+      $_db,
+      $_db.appUser,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_userIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$UserTrainingDayTableFilterComposer
+    extends Composer<_$AppDb, $UserTrainingDayTable> {
+  $$UserTrainingDayTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get dayOfWeek => $composableBuilder(
+    column: $table.dayOfWeek,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$AppUserTableFilterComposer get userId {
+    final $$AppUserTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.appUser,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppUserTableFilterComposer(
+            $db: $db,
+            $table: $db.appUser,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserTrainingDayTableOrderingComposer
+    extends Composer<_$AppDb, $UserTrainingDayTable> {
+  $$UserTrainingDayTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get dayOfWeek => $composableBuilder(
+    column: $table.dayOfWeek,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$AppUserTableOrderingComposer get userId {
+    final $$AppUserTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.appUser,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppUserTableOrderingComposer(
+            $db: $db,
+            $table: $db.appUser,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserTrainingDayTableAnnotationComposer
+    extends Composer<_$AppDb, $UserTrainingDayTable> {
+  $$UserTrainingDayTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get dayOfWeek =>
+      $composableBuilder(column: $table.dayOfWeek, builder: (column) => column);
+
+  $$AppUserTableAnnotationComposer get userId {
+    final $$AppUserTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.userId,
+      referencedTable: $db.appUser,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AppUserTableAnnotationComposer(
+            $db: $db,
+            $table: $db.appUser,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserTrainingDayTableTableManager
+    extends
+        RootTableManager<
+          _$AppDb,
+          $UserTrainingDayTable,
+          UserTrainingDayData,
+          $$UserTrainingDayTableFilterComposer,
+          $$UserTrainingDayTableOrderingComposer,
+          $$UserTrainingDayTableAnnotationComposer,
+          $$UserTrainingDayTableCreateCompanionBuilder,
+          $$UserTrainingDayTableUpdateCompanionBuilder,
+          (UserTrainingDayData, $$UserTrainingDayTableReferences),
+          UserTrainingDayData,
+          PrefetchHooks Function({bool userId})
+        > {
+  $$UserTrainingDayTableTableManager(_$AppDb db, $UserTrainingDayTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer:
+              () =>
+                  $$UserTrainingDayTableFilterComposer($db: db, $table: table),
+          createOrderingComposer:
+              () => $$UserTrainingDayTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer:
+              () => $$UserTrainingDayTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> userId = const Value.absent(),
+                Value<int> dayOfWeek = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => UserTrainingDayCompanion(
+                userId: userId,
+                dayOfWeek: dayOfWeek,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int userId,
+                required int dayOfWeek,
+                Value<int> rowid = const Value.absent(),
+              }) => UserTrainingDayCompanion.insert(
+                userId: userId,
+                dayOfWeek: dayOfWeek,
+                rowid: rowid,
+              ),
+          withReferenceMapper:
+              (p0) =>
+                  p0
+                      .map(
+                        (e) => (
+                          e.readTable(table),
+                          $$UserTrainingDayTableReferences(db, table, e),
+                        ),
+                      )
+                      .toList(),
+          prefetchHooksCallback: ({userId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                T extends TableManagerState<
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic,
+                  dynamic
+                >
+              >(state) {
+                if (userId) {
+                  state =
+                      state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.userId,
+                            referencedTable: $$UserTrainingDayTableReferences
+                                ._userIdTable(db),
+                            referencedColumn:
+                                $$UserTrainingDayTableReferences
+                                    ._userIdTable(db)
+                                    .id,
+                          )
+                          as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$UserTrainingDayTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDb,
+      $UserTrainingDayTable,
+      UserTrainingDayData,
+      $$UserTrainingDayTableFilterComposer,
+      $$UserTrainingDayTableOrderingComposer,
+      $$UserTrainingDayTableAnnotationComposer,
+      $$UserTrainingDayTableCreateCompanionBuilder,
+      $$UserTrainingDayTableUpdateCompanionBuilder,
+      (UserTrainingDayData, $$UserTrainingDayTableReferences),
+      UserTrainingDayData,
+      PrefetchHooks Function({bool userId})
     >;
 typedef $$UserFeedbackTableCreateCompanionBuilder =
     UserFeedbackCompanion Function({
@@ -16575,6 +17179,8 @@ class $AppDbManager {
       $$UserEquipmentTableTableManager(_db, _db.userEquipment);
   $$UserGoalTableTableManager get userGoal =>
       $$UserGoalTableTableManager(_db, _db.userGoal);
+  $$UserTrainingDayTableTableManager get userTrainingDay =>
+      $$UserTrainingDayTableTableManager(_db, _db.userTrainingDay);
   $$UserFeedbackTableTableManager get userFeedback =>
       $$UserFeedbackTableTableManager(_db, _db.userFeedback);
   $$WorkoutProgramTableTableManager get workoutProgram =>

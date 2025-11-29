@@ -241,6 +241,14 @@ class UserGoal extends Table {
   Set<Column> get primaryKey => {userId, objectiveId};
 }
 
+class UserTrainingDay extends Table {
+  IntColumn get userId =>
+      integer().named('user_id').references(AppUser, #id, onDelete: KeyAction.cascade)();
+  IntColumn get dayOfWeek => integer().named('day_of_week').check(dayOfWeek.isBetweenValues(1, 7))();
+  @override
+  Set<Column> get primaryKey => {userId, dayOfWeek};
+}
+
 class UserFeedback extends Table {
   IntColumn get userId =>
       integer().named('user_id').references(AppUser, #id, onDelete: KeyAction.cascade)();
@@ -343,6 +351,7 @@ class UserProgram extends Table {
     AppUser,
     UserEquipment,
     UserGoal,
+    UserTrainingDay,
     UserFeedback,
     Session,
     SessionExercise,
@@ -363,7 +372,7 @@ class AppDb extends _$AppDb {
 
   /// Bump quand tu touches au schéma.
   @override
-  int get schemaVersion => 35;
+  int get schemaVersion => 36;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -386,6 +395,8 @@ class AppDb extends _$AppDb {
       if (await _tableExists('program_day_exercise')) {
         await _addColumnIfMissing('program_day_exercise', 'scheduled_date', 'INTEGER');
       }
+      // Créer la table user_training_day si manquante
+      await _ensureUserTrainingDayTable();
       await customStatement('PRAGMA foreign_keys = ON;');
     },
 
@@ -421,6 +432,7 @@ class AppDb extends _$AppDb {
       }
 
       await _ensureExerciseRelationTable();
+      await _ensureUserTrainingDayTable();
 
       // On évite toute magie sur tables existantes (source d'erreurs).
       // On ne crée que les INDEX manquants, de façon idempotente.
@@ -504,6 +516,20 @@ class AppDb extends _$AppDb {
         FOREIGN KEY (src_exercise_id) REFERENCES exercise (id) ON DELETE CASCADE,
         FOREIGN KEY (dst_exercise_id) REFERENCES exercise (id) ON DELETE CASCADE,
         PRIMARY KEY (src_exercise_id, dst_exercise_id, relation_type)
+      );
+    ''');
+    }
+  }
+
+  Future<void> _ensureUserTrainingDayTable() async {
+    // crée la table user_training_day si absente
+    if (!await _tableExists('user_training_day')) {
+      await customStatement('''
+      CREATE TABLE IF NOT EXISTS user_training_day (
+        user_id     INTEGER NOT NULL,
+        day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
+        FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
+        PRIMARY KEY (user_id, day_of_week)
       );
     ''');
     }
