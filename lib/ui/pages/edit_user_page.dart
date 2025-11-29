@@ -51,7 +51,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
       text: widget.user.height?.toString() ?? "",
     );
 
-    
     gender = _normalizeGender(widget.user.gender);
     niveau = widget.user.level;
     metabolism = widget.user.metabolism;
@@ -126,7 +125,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
 
     await widget.userDao.updateOne(updated);
-    final List<int> goalsToSave = selectedGoalId != null ? [selectedGoalId!] : [];
+    final List<int> goalsToSave =
+        selectedGoalId != null ? [selectedGoalId!] : [];
     // Mis à jour de l'objectifs et des équipements
     await widget.goalDao.replace(widget.user.id!, goalsToSave);
     await widget.equipmentDao.replace(widget.user.id!, selectedEquipmentIds);
@@ -153,9 +153,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   selectedGoalId = obj.id;
                 }
               });
-            },  
-          activeColor: Colors.amber, 
-          checkColor: Colors.black,
+            },
+            activeColor: Colors.amber,
+            checkColor: Colors.black,
           ),
         ),
       ],
@@ -265,7 +265,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
             _multiSelectEquipment(),
 
             const SizedBox(height: 30),
-
 
             const SizedBox(height: 20),
 
