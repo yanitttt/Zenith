@@ -34,7 +34,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   String? niveau;
   String? metabolism;
   DateTime? birthDate;
-  List<int> selectedGoalIds = [];
+  int? selectedGoalId;
   List<int> selectedEquipmentIds = [];
   List<ObjectiveData> allObjectives = [];
   List<EquipmentData> allEquipments = [];
@@ -82,10 +82,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     allEquipments = await widget.equipmentDao.allEquipmentList();
 
     // Les IDs sélectionnés pour cet utilisateur
-    selectedGoalIds =
-        (await widget.goalDao.goalsOf(
-          widget.user.id!,
-        )).map((g) => g.objectiveId).toList();
+    final userGoals = (await widget.goalDao.goalsOf(widget.user.id!));
+    selectedGoalId = userGoals.isNotEmpty ? userGoals.first.objectiveId : null;
 
     selectedEquipmentIds =
         (await widget.equipmentDao.equipmentOf(
@@ -128,36 +126,36 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
 
     await widget.userDao.updateOne(updated);
-
-    // Mis à jour des objectifs et équipements
-    await widget.goalDao.replace(widget.user.id!, selectedGoalIds);
+    final List<int> goalsToSave = selectedGoalId != null ? [selectedGoalId!] : [];
+    // Mis à jour de l'objectifs et des équipements
+    await widget.goalDao.replace(widget.user.id!, goalsToSave);
     await widget.equipmentDao.replace(widget.user.id!, selectedEquipmentIds);
 
     if (!mounted) return;
     Navigator.pop(context, true);
   }
 
-  Widget _multiSelectGoals() {
+  Widget _selectGoal() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "Objectifs",
+          "Objectif",
           style: TextStyle(color: Colors.amber, fontSize: 16),
         ),
         ...allObjectives.map(
           (obj) => CheckboxListTile(
             title: Text(obj.name, style: const TextStyle(color: Colors.white)),
-            value: selectedGoalIds.contains(obj.id),
+            value: selectedGoalId == obj.id,
             onChanged: (val) {
               setState(() {
                 if (val == true) {
-                  selectedGoalIds.add(obj.id);
-                } else {
-                  selectedGoalIds.remove(obj.id);
+                  selectedGoalId = obj.id;
                 }
               });
-            },
+            },  
+          activeColor: Colors.amber, 
+          checkColor: Colors.black,
           ),
         ),
       ],
@@ -259,7 +257,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ),
             const SizedBox(height: 20),
             // Sélection des objectifs
-            _multiSelectGoals(),
+            _selectGoal(),
 
             const SizedBox(height: 20),
 
