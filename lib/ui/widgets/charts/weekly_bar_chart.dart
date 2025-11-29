@@ -12,7 +12,7 @@ class WeeklyBarChart extends StatelessWidget {
     // Convert map to list of BarChartGroupData
     final days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
     List<BarChartGroupData> barGroups = [];
-    
+
     int index = 0;
     for (var day in days) {
       final count = weeklyData[day] ?? 0;
