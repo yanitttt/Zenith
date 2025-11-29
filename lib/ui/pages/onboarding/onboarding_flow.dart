@@ -81,7 +81,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                                     builder: (_) =>
                                         ObjectivesPage(
                                           db: widget.db,
-                                          initialGoalIds: [],
+                                          initialGoalIds: [],  
                                           onNext: (objectiveIds) async {
                                             _objectiveIds = objectiveIds;
                                             if (!mounted) return;
@@ -90,7 +90,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                                                   builder: (_) =>
                                                       EquipmentPage(
                                                         db: widget.db,
-                                                        initialEquipmentIds: [],
+                                                        initialEquipmentIds: [], 
                                                         onNext: (
                                                             equipmentIds) async {
                                                           _equipmentIds =
@@ -227,7 +227,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
                 fit: BoxFit.contain,
               ),
             ),
-          ),
+          ), 
+
 
           const SizedBox(height: 20),
         ],
@@ -239,7 +240,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         child: ElevatedButton(
           onPressed: _startOnboarding,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFFD9BE77),
+            backgroundColor: const Color(0xFFD9BE77),
             foregroundColor: const Color(0xFF0b0f1a),
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(

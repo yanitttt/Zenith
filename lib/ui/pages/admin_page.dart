@@ -1,5 +1,8 @@
 // lib/ui/pages/admin_page.dart
+
 import 'package:flutter/material.dart';
+import 'package:recommandation_mobile/data/db/daos/user_equipment_dao.dart';
+import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_training_day_dao.dart';
 import 'package:recommandation_mobile/ui/pages/onboarding/profile_basics_page.dart';
 import 'package:drift/drift.dart' show Value;
@@ -9,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../../services/ImcService.dart';
 import 'onboarding/onboarding_flow.dart';
 import '../../core/prefs/app_prefs.dart';
+import 'edit_user_page.dart'; 
 import '../../services/notification_service.dart';
 
 class AdminPage extends StatefulWidget {
@@ -17,7 +21,7 @@ class AdminPage extends StatefulWidget {
   const AdminPage({
     super.key,
     required this.db,
-    required this.prefs,  // <-- AJOUT
+    required this.prefs,
   });
 
   @override
@@ -26,12 +30,16 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   late final UserDao _userDao;
+  late final UserGoalDao _goalDao; // DAO pour les objectifs
+  late final UserEquipmentDao _equipmentDao; // DAO pour les équipements
   late final UserTrainingDayDao _trainingDayDao;
 
   @override
   void initState() {
     super.initState();
     _userDao = UserDao(widget.db);
+    _goalDao = UserGoalDao(widget.db); // Initialisation
+    _equipmentDao = UserEquipmentDao(widget.db); // Initialisation
     _trainingDayDao = UserTrainingDayDao(widget.db);
   }
 
@@ -73,8 +81,8 @@ class _AdminPageState extends State<AdminPage> {
         body: "Votre profil a été supprimé avec succès.",
       );
 
-  // Reset prefs
-  await widget.prefs.setCurrentUserId(-1); // utiliser -1 plutôt que null
+  
+  await widget.prefs.setCurrentUserId(-1);
   await widget.prefs.setOnboarded(false);
 
   if (!mounted) return;
@@ -88,7 +96,6 @@ class _AdminPageState extends State<AdminPage> {
 }
 
 }
-
 
   @override
   Widget build(BuildContext context) {
@@ -142,9 +149,6 @@ class _AdminPageState extends State<AdminPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Bandeau stats
-
-
                     // Liste
                     Expanded(
                       child: StreamBuilder<List<AppUserData>>(
@@ -209,6 +213,7 @@ class _UserCardState extends State<_UserCard> {
   }
 
   Future<void> _loadTrainingDays() async {
+    // Accède directement au DAO via l'état du parent
     final dao = context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
     final days = await dao.getDayNumbersForUser(widget.u.id);
     if (mounted) {
@@ -304,7 +309,7 @@ class _UserCardState extends State<_UserCard> {
       ),
       child: Column(
         children: [
-          // En-tête du profil compact
+
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -316,7 +321,7 @@ class _UserCardState extends State<_UserCard> {
             ),
             child: Row(
               children: [
-                // Avatar simple
+                
                 Container(
                   width: 50,
                   height: 50,
@@ -443,35 +448,17 @@ class _UserCardState extends State<_UserCard> {
                         label: 'Modifier',
                         isCompact: true,
                         onPressed: () {
-                          final parent = context.findAncestorStateOfType<_AdminPageState>()!;
+                          final adminState = context.findAncestorStateOfType<_AdminPageState>()!;
+                          final db = adminState.widget.db;
+                          
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => ProfileBasicsPage(
-                                initialPrenom: widget.u.prenom ?? "",
-                                initialNom: widget.u.nom ?? "",
-                                initialBirthDate: widget.u.birthDate,
-                                initialWeight: widget.u.weight,
-                                initialHeight: widget.u.height,
-                                initialGender: (widget.u.gender == "homme") ? Gender.homme : Gender.femme,
-                                onNext: ({
-                                  required String prenom,
-                                  required String nom,
-                                  required DateTime birthDate,
-                                  required double weight,
-                                  required double height,
-                                  required Gender gender,
-                                }) async {
-                                  final updated = widget.u.copyWith(
-                                    prenom: Value(prenom),
-                                    nom: Value(nom),
-                                    birthDate: Value(birthDate),
-                                    weight: Value(weight),
-                                    height: Value(height),
-                                    gender: Value(gender == Gender.homme ? "homme" : "femme"),
-                                  );
-                                  await parent._userDao.updateOne(updated);
-                                  Navigator.pop(context);
-                                },
+                              builder: (_) => EditProfilePage(
+                                user: widget.u,
+                                db: db, 
+                                userDao: adminState._userDao,
+                                goalDao: adminState._goalDao, 
+                                equipmentDao: adminState._equipmentDao, 
                               ),
                             ),
                           );
