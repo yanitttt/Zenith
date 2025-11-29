@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
+import 'package:flutter/foundation.dart';
 
 class RecommendedExercise {
   final int id;
@@ -384,11 +385,16 @@ class RecommendationService {
     required int userId,
     required int exerciseId,
   }) async {
-    // Récupérer les 5 dernières sessions avec cet exercice
+    // Récupérer les 5 dernières sessions avec cet exercice ET leurs suggestions
     final query = '''
-      SELECT se.sets, se.reps, se.load, se.rpe, s.date_ts
+      SELECT se.sets, se.reps, se.load, se.rpe, s.date_ts,
+             pde.sets_suggestion, pde.reps_suggestion,
+             pd.id as program_day_id
       FROM session_exercise se
       JOIN session s ON s.id = se.session_id
+      LEFT JOIN program_day_exercise pde ON pde.program_day_id = s.program_day_id
+                                        AND pde.exercise_id = se.exercise_id
+      LEFT JOIN program_day pd ON pd.id = s.program_day_id
       WHERE s.user_id = ? AND se.exercise_id = ?
       ORDER BY s.date_ts DESC
       LIMIT 5
@@ -400,27 +406,63 @@ class RecommendationService {
         Variable.withInt(userId),
         Variable.withInt(exerciseId),
       ],
-      readsFrom: {db.session, db.sessionExercise},
+      readsFrom: {db.session, db.sessionExercise, db.programDayExercise, db.programDay},
     ).get();
 
     if (results.isEmpty) {
       return 0.0; // Pas d'historique = neutre
     }
 
-    // Calculer le RPE moyen
+    // Calculer le RPE moyen et analyser les performances vs suggestions
     double totalRpe = 0;
     int rpeCount = 0;
+    double performanceRatio = 0.0;
+    int performanceCount = 0;
+
     for (final row in results) {
       final rpe = row.read<double?>('rpe');
       if (rpe != null) {
         totalRpe += rpe;
         rpeCount++;
       }
+
+      // Comparer les performances réelles vs suggérées
+      final actualSets = row.read<int?>('sets');
+      final actualReps = row.read<int?>('reps');
+      final setsSuggestion = row.read<String?>('sets_suggestion');
+      final repsSuggestion = row.read<String?>('reps_suggestion');
+
+      if (actualSets != null && setsSuggestion != null) {
+        // Parser "3 séries" → 3
+        final suggestedSets = int.tryParse(setsSuggestion.replaceAll(RegExp(r'[^0-9]'), ''));
+        if (suggestedSets != null && suggestedSets > 0) {
+          final setsRatio = actualSets / suggestedSets;
+          performanceRatio += setsRatio;
+          performanceCount++;
+        }
+      }
+
+      if (actualReps != null && repsSuggestion != null) {
+        // Parser "10-12 reps" ou "10 reps" → prendre la moyenne ou valeur unique
+        final repsMatch = RegExp(r'(\d+)(?:-(\d+))?').firstMatch(repsSuggestion);
+        if (repsMatch != null) {
+          final minReps = int.parse(repsMatch.group(1)!);
+          final maxReps = repsMatch.group(2) != null ? int.parse(repsMatch.group(2)!) : minReps;
+          final suggestedReps = (minReps + maxReps) / 2;
+
+          if (suggestedReps > 0) {
+            final repsRatio = actualReps / suggestedReps;
+            performanceRatio += repsRatio;
+            performanceCount++;
+          }
+        }
+      }
     }
 
     if (rpeCount == 0) return 0.0;
 
     final avgRpe = totalRpe / rpeCount;
+    final avgPerformanceRatio = performanceCount > 0 ? performanceRatio / performanceCount : 1.0;
 
     // Analyser la tendance de la charge (progression)
     double loadTrend = 0.0;
@@ -433,35 +475,63 @@ class RecommendationService {
       }
     }
 
-    // Calcul de l'ajustement basé sur le RPE
+    // Calcul de l'ajustement basé sur le RPE ET les performances réelles
     double adjustment = 0.0;
 
-    if (avgRpe > 8.5) {
-      // Trop difficile : ajustement négatif (-0.3 à -0.5)
+    // 1. Pénalité FORTE si l'utilisateur n'arrive pas à compléter les séries/reps suggérées
+    if (avgPerformanceRatio < 0.5) {
+      // L'utilisateur fait moins de 50% de ce qui est suggéré → TROP DIFFICILE
+      adjustment = -0.8;
+      debugPrint('[PERF_ADJ] Exercice $exerciseId: Performance très faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.8');
+    } else if (avgPerformanceRatio < 0.7) {
+      // L'utilisateur fait 50-70% de ce qui est suggéré → Difficile
       adjustment = -0.5;
-    } else if (avgRpe > 7.5) {
-      // Difficile mais gérable : léger ajustement négatif
+      debugPrint('[PERF_ADJ] Exercice $exerciseId: Performance faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.5');
+    } else if (avgPerformanceRatio < 0.9) {
+      // L'utilisateur fait 70-90% → Légèrement difficile
       adjustment = -0.2;
-    } else if (avgRpe < 5.5) {
-      // Trop facile : ajustement positif (+0.3 à +0.5)
-      adjustment = 0.5;
-    } else if (avgRpe < 6.5) {
-      // Facile : léger ajustement positif
-      adjustment = 0.2;
-    } else {
-      // RPE dans la zone optimale (6.5-7.5)
-      // Si progression, légèrement positif
-      if (loadTrend > 0.1) {
-        adjustment = 0.1;
+      debugPrint('[PERF_ADJ] Exercice $exerciseId: Performance acceptable (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.2');
+    } else if (avgPerformanceRatio >= 1.0) {
+      // L'utilisateur fait 100%+ des suggestions → Regarder le RPE pour affiner
+      if (avgRpe > 8.5) {
+        // Complète les suggestions mais RPE trop élevé → Encore trop dur
+        adjustment = -0.3;
+        debugPrint('[PERF_ADJ] Exercice $exerciseId: Complète mais RPE élevé (${avgRpe.toStringAsFixed(1)}) → -0.3');
+      } else if (avgRpe < 5.5) {
+        // Complète facilement → Trop facile
+        adjustment = 0.5;
+        debugPrint('[PERF_ADJ] Exercice $exerciseId: Trop facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.5');
+      } else if (avgRpe < 6.5) {
+        // Complète avec RPE faible → Facile
+        adjustment = 0.2;
+        debugPrint('[PERF_ADJ] Exercice $exerciseId: Facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.2');
+      } else {
+        // RPE dans la zone optimale (6.5-7.5)
+        if (loadTrend > 0.1) {
+          adjustment = 0.1;
+          debugPrint('[PERF_ADJ] Exercice $exerciseId: Zone optimale avec progression → +0.1');
+        } else {
+          debugPrint('[PERF_ADJ] Exercice $exerciseId: Zone optimale → neutre');
+        }
       }
     }
 
-    // Ajustement bonus si bonne progression même avec RPE élevé
-    if (loadTrend > 0.2 && avgRpe < 8.0) {
+    // 2. Ajustement bonus si bonne progression de charge ET RPE contrôlé
+    if (loadTrend > 0.2 && avgRpe < 8.0 && avgPerformanceRatio >= 0.9) {
       adjustment += 0.2;
+      debugPrint('[PERF_ADJ] Exercice $exerciseId: Bonus progression (+${(loadTrend * 100).toStringAsFixed(0)}%) → +0.2');
     }
 
-    return adjustment.clamp(-1.0, 1.0);
+    // 3. Pénalité supplémentaire si régression de charge
+    if (loadTrend < -0.1) {
+      adjustment -= 0.2;
+      debugPrint('[PERF_ADJ] Exercice $exerciseId: Régression de charge (${(loadTrend * 100).toStringAsFixed(0)}%) → -0.2');
+    }
+
+    final finalAdjustment = adjustment.clamp(-1.0, 1.0);
+    debugPrint('[PERF_ADJ] Exercice $exerciseId: Ajustement final = $finalAdjustment');
+
+    return finalAdjustment;
   }
 
   /// Analyse les feedbacks pour un exercice et calcule un ajustement

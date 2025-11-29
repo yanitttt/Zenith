@@ -424,12 +424,44 @@ class ProgramGeneratorService {
       notes = 'Exercice principal - charge maximale';
     }
 
+    // Ajustements adaptatifs basés sur l'historique
+    if (exercise.performanceAdjustment <= -0.5) {
+      // Difficulté élevée (échec significatif) : réduire le volume
+      sets = max(1, sets - 1);
+      reps = _adjustReps(reps, -2);
+      if (notes == null) notes = "Réduire la charge si nécessaire";
+      else notes = "$notes - Réduire charge";
+    } else if (exercise.performanceAdjustment <= -0.2) {
+      // Difficulté modérée : réduire légèrement les reps
+      reps = _adjustReps(reps, -1);
+    } else if (exercise.performanceAdjustment >= 0.5) {
+      // Trop facile : augmenter légèrement le volume
+      reps = _adjustReps(reps, 2);
+    }
+
     return {
       'sets': '$sets séries',
       'reps': '$reps reps',
       'rest': rest,
       'notes': notes,
     };
+  }
+
+  String _adjustReps(String repsStr, int delta) {
+    final match = RegExp(r'(\d+)(?:-(\d+))?').firstMatch(repsStr);
+    if (match != null) {
+      int min = int.parse(match.group(1)!);
+      int? maxVal = match.group(2) != null ? int.parse(match.group(2)!) : null;
+
+      min = (min + delta).clamp(1, 100);
+      if (maxVal != null) {
+        maxVal = (maxVal + delta).clamp(min, 100);
+        return '$min-$maxVal';
+      } else {
+        return '$min';
+      }
+    }
+    return repsStr;
   }
 
   Future<TrainingModalityData?> _getModalityForExercise({
