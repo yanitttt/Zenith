@@ -4,12 +4,14 @@ import '../../theme/app_theme.dart';
 
 class EquipmentPage extends StatefulWidget {
   final AppDb db;
-  final Future<void> Function(List<int> equipmentIds) onNext;
+  final List<int> initialEquipmentIds;
+  final Future<void> Function(List<int> equipmentIds)? onNext;
 
   const EquipmentPage({
     super.key,
     required this.db,
-    required this.onNext,
+    required this.initialEquipmentIds,
+    this.onNext,
   });
 
   @override
@@ -26,6 +28,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
   void initState() {
     super.initState();
     _loadEquipment();
+    _selectedEquipmentIds = widget.initialEquipmentIds.toSet();
   }
 
   Future<void> _loadEquipment() async {
@@ -69,11 +72,20 @@ class _EquipmentPageState extends State<EquipmentPage> {
     }
 
     setState(() => _submitting = true);
-    try {
-      await widget.onNext(_selectedEquipmentIds.toList());
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+    final List<int> resultIds = _selectedEquipmentIds.toList();
+    if (widget.onNext != null) {
+      try {
+            await widget.onNext!(resultIds);
+        } catch (e) {
+            debugPrint('Erreur lors de la sauvegarde onNext: $e');
+        }
+        } else {
+        if (!mounted) return;
+        Navigator.pop(context, resultIds);
     }
+    if (mounted){
+        setState(() => _submitting = false);
+        }
   }
 
   @override
