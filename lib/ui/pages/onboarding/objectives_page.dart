@@ -4,12 +4,14 @@ import '../../theme/app_theme.dart';
 
 class ObjectivesPage extends StatefulWidget {
   final AppDb db;
-  final Future<void> Function(List<int> objectiveIds) onNext;
+  final List<int> initialGoalIds;
+  final Future<void> Function(List<int> objectiveIds)? onNext;
 
   const ObjectivesPage({
     super.key,
     required this.db,
-    required this.onNext,
+    required this.initialGoalIds,
+    this.onNext,
   });
 
   @override
@@ -26,6 +28,9 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
   void initState() {
     super.initState();
     _loadObjectives();
+    if (widget.initialGoalIds.isNotEmpty) {
+      _selectedObjectiveId = widget.initialGoalIds.first;
+    }
   }
 
   Future<void> _loadObjectives() async {
@@ -62,20 +67,29 @@ class _ObjectivesPageState extends State<ObjectivesPage> {
     if (_selectedObjectiveId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Sélectionne au moins un objectif'),
+          content: Text('Sélectionne un objectif'),
         ),
       );
       return;
     }
 
     setState(() => _submitting = true);
-    try {
-      await widget.onNext([_selectedObjectiveId!]);
-    } finally {
-      if (mounted) setState(() => _submitting = false);
+    final List<int> resultIds = [_selectedObjectiveId!];
+    if (widget.onNext != null) {
+      try {
+        await widget.onNext!(resultIds);
+      } catch (e) {
+        debugPrint('Erreur lors de la sauvegarde onNext: $e');
+      }
+      } else {
+        if (!mounted) return;
+      Navigator.pop(context, resultIds);
     }
+    if (mounted){
+        setState(() => _submitting = false);
+        }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
