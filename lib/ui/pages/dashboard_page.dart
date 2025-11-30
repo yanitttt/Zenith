@@ -107,6 +107,7 @@ class _DashboardPageState extends State<DashboardPage> {
               final muscleStats = data?.muscleStats ?? [];
               final totalHeures = data?.totalHeures ?? 0.0;
               final totalSeances = data?.totalSeances ?? 0;
+              final moyennePlaisir = data?.moyennePlaisir ?? 0.0;
 
 
               return Column(
@@ -186,17 +187,14 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: _buildCompactStatCard(
-                            "Progression",
-                            "${volumeVariation > 0 ? '+' : ''}$volumeVariation%",
-                            volumeVariation >= 0
-                                ? Icons.trending_up
-                                : Icons.trending_down,
-                            volumeVariation >= 0
-                                ? Colors.greenAccent
-                                : Colors.redAccent,
-                          ),
-                        ),
+  child: _buildCompactStatCard(
+    "Streak",
+    "$streakWeeks sem.", // nombre de semaines
+    Icons.local_fire_department, // ou un autre icône qui te plaît
+    Colors.redAccent, // couleur que tu veux
+  ),
+),
+
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildCompactStatCard(

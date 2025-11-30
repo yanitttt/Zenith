@@ -17,6 +17,7 @@ class DashboardData {
   final double totalHeures;
   final int totalSeances;
   final List<MuscleStat> muscleStats;
+  final double moyennePlaisir;
 
 
   DashboardData({
@@ -27,6 +28,7 @@ class DashboardData {
     required this.muscleStats,
     required this.totalHeures,
     required this.totalSeances,
+    required this.moyennePlaisir,
   });
 }
 
@@ -509,6 +511,7 @@ class DashboardService {
         muscleStats: muscleStats,
         totalHeures: totalHeures,
         totalSeances: totalSeances,
+        moyennePlaisir: await getMoyennePlaisir(userId),
       );
     });
   }
