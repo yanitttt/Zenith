@@ -376,13 +376,14 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
             ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Row(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   _buildSuggestionChip(
                     icon: Icons.repeat,
                     text: exercise.setsSuggestion ?? '-',
                   ),
-                  const SizedBox(width: 8),
                   _buildSuggestionChip(
                     icon: Icons.fitness_center,
                     text: exercise.repsSuggestion ?? '-',
