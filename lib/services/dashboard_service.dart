@@ -14,7 +14,10 @@ class DashboardData {
   final double volumeVariation;
   final double efficiency;
   final Map<String, int> weeklyAttendance;
+  final double totalHeures;
+  final int totalSeances;
   final List<MuscleStat> muscleStats;
+
 
   DashboardData({
     required this.streakWeeks,
@@ -22,6 +25,8 @@ class DashboardData {
     required this.efficiency,
     required this.weeklyAttendance,
     required this.muscleStats,
+    required this.totalHeures,
+    required this.totalSeances,
   });
 }
 
@@ -182,19 +187,15 @@ class DashboardService {
   }
 
   /// Temps total passé à la salle depuis le début (formatté en "XX h")
-  Future<String> getTotalHeuresEntrainement(int userId) async {
-    final result =
-    await db
-        .customSelect(
+  Future<double> getTotalHeuresEntrainement(int userId) async {
+    final result = await db.customSelect(
       'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ?',
       variables: [Variable.withInt(userId)],
       readsFrom: {db.session},
-    )
-        .getSingle();
+    ).getSingle();
 
     final minutes = result.read<int?>('total_min') ?? 0;
-    final hours = (minutes / 60).toStringAsFixed(1);
-    return "$hours h";
+    return minutes / 60;
   }
 
   /// Nombre total de séances terminées depuis le début
@@ -497,6 +498,8 @@ class DashboardService {
       final efficiency = await getTrainingEfficiency(userId);
       final weeklyAttendance = await getAssiduiteSemaine(userId);
       final muscleStats = await getRepartitionMusculaire(userId);
+      final totalHeures = await getTotalHeuresEntrainement(userId);
+      final totalSeances = await getTotalSeances(userId);
 
       return DashboardData(
         streakWeeks: streak,
@@ -504,6 +507,8 @@ class DashboardService {
         efficiency: efficiency,
         weeklyAttendance: weeklyAttendance,
         muscleStats: muscleStats,
+        totalHeures: totalHeures,
+        totalSeances: totalSeances,
       );
     });
   }

@@ -26,6 +26,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _todayDate = "";
   int? _userId;
 
+
   // Metrics
   Stream<DashboardData>? _dashboardStream;
 
@@ -72,6 +73,12 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  String formatHeures(double h) {
+    int hours = h.floor();
+    int minutes = ((h - hours) * 60).round();
+    return "$hours h ${minutes.toString().padLeft(2, '0')} min";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,6 +105,9 @@ class _DashboardPageState extends State<DashboardPage> {
               final efficiency = data?.efficiency ?? 0.0;
               final weeklyAttendance = data?.weeklyAttendance ?? {};
               final muscleStats = data?.muscleStats ?? [];
+              final totalHeures = data?.totalHeures ?? 0.0;
+              final totalSeances = data?.totalSeances ?? 0;
+
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -168,10 +178,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Expanded(
                           child: _buildCompactStatCard(
-                            "Série",
-                            "$streakWeeks sem.",
-                            Icons.local_fire_department,
-                            Colors.orangeAccent,
+                            "Temps total",
+                            formatHeures(totalHeures),
+                            Icons.timer,
+                            Colors.purpleAccent,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -190,10 +200,10 @@ class _DashboardPageState extends State<DashboardPage> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _buildCompactStatCard(
-                            "Intensité",
-                            "$efficiency kg/min",
-                            Icons.speed,
-                            Colors.blueAccent,
+                            "Séances total",
+                            "$totalSeances",
+                            Icons.fitness_center,
+                            Colors.orangeAccent,
                           ),
                         ),
                       ],
