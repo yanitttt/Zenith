@@ -6424,6 +6424,38 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _previousSetsSuggestionMeta =
+      const VerificationMeta('previousSetsSuggestion');
+  @override
+  late final GeneratedColumn<String> previousSetsSuggestion =
+      GeneratedColumn<String>(
+        'previous_sets_suggestion',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _previousRepsSuggestionMeta =
+      const VerificationMeta('previousRepsSuggestion');
+  @override
+  late final GeneratedColumn<String> previousRepsSuggestion =
+      GeneratedColumn<String>(
+        'previous_reps_suggestion',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _previousRestSuggestionMeta =
+      const VerificationMeta('previousRestSuggestion');
+  @override
+  late final GeneratedColumn<int> previousRestSuggestion = GeneratedColumn<int>(
+    'previous_rest_suggestion',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _notesMeta = const VerificationMeta('notes');
   @override
   late final GeneratedColumn<String> notes = GeneratedColumn<String>(
@@ -6455,6 +6487,9 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
     setsSuggestion,
     repsSuggestion,
     restSuggestionSec,
+    previousSetsSuggestion,
+    previousRepsSuggestion,
+    previousRestSuggestion,
     notes,
     scheduledDate,
   ];
@@ -6533,6 +6568,33 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
         ),
       );
     }
+    if (data.containsKey('previous_sets_suggestion')) {
+      context.handle(
+        _previousSetsSuggestionMeta,
+        previousSetsSuggestion.isAcceptableOrUnknown(
+          data['previous_sets_suggestion']!,
+          _previousSetsSuggestionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('previous_reps_suggestion')) {
+      context.handle(
+        _previousRepsSuggestionMeta,
+        previousRepsSuggestion.isAcceptableOrUnknown(
+          data['previous_reps_suggestion']!,
+          _previousRepsSuggestionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('previous_rest_suggestion')) {
+      context.handle(
+        _previousRestSuggestionMeta,
+        previousRestSuggestion.isAcceptableOrUnknown(
+          data['previous_rest_suggestion']!,
+          _previousRestSuggestionMeta,
+        ),
+      );
+    }
     if (data.containsKey('notes')) {
       context.handle(
         _notesMeta,
@@ -6593,6 +6655,18 @@ class $ProgramDayExerciseTable extends ProgramDayExercise
         DriftSqlType.int,
         data['${effectivePrefix}rest_suggestion_sec'],
       ),
+      previousSetsSuggestion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_sets_suggestion'],
+      ),
+      previousRepsSuggestion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}previous_reps_suggestion'],
+      ),
+      previousRestSuggestion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}previous_rest_suggestion'],
+      ),
       notes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}notes'],
@@ -6620,6 +6694,9 @@ class ProgramDayExerciseData extends DataClass
   final String? setsSuggestion;
   final String? repsSuggestion;
   final int? restSuggestionSec;
+  final String? previousSetsSuggestion;
+  final String? previousRepsSuggestion;
+  final int? previousRestSuggestion;
   final String? notes;
   final DateTime? scheduledDate;
   const ProgramDayExerciseData({
@@ -6631,6 +6708,9 @@ class ProgramDayExerciseData extends DataClass
     this.setsSuggestion,
     this.repsSuggestion,
     this.restSuggestionSec,
+    this.previousSetsSuggestion,
+    this.previousRepsSuggestion,
+    this.previousRestSuggestion,
     this.notes,
     this.scheduledDate,
   });
@@ -6652,6 +6732,19 @@ class ProgramDayExerciseData extends DataClass
     }
     if (!nullToAbsent || restSuggestionSec != null) {
       map['rest_suggestion_sec'] = Variable<int>(restSuggestionSec);
+    }
+    if (!nullToAbsent || previousSetsSuggestion != null) {
+      map['previous_sets_suggestion'] = Variable<String>(
+        previousSetsSuggestion,
+      );
+    }
+    if (!nullToAbsent || previousRepsSuggestion != null) {
+      map['previous_reps_suggestion'] = Variable<String>(
+        previousRepsSuggestion,
+      );
+    }
+    if (!nullToAbsent || previousRestSuggestion != null) {
+      map['previous_rest_suggestion'] = Variable<int>(previousRestSuggestion);
     }
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -6684,6 +6777,18 @@ class ProgramDayExerciseData extends DataClass
           restSuggestionSec == null && nullToAbsent
               ? const Value.absent()
               : Value(restSuggestionSec),
+      previousSetsSuggestion:
+          previousSetsSuggestion == null && nullToAbsent
+              ? const Value.absent()
+              : Value(previousSetsSuggestion),
+      previousRepsSuggestion:
+          previousRepsSuggestion == null && nullToAbsent
+              ? const Value.absent()
+              : Value(previousRepsSuggestion),
+      previousRestSuggestion:
+          previousRestSuggestion == null && nullToAbsent
+              ? const Value.absent()
+              : Value(previousRestSuggestion),
       notes:
           notes == null && nullToAbsent ? const Value.absent() : Value(notes),
       scheduledDate:
@@ -6707,6 +6812,15 @@ class ProgramDayExerciseData extends DataClass
       setsSuggestion: serializer.fromJson<String?>(json['setsSuggestion']),
       repsSuggestion: serializer.fromJson<String?>(json['repsSuggestion']),
       restSuggestionSec: serializer.fromJson<int?>(json['restSuggestionSec']),
+      previousSetsSuggestion: serializer.fromJson<String?>(
+        json['previousSetsSuggestion'],
+      ),
+      previousRepsSuggestion: serializer.fromJson<String?>(
+        json['previousRepsSuggestion'],
+      ),
+      previousRestSuggestion: serializer.fromJson<int?>(
+        json['previousRestSuggestion'],
+      ),
       notes: serializer.fromJson<String?>(json['notes']),
       scheduledDate: serializer.fromJson<DateTime?>(json['scheduledDate']),
     );
@@ -6723,6 +6837,13 @@ class ProgramDayExerciseData extends DataClass
       'setsSuggestion': serializer.toJson<String?>(setsSuggestion),
       'repsSuggestion': serializer.toJson<String?>(repsSuggestion),
       'restSuggestionSec': serializer.toJson<int?>(restSuggestionSec),
+      'previousSetsSuggestion': serializer.toJson<String?>(
+        previousSetsSuggestion,
+      ),
+      'previousRepsSuggestion': serializer.toJson<String?>(
+        previousRepsSuggestion,
+      ),
+      'previousRestSuggestion': serializer.toJson<int?>(previousRestSuggestion),
       'notes': serializer.toJson<String?>(notes),
       'scheduledDate': serializer.toJson<DateTime?>(scheduledDate),
     };
@@ -6737,6 +6858,9 @@ class ProgramDayExerciseData extends DataClass
     Value<String?> setsSuggestion = const Value.absent(),
     Value<String?> repsSuggestion = const Value.absent(),
     Value<int?> restSuggestionSec = const Value.absent(),
+    Value<String?> previousSetsSuggestion = const Value.absent(),
+    Value<String?> previousRepsSuggestion = const Value.absent(),
+    Value<int?> previousRestSuggestion = const Value.absent(),
     Value<String?> notes = const Value.absent(),
     Value<DateTime?> scheduledDate = const Value.absent(),
   }) => ProgramDayExerciseData(
@@ -6753,6 +6877,18 @@ class ProgramDayExerciseData extends DataClass
         restSuggestionSec.present
             ? restSuggestionSec.value
             : this.restSuggestionSec,
+    previousSetsSuggestion:
+        previousSetsSuggestion.present
+            ? previousSetsSuggestion.value
+            : this.previousSetsSuggestion,
+    previousRepsSuggestion:
+        previousRepsSuggestion.present
+            ? previousRepsSuggestion.value
+            : this.previousRepsSuggestion,
+    previousRestSuggestion:
+        previousRestSuggestion.present
+            ? previousRestSuggestion.value
+            : this.previousRestSuggestion,
     notes: notes.present ? notes.value : this.notes,
     scheduledDate:
         scheduledDate.present ? scheduledDate.value : this.scheduledDate,
@@ -6781,6 +6917,18 @@ class ProgramDayExerciseData extends DataClass
           data.restSuggestionSec.present
               ? data.restSuggestionSec.value
               : this.restSuggestionSec,
+      previousSetsSuggestion:
+          data.previousSetsSuggestion.present
+              ? data.previousSetsSuggestion.value
+              : this.previousSetsSuggestion,
+      previousRepsSuggestion:
+          data.previousRepsSuggestion.present
+              ? data.previousRepsSuggestion.value
+              : this.previousRepsSuggestion,
+      previousRestSuggestion:
+          data.previousRestSuggestion.present
+              ? data.previousRestSuggestion.value
+              : this.previousRestSuggestion,
       notes: data.notes.present ? data.notes.value : this.notes,
       scheduledDate:
           data.scheduledDate.present
@@ -6800,6 +6948,9 @@ class ProgramDayExerciseData extends DataClass
           ..write('setsSuggestion: $setsSuggestion, ')
           ..write('repsSuggestion: $repsSuggestion, ')
           ..write('restSuggestionSec: $restSuggestionSec, ')
+          ..write('previousSetsSuggestion: $previousSetsSuggestion, ')
+          ..write('previousRepsSuggestion: $previousRepsSuggestion, ')
+          ..write('previousRestSuggestion: $previousRestSuggestion, ')
           ..write('notes: $notes, ')
           ..write('scheduledDate: $scheduledDate')
           ..write(')'))
@@ -6816,6 +6967,9 @@ class ProgramDayExerciseData extends DataClass
     setsSuggestion,
     repsSuggestion,
     restSuggestionSec,
+    previousSetsSuggestion,
+    previousRepsSuggestion,
+    previousRestSuggestion,
     notes,
     scheduledDate,
   );
@@ -6831,6 +6985,9 @@ class ProgramDayExerciseData extends DataClass
           other.setsSuggestion == this.setsSuggestion &&
           other.repsSuggestion == this.repsSuggestion &&
           other.restSuggestionSec == this.restSuggestionSec &&
+          other.previousSetsSuggestion == this.previousSetsSuggestion &&
+          other.previousRepsSuggestion == this.previousRepsSuggestion &&
+          other.previousRestSuggestion == this.previousRestSuggestion &&
           other.notes == this.notes &&
           other.scheduledDate == this.scheduledDate);
 }
@@ -6845,6 +7002,9 @@ class ProgramDayExerciseCompanion
   final Value<String?> setsSuggestion;
   final Value<String?> repsSuggestion;
   final Value<int?> restSuggestionSec;
+  final Value<String?> previousSetsSuggestion;
+  final Value<String?> previousRepsSuggestion;
+  final Value<int?> previousRestSuggestion;
   final Value<String?> notes;
   final Value<DateTime?> scheduledDate;
   const ProgramDayExerciseCompanion({
@@ -6856,6 +7016,9 @@ class ProgramDayExerciseCompanion
     this.setsSuggestion = const Value.absent(),
     this.repsSuggestion = const Value.absent(),
     this.restSuggestionSec = const Value.absent(),
+    this.previousSetsSuggestion = const Value.absent(),
+    this.previousRepsSuggestion = const Value.absent(),
+    this.previousRestSuggestion = const Value.absent(),
     this.notes = const Value.absent(),
     this.scheduledDate = const Value.absent(),
   });
@@ -6868,6 +7031,9 @@ class ProgramDayExerciseCompanion
     this.setsSuggestion = const Value.absent(),
     this.repsSuggestion = const Value.absent(),
     this.restSuggestionSec = const Value.absent(),
+    this.previousSetsSuggestion = const Value.absent(),
+    this.previousRepsSuggestion = const Value.absent(),
+    this.previousRestSuggestion = const Value.absent(),
     this.notes = const Value.absent(),
     this.scheduledDate = const Value.absent(),
   }) : programDayId = Value(programDayId),
@@ -6882,6 +7048,9 @@ class ProgramDayExerciseCompanion
     Expression<String>? setsSuggestion,
     Expression<String>? repsSuggestion,
     Expression<int>? restSuggestionSec,
+    Expression<String>? previousSetsSuggestion,
+    Expression<String>? previousRepsSuggestion,
+    Expression<int>? previousRestSuggestion,
     Expression<String>? notes,
     Expression<DateTime>? scheduledDate,
   }) {
@@ -6894,6 +7063,12 @@ class ProgramDayExerciseCompanion
       if (setsSuggestion != null) 'sets_suggestion': setsSuggestion,
       if (repsSuggestion != null) 'reps_suggestion': repsSuggestion,
       if (restSuggestionSec != null) 'rest_suggestion_sec': restSuggestionSec,
+      if (previousSetsSuggestion != null)
+        'previous_sets_suggestion': previousSetsSuggestion,
+      if (previousRepsSuggestion != null)
+        'previous_reps_suggestion': previousRepsSuggestion,
+      if (previousRestSuggestion != null)
+        'previous_rest_suggestion': previousRestSuggestion,
       if (notes != null) 'notes': notes,
       if (scheduledDate != null) 'scheduled_date': scheduledDate,
     });
@@ -6908,6 +7083,9 @@ class ProgramDayExerciseCompanion
     Value<String?>? setsSuggestion,
     Value<String?>? repsSuggestion,
     Value<int?>? restSuggestionSec,
+    Value<String?>? previousSetsSuggestion,
+    Value<String?>? previousRepsSuggestion,
+    Value<int?>? previousRestSuggestion,
     Value<String?>? notes,
     Value<DateTime?>? scheduledDate,
   }) {
@@ -6920,6 +7098,12 @@ class ProgramDayExerciseCompanion
       setsSuggestion: setsSuggestion ?? this.setsSuggestion,
       repsSuggestion: repsSuggestion ?? this.repsSuggestion,
       restSuggestionSec: restSuggestionSec ?? this.restSuggestionSec,
+      previousSetsSuggestion:
+          previousSetsSuggestion ?? this.previousSetsSuggestion,
+      previousRepsSuggestion:
+          previousRepsSuggestion ?? this.previousRepsSuggestion,
+      previousRestSuggestion:
+          previousRestSuggestion ?? this.previousRestSuggestion,
       notes: notes ?? this.notes,
       scheduledDate: scheduledDate ?? this.scheduledDate,
     );
@@ -6952,6 +7136,21 @@ class ProgramDayExerciseCompanion
     if (restSuggestionSec.present) {
       map['rest_suggestion_sec'] = Variable<int>(restSuggestionSec.value);
     }
+    if (previousSetsSuggestion.present) {
+      map['previous_sets_suggestion'] = Variable<String>(
+        previousSetsSuggestion.value,
+      );
+    }
+    if (previousRepsSuggestion.present) {
+      map['previous_reps_suggestion'] = Variable<String>(
+        previousRepsSuggestion.value,
+      );
+    }
+    if (previousRestSuggestion.present) {
+      map['previous_rest_suggestion'] = Variable<int>(
+        previousRestSuggestion.value,
+      );
+    }
     if (notes.present) {
       map['notes'] = Variable<String>(notes.value);
     }
@@ -6972,6 +7171,9 @@ class ProgramDayExerciseCompanion
           ..write('setsSuggestion: $setsSuggestion, ')
           ..write('repsSuggestion: $repsSuggestion, ')
           ..write('restSuggestionSec: $restSuggestionSec, ')
+          ..write('previousSetsSuggestion: $previousSetsSuggestion, ')
+          ..write('previousRepsSuggestion: $previousRepsSuggestion, ')
+          ..write('previousRestSuggestion: $previousRestSuggestion, ')
           ..write('notes: $notes, ')
           ..write('scheduledDate: $scheduledDate')
           ..write(')'))
@@ -16457,6 +16659,9 @@ typedef $$ProgramDayExerciseTableCreateCompanionBuilder =
       Value<String?> setsSuggestion,
       Value<String?> repsSuggestion,
       Value<int?> restSuggestionSec,
+      Value<String?> previousSetsSuggestion,
+      Value<String?> previousRepsSuggestion,
+      Value<int?> previousRestSuggestion,
       Value<String?> notes,
       Value<DateTime?> scheduledDate,
     });
@@ -16470,6 +16675,9 @@ typedef $$ProgramDayExerciseTableUpdateCompanionBuilder =
       Value<String?> setsSuggestion,
       Value<String?> repsSuggestion,
       Value<int?> restSuggestionSec,
+      Value<String?> previousSetsSuggestion,
+      Value<String?> previousRepsSuggestion,
+      Value<int?> previousRestSuggestion,
       Value<String?> notes,
       Value<DateTime?> scheduledDate,
     });
@@ -16581,6 +16789,21 @@ class $$ProgramDayExerciseTableFilterComposer
 
   ColumnFilters<int> get restSuggestionSec => $composableBuilder(
     column: $table.restSuggestionSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previousSetsSuggestion => $composableBuilder(
+    column: $table.previousSetsSuggestion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get previousRepsSuggestion => $composableBuilder(
+    column: $table.previousRepsSuggestion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get previousRestSuggestion => $composableBuilder(
+    column: $table.previousRestSuggestion,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -16698,6 +16921,21 @@ class $$ProgramDayExerciseTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get previousSetsSuggestion => $composableBuilder(
+    column: $table.previousSetsSuggestion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get previousRepsSuggestion => $composableBuilder(
+    column: $table.previousRepsSuggestion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get previousRestSuggestion => $composableBuilder(
+    column: $table.previousRestSuggestion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get notes => $composableBuilder(
     column: $table.notes,
     builder: (column) => ColumnOrderings(column),
@@ -16805,6 +17043,21 @@ class $$ProgramDayExerciseTableAnnotationComposer
 
   GeneratedColumn<int> get restSuggestionSec => $composableBuilder(
     column: $table.restSuggestionSec,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get previousSetsSuggestion => $composableBuilder(
+    column: $table.previousSetsSuggestion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get previousRepsSuggestion => $composableBuilder(
+    column: $table.previousRepsSuggestion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get previousRestSuggestion => $composableBuilder(
+    column: $table.previousRestSuggestion,
     builder: (column) => column,
   );
 
@@ -16937,6 +17190,9 @@ class $$ProgramDayExerciseTableTableManager
                 Value<String?> setsSuggestion = const Value.absent(),
                 Value<String?> repsSuggestion = const Value.absent(),
                 Value<int?> restSuggestionSec = const Value.absent(),
+                Value<String?> previousSetsSuggestion = const Value.absent(),
+                Value<String?> previousRepsSuggestion = const Value.absent(),
+                Value<int?> previousRestSuggestion = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> scheduledDate = const Value.absent(),
               }) => ProgramDayExerciseCompanion(
@@ -16948,6 +17204,9 @@ class $$ProgramDayExerciseTableTableManager
                 setsSuggestion: setsSuggestion,
                 repsSuggestion: repsSuggestion,
                 restSuggestionSec: restSuggestionSec,
+                previousSetsSuggestion: previousSetsSuggestion,
+                previousRepsSuggestion: previousRepsSuggestion,
+                previousRestSuggestion: previousRestSuggestion,
                 notes: notes,
                 scheduledDate: scheduledDate,
               ),
@@ -16961,6 +17220,9 @@ class $$ProgramDayExerciseTableTableManager
                 Value<String?> setsSuggestion = const Value.absent(),
                 Value<String?> repsSuggestion = const Value.absent(),
                 Value<int?> restSuggestionSec = const Value.absent(),
+                Value<String?> previousSetsSuggestion = const Value.absent(),
+                Value<String?> previousRepsSuggestion = const Value.absent(),
+                Value<int?> previousRestSuggestion = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime?> scheduledDate = const Value.absent(),
               }) => ProgramDayExerciseCompanion.insert(
@@ -16972,6 +17234,9 @@ class $$ProgramDayExerciseTableTableManager
                 setsSuggestion: setsSuggestion,
                 repsSuggestion: repsSuggestion,
                 restSuggestionSec: restSuggestionSec,
+                previousSetsSuggestion: previousSetsSuggestion,
+                previousRepsSuggestion: previousRepsSuggestion,
+                previousRestSuggestion: previousRestSuggestion,
                 notes: notes,
                 scheduledDate: scheduledDate,
               ),

@@ -100,7 +100,6 @@ const _convRelationType = EnumTextConverter([
 
 // Wrappers null-aware (pour colonnes NULL)
 const _nullableLevel = NullAwareTypeConverter.wrap(_convLevel);
-
 const _nullableMetabolism = NullAwareTypeConverter.wrap(_convMetabolism);
 
 /* ===================== TABLES — PARTIE 1 : CATALOGUE ===================== */
@@ -395,6 +394,15 @@ class ProgramDayExercise extends Table {
   TextColumn get repsSuggestion => text().named('reps_suggestion').nullable()();
   IntColumn get restSuggestionSec =>
       integer().named('rest_suggestion_sec').nullable()();
+
+  // Colonnes pour stocker les anciennes valeurs après adaptation
+  TextColumn get previousSetsSuggestion =>
+      text().named('previous_sets_suggestion').nullable()();
+  TextColumn get previousRepsSuggestion =>
+      text().named('previous_reps_suggestion').nullable()();
+  IntColumn get previousRestSuggestion =>
+      integer().named('previous_rest_suggestion').nullable()();
+
   TextColumn get notes => text().named('notes').nullable()();
   DateTimeColumn get scheduledDate =>
       dateTime().named('scheduled_date').nullable()();
@@ -485,6 +493,23 @@ class AppDb extends _$AppDb {
           'scheduled_date',
           'INTEGER',
         );
+
+        // Assurer la présence des colonnes previous_* (Fix pour éviter les crashs si migration ratée)
+        await _addColumnIfMissing(
+          'program_day_exercise',
+          'previous_sets_suggestion',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          'program_day_exercise',
+          'previous_reps_suggestion',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          'program_day_exercise',
+          'previous_rest_suggestion',
+          'INTEGER',
+        );
       }
       // Créer la table user_training_day si manquante
       await _ensureUserTrainingDayTable();
@@ -495,10 +520,6 @@ class AppDb extends _$AppDb {
           'session_id',
           'INTEGER REFERENCES session(id) ON DELETE CASCADE',
         );
-      }
-      // Ajouter name à la table session si manquante
-      if (await _tableExists('session')) {
-        await _addColumnIfMissing('session', 'name', 'TEXT');
       }
       await customStatement('PRAGMA foreign_keys = ON;');
     },
@@ -545,6 +566,23 @@ class AppDb extends _$AppDb {
         await _addColumnIfMissing(
           'program_day_exercise',
           'scheduled_date',
+          'INTEGER',
+        );
+
+        // V38: Ajouter les colonnes previous_*
+        await _addColumnIfMissing(
+          'program_day_exercise',
+          'previous_sets_suggestion',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          'program_day_exercise',
+          'previous_reps_suggestion',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          'program_day_exercise',
+          'previous_rest_suggestion',
           'INTEGER',
         );
       }

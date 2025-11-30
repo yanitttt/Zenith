@@ -58,7 +58,7 @@ class _RootShellState extends State<RootShell> {
       BottomNavItem(icon: Icons.calendar_month_outlined, label: 'Planning'),
       BottomNavItem(icon: Icons.fitness_center_outlined, label: 'Programme'),
       BottomNavItem(icon: Icons.list, label: 'Exercices'),
-      BottomNavItem(icon: Icons.admin_panel_settings, label: 'Admin'),
+      BottomNavItem(icon: Icons.person, label: 'Profil'),
     ];
 
     return Scaffold(

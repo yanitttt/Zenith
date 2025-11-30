@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../data/db/app_db.dart';
 import '../../services/session_tracking_service.dart';
 import '../theme/app_theme.dart';
+import '../../services/program_generator_service.dart';
 
 class ActiveSessionPage extends StatefulWidget {
   final AppDb db;
@@ -24,6 +25,7 @@ class ActiveSessionPage extends StatefulWidget {
 
 class _ActiveSessionPageState extends State<ActiveSessionPage> {
   late final SessionTrackingService _sessionService;
+  late final ProgramGeneratorService _programGenerator;
   late DateTime _startTime;
   int? _sessionId;
   List<ActiveSessionExercise> _exercises = [];
@@ -35,6 +37,7 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
   void initState() {
     super.initState();
     _sessionService = SessionTrackingService(widget.db);
+    _programGenerator = ProgramGeneratorService(widget.db);
     _startTime = DateTime.now();
     _initSession();
   }
@@ -48,8 +51,9 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
       );
 
       // Charger les exercices
-      final exercises =
-          await _sessionService.getSessionExercises(widget.programDayId);
+      final exercises = await _sessionService.getSessionExercises(
+        widget.programDayId,
+      );
 
       if (mounted) {
         setState(() {
@@ -61,9 +65,9 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
     } catch (e) {
       debugPrint('[ACTIVE_SESSION] Erreur init: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
         Navigator.pop(context);
       }
     }
@@ -73,11 +77,12 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
     final result = await showDialog<ActiveSessionExercise>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => _ExercisePerformanceDialog(
-        exercise: exercise,
-        sessionService: _sessionService,
-        userId: widget.userId,
-      ),
+      builder:
+          (context) => _ExercisePerformanceDialog(
+            exercise: exercise,
+            sessionService: _sessionService,
+            userId: widget.userId,
+          ),
     );
 
     if (result != null) {
@@ -107,27 +112,34 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
     if (!allCompleted) {
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          backgroundColor: const Color(0xFF1E1E1E),
-          title: const Text(
-            'Séance incomplète',
-            style: TextStyle(color: Colors.white),
-          ),
-          content: const Text(
-            'Tu n\'as pas complété tous les exercices. Veux-tu quand même terminer la séance ?',
-            style: TextStyle(color: Colors.white70),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Continuer', style: TextStyle(color: AppTheme.gold)),
+        builder:
+            (context) => AlertDialog(
+              backgroundColor: const Color(0xFF1E1E1E),
+              title: const Text(
+                'Séance incomplète',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: const Text(
+                'Tu n\'as pas complété tous les exercices. Veux-tu quand même terminer la séance ?',
+                style: TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text(
+                    'Continuer',
+                    style: TextStyle(color: AppTheme.gold),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text(
+                    'Terminer',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Terminer', style: TextStyle(color: Colors.grey)),
-            ),
-          ],
-        ),
       );
 
       if (confirmed != true) return;
@@ -139,6 +151,25 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
       await _sessionService.completeSession(
         sessionId: _sessionId!,
         startTime: _startTime,
+      );
+
+      // Régénérer les jours futurs du programme
+      if (mounted) {
+        setState(() {
+          // Mettre à jour le message du bouton si nécessaire,
+          // mais _completing est déjà true donc le bouton affiche "Finalisation..."
+        });
+      }
+
+      // Récupérer l'ID du programme
+      final programDay =
+          await (widget.db.select(widget.db.programDay)
+            ..where((tbl) => tbl.id.equals(widget.programDayId))).getSingle();
+
+      // Lancer la régénération
+      await _programGenerator.regenerateFutureDays(
+        userId: widget.userId,
+        programId: programDay.programId,
       );
 
       if (mounted) {
@@ -154,9 +185,9 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
       debugPrint('[ACTIVE_SESSION] Erreur completion: $e');
       if (mounted) {
         setState(() => _completing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
       }
     }
   }
@@ -175,24 +206,34 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
       onWillPop: () async {
         final confirmed = await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF1E1E1E),
-            title: const Text('Abandonner la séance ?', style: TextStyle(color: Colors.white)),
-            content: const Text(
-              'Ta progression ne sera pas sauvegardée.',
-              style: TextStyle(color: Colors.white70),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Continuer', style: TextStyle(color: AppTheme.gold)),
+          builder:
+              (context) => AlertDialog(
+                backgroundColor: const Color(0xFF1E1E1E),
+                title: const Text(
+                  'Abandonner la séance ?',
+                  style: TextStyle(color: Colors.white),
+                ),
+                content: const Text(
+                  'Ta progression ne sera pas sauvegardée.',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text(
+                      'Continuer',
+                      style: TextStyle(color: AppTheme.gold),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, true),
+                    child: const Text(
+                      'Abandonner',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Abandonner', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
         );
         return confirmed == true;
       },
@@ -211,15 +252,18 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
             ],
           ),
         ),
-        body: _loading
-            ? const Center(child: CircularProgressIndicator(color: AppTheme.gold))
-            : Column(
-                children: [
-                  _buildProgress(),
-                  Expanded(child: _buildExercisesList()),
-                  _buildCompleteButton(),
-                ],
-              ),
+        body:
+            _loading
+                ? const Center(
+                  child: CircularProgressIndicator(color: AppTheme.gold),
+                )
+                : Column(
+                  children: [
+                    _buildProgress(),
+                    Expanded(child: _buildExercisesList()),
+                    _buildCompleteButton(),
+                  ],
+                ),
       ),
     );
   }
@@ -282,7 +326,10 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
   }
 
   Widget _buildExerciseCard(
-      ActiveSessionExercise exercise, int index, bool isCurrent) {
+    ActiveSessionExercise exercise,
+    int index,
+    bool isCurrent,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -301,20 +348,22 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: exercise.isCompleted ? AppTheme.gold : Colors.grey.shade800,
+                color:
+                    exercise.isCompleted ? AppTheme.gold : Colors.grey.shade800,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
-                child: exercise.isCompleted
-                    ? const Icon(Icons.check, color: Colors.black)
-                    : Text(
-                        '${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                child:
+                    exercise.isCompleted
+                        ? const Icon(Icons.check, color: Colors.black)
+                        : Text(
+                          '${index + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
               ),
             ),
             title: Text(
@@ -327,13 +376,14 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
             ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Row(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   _buildSuggestionChip(
                     icon: Icons.repeat,
                     text: exercise.setsSuggestion ?? '-',
                   ),
-                  const SizedBox(width: 8),
                   _buildSuggestionChip(
                     icon: Icons.fitness_center,
                     text: exercise.repsSuggestion ?? '-',
@@ -341,16 +391,23 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
                 ],
               ),
             ),
-            trailing: exercise.isCompleted
-                ? const Icon(Icons.check_circle, color: AppTheme.gold, size: 32)
-                : ElevatedButton(
-                    onPressed: () => _showExerciseDialog(exercise),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isCurrent ? AppTheme.gold : Colors.grey.shade700,
-                      foregroundColor: isCurrent ? Colors.black : Colors.white,
+            trailing:
+                exercise.isCompleted
+                    ? const Icon(
+                      Icons.check_circle,
+                      color: AppTheme.gold,
+                      size: 32,
+                    )
+                    : ElevatedButton(
+                      onPressed: () => _showExerciseDialog(exercise),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            isCurrent ? AppTheme.gold : Colors.grey.shade700,
+                        foregroundColor:
+                            isCurrent ? Colors.black : Colors.white,
+                      ),
+                      child: const Text('Faire'),
                     ),
-                    child: const Text('Faire'),
-                  ),
           ),
           if (exercise.isCompleted) _buildCompletedInfo(exercise),
         ],
@@ -394,8 +451,14 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
         children: [
           _buildStatColumn('Séries', '${exercise.actualSets ?? "-"}'),
           _buildStatColumn('Reps', '${exercise.actualReps ?? "-"}'),
-          _buildStatColumn('Charge', '${exercise.actualLoad?.toStringAsFixed(1) ?? "-"} kg'),
-          _buildStatColumn('RPE', '${exercise.actualRpe?.toStringAsFixed(1) ?? "-"}/10'),
+          _buildStatColumn(
+            'Charge',
+            '${exercise.actualLoad?.toStringAsFixed(1) ?? "-"} kg',
+          ),
+          _buildStatColumn(
+            'RPE',
+            '${exercise.actualRpe?.toStringAsFixed(1) ?? "-"}/10',
+          ),
         ],
       ),
     );
@@ -429,16 +492,17 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
         height: 56,
         child: ElevatedButton.icon(
           onPressed: _completing ? null : _completeSession,
-          icon: _completing
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.black,
-                  ),
-                )
-              : const Icon(Icons.check_circle),
+          icon:
+              _completing
+                  ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black,
+                    ),
+                  )
+                  : const Icon(Icons.check_circle),
           label: Text(_completing ? 'Finalisation...' : 'Terminer la séance'),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.gold,
@@ -514,8 +578,8 @@ class _ExercisePerformanceDialogState
                 (analysis['averageReps'] as double).round().toString();
           }
           if (_loadController.text.isEmpty) {
-            _loadController.text =
-                (analysis['averageLoad'] as double).toStringAsFixed(1);
+            _loadController.text = (analysis['averageLoad'] as double)
+                .toStringAsFixed(1);
           }
         }
       });
@@ -579,7 +643,9 @@ class _ExercisePerformanceDialogState
                 'Suggéré: ${widget.exercise.setsSuggestion ?? "-"} × ${widget.exercise.repsSuggestion ?? "-"}',
                 style: const TextStyle(color: Colors.white60, fontSize: 14),
               ),
-            if (!_loadingAnalysis && _analysis != null && _analysis!['hasHistory'] == true) ...[
+            if (!_loadingAnalysis &&
+                _analysis != null &&
+                _analysis!['hasHistory'] == true) ...[
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -593,7 +659,11 @@ class _ExercisePerformanceDialogState
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.insights, color: AppTheme.gold, size: 16),
+                        const Icon(
+                          Icons.insights,
+                          color: AppTheme.gold,
+                          size: 16,
+                        ),
                         const SizedBox(width: 8),
                         const Text(
                           'Historique',
@@ -608,7 +678,10 @@ class _ExercisePerformanceDialogState
                     const SizedBox(height: 4),
                     Text(
                       'Dernières fois: ${_analysis!['averageSets']?.toStringAsFixed(0)} séries × ${_analysis!['averageReps']?.toStringAsFixed(0)} reps @ ${_analysis!['averageLoad']?.toStringAsFixed(1)} kg',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                      ),
                     ),
                   ],
                 ),
@@ -653,7 +726,10 @@ class _ExercisePerformanceDialogState
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.gold,
                     borderRadius: BorderRadius.circular(8),
@@ -675,7 +751,10 @@ class _ExercisePerformanceDialogState
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    'Annuler',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
