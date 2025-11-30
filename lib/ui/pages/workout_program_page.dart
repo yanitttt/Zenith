@@ -11,11 +11,7 @@ class WorkoutProgramPage extends StatefulWidget {
   final AppDb db;
   final AppPrefs prefs;
 
-  const WorkoutProgramPage({
-    super.key,
-    required this.db,
-    required this.prefs,
-  });
+  const WorkoutProgramPage({super.key, required this.db, required this.prefs});
 
   @override
   State<WorkoutProgramPage> createState() => _WorkoutProgramPageState();
@@ -64,8 +60,8 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
 
         // Charger les sessions complétées pour chaque jour
         final dayIds = days.map((d) => d.programDayId).toList();
-        final completedSessions =
-            await _sessionService.getCompletedSessionsForDays(dayIds);
+        final completedSessions = await _sessionService
+            .getCompletedSessionsForDays(dayIds);
 
         if (mounted) {
           setState(() {
@@ -103,9 +99,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       );
 
       // Recharger le programme
-      final program = await (widget.db.select(widget.db.workoutProgram)
-            ..where((tbl) => tbl.id.equals(programId)))
-          .getSingle();
+      final program =
+          await (widget.db.select(widget.db.workoutProgram)
+            ..where((tbl) => tbl.id.equals(programId))).getSingle();
 
       final days = await _programService.getProgramDays(programId);
 
@@ -139,29 +135,35 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
   Future<void> _regenerateProgram() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text(
-          'Régénérer le programme',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Veux-tu créer un nouveau programme ? L\'ancien sera archivé.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler', style: TextStyle(color: Colors.grey)),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text(
+              'Régénérer le programme',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              'Veux-tu créer un nouveau programme ? L\'ancien sera archivé.',
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  'Annuler',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold),
+                child: const Text(
+                  'Confirmer',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold),
-            child: const Text('Confirmer',
-                style: TextStyle(color: Colors.black)),
-          ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -180,9 +182,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       } catch (e) {
         debugPrint('[WORKOUT_PROGRAM] Erreur régénération: $e');
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
         }
       } finally {
         if (mounted) setState(() => _generating = false);
@@ -193,67 +195,55 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
   Future<void> _startSession(ProgramDaySession day) async {
     final userId = widget.prefs.currentUserId;
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Utilisateur non connecté')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Utilisateur non connecté')));
       return;
     }
 
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => ActiveSessionPage(
-          db: widget.db,
-          userId: userId,
-          programDayId: day.programDayId,
-          dayName: day.dayName,
-        ),
+        builder:
+            (context) => ActiveSessionPage(
+              db: widget.db,
+              userId: userId,
+              programDayId: day.programDayId,
+              dayName: day.dayName,
+            ),
       ),
     );
 
-    // Si la session est terminée, régénérer les jours futurs et recharger
+    // Si la session est terminée, recharger le programme
     if (result == true && mounted) {
       // Afficher un message de succès
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Séance enregistrée avec succès !'),
+          content: Text('Séance enregistrée et programme mis à jour !'),
           backgroundColor: AppTheme.gold,
         ),
       );
 
-      // Régénérer les jours futurs du programme avec les nouvelles performances
-      if (_currentProgram != null) {
-        try {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Adaptation du programme en cours...'),
-              backgroundColor: Colors.blue,
-              duration: Duration(seconds: 2),
-            ),
-          );
-
-          await _programService.regenerateFutureDays(
-            userId: userId,
-            programId: _currentProgram!.id,
-          );
-
-          debugPrint('[WORKOUT_PROGRAM] Jours futurs régénérés avec succès');
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Programme adapté à tes performances !'),
-              backgroundColor: AppTheme.gold,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        } catch (e) {
-          debugPrint('[WORKOUT_PROGRAM] Erreur régénération: $e');
-          // Ne pas afficher d'erreur à l'utilisateur, on recharge juste le programme
-        }
-      }
+      debugPrint(
+        '[WORKOUT_PROGRAM] Retour de session, rechargement du programme...',
+      );
 
       // Recharger pour mettre à jour l'état de complétion et les nouveaux exercices
       await _loadProgram();
+
+      // Debug: Afficher les suggestions du prochain jour pour vérification
+      if (_programDays.length > 1) {
+        final nextDay = _programDays.firstWhere(
+          (d) => !_completedSessions.containsKey(d.programDayId),
+          orElse: () => _programDays.last,
+        );
+        if (nextDay.exercises.isNotEmpty) {
+          final firstEx = nextDay.exercises.first;
+          debugPrint(
+            '[WORKOUT_PROGRAM] Vérification jour ${nextDay.dayOrder}: ${firstEx.exerciseName} -> ${firstEx.setsSuggestion} (was ${firstEx.previousSetsSuggestion}) / ${firstEx.repsSuggestion}',
+          );
+        }
+      }
     }
   }
 
@@ -282,13 +272,14 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
             _buildHeader(),
             if (_programDays.isNotEmpty) _buildDaySelector(),
             Expanded(
-              child: _loading || _generating
-                  ? _buildLoading()
-                  : _error != null
+              child:
+                  _loading || _generating
+                      ? _buildLoading()
+                      : _error != null
                       ? _buildError()
                       : _programDays.isEmpty
-                          ? _buildEmpty()
-                          : _buildDayContent(),
+                      ? _buildEmpty()
+                      : _buildDayContent(),
             ),
           ],
         ),
@@ -386,18 +377,25 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
             child: GestureDetector(
               onTap: () => setState(() => _selectedDayIndex = index),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppTheme.gold
-                      : (isCompleted ? Colors.green.shade900 : Colors.black),
+                  color:
+                      isSelected
+                          ? AppTheme.gold
+                          : (isCompleted
+                              ? Colors.green.shade900
+                              : Colors.black),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected
-                        ? AppTheme.gold
-                        : (isCompleted
-                            ? Colors.green
-                            : Colors.grey.shade800),
+                    color:
+                        isSelected
+                            ? AppTheme.gold
+                            : (isCompleted
+                                ? Colors.green
+                                : Colors.grey.shade800),
                     width: 2,
                   ),
                 ),
@@ -476,7 +474,11 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.calendar_today, color: AppTheme.gold, size: 14),
+                          const Icon(
+                            Icons.calendar_today,
+                            color: AppTheme.gold,
+                            size: 14,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             'Prévue le ${_formatScheduledDate(currentDay.scheduledDate!)}',
@@ -518,10 +520,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
           child: Text(
             '${currentDay.exercises.length} exercices',
-            style: const TextStyle(
-              color: Colors.white60,
-              fontSize: 14,
-            ),
+            style: const TextStyle(color: Colors.white60, fontSize: 14),
           ),
         ),
         Expanded(
@@ -588,15 +587,22 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                       children: [
                         _buildBadge(
                           label: exercise.exerciseType.toUpperCase(),
-                          color: exercise.exerciseType == 'poly'
-                              ? Colors.blue
-                              : Colors.purple,
+                          color:
+                              exercise.exerciseType == 'poly'
+                                  ? Colors.blue
+                                  : Colors.purple,
                         ),
                         const SizedBox(width: 8),
                         _buildBadge(
                           label: 'Difficulté ${exercise.difficulty}/5',
                           color: _getDifficultyColor(exercise.difficulty),
                         ),
+                        if (exercise.previousSetsSuggestion != null ||
+                            exercise.previousRepsSuggestion != null ||
+                            exercise.previousRestSuggestion != null) ...[
+                          const SizedBox(width: 8),
+                          _buildBadge(label: 'ADAPTÉ', color: AppTheme.gold),
+                        ],
                       ],
                     ),
                   ],
@@ -614,18 +620,25 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                 icon: Icons.repeat,
                 label: 'Séries',
                 value: exercise.setsSuggestion ?? '-',
+                previousValue: exercise.previousSetsSuggestion,
               ),
               _buildInfoColumn(
                 icon: Icons.fitness_center,
                 label: 'Reps',
                 value: exercise.repsSuggestion ?? '-',
+                previousValue: exercise.previousRepsSuggestion,
               ),
               _buildInfoColumn(
                 icon: Icons.timer,
                 label: 'Repos',
-                value: exercise.restSuggestionSec != null
-                    ? '${exercise.restSuggestionSec}s'
-                    : '-',
+                value:
+                    exercise.restSuggestionSec != null
+                        ? '${exercise.restSuggestionSec}s'
+                        : '-',
+                previousValue:
+                    exercise.previousRestSuggestion != null
+                        ? '${exercise.previousRestSuggestion}s'
+                        : null,
               ),
             ],
           ),
@@ -638,6 +651,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     required IconData icon,
     required String label,
     required String value,
+    String? previousValue,
   }) {
     return Column(
       children: [
@@ -645,16 +659,24 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white60,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: Colors.white60, fontSize: 12),
         ),
         const SizedBox(height: 2),
+        if (previousValue != null && previousValue != value) ...[
+          Text(
+            previousValue,
+            style: const TextStyle(
+              color: Colors.white38,
+              fontSize: 12,
+              decoration: TextDecoration.lineThrough,
+            ),
+          ),
+          const SizedBox(height: 2),
+        ],
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: previousValue != null ? AppTheme.gold : Colors.white,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
