@@ -24,6 +24,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isLoading = true;
   String _todayDate = "";
   int? _userId;
+  double _totalHeures = 0.0; // corrigé en double
 
   // Metrics
   int _streakWeeks = 0;
@@ -61,6 +62,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final efficiency = await _dashboardService.getTrainingEfficiency(_userId!);
         final weeklyAttendance = await _dashboardService.getAssiduiteSemaine(_userId!);
         final muscleStats = await _dashboardService.getRepartitionMusculaire(_userId!);
+        final totalHeuresStr = await _dashboardService.getTotalHeuresEntrainement(_userId!);
 
         if (mounted) {
           setState(() {
@@ -70,6 +72,7 @@ class _DashboardPageState extends State<DashboardPage> {
             _efficiency = efficiency;
             _weeklyAttendance = weeklyAttendance;
             _muscleStats = muscleStats;
+            _totalHeures = double.tryParse(totalHeuresStr.replaceAll(" h", "")) ?? 0.0; // conversion
             _isLoading = false;
           });
         }
@@ -92,6 +95,13 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  // Fonction pour formater les heures en "X h YY min"
+  String formatHeures(double heures) {
+    final int h = heures.floor();
+    final int minutes = ((heures - h) * 60).round();
+    return "$h h ${minutes.toString().padLeft(2, '0')} min";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,92 +110,130 @@ class _DashboardPageState extends State<DashboardPage> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(color: AppTheme.gold))
             : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    /// HEADER COMPACT
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Bonjour $_userName",
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const Text(
-                              "Prêt à tout casser ?",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              /// HEADER COMPACT
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Bonjour $_userName",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: const Color.fromRGBO(217, 190, 119, 0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color.fromRGBO(217, 190, 119, 0.3)),
-                          ),
-                          child: Text(
-                            _todayDate,
-                            style: const TextStyle(
-                              color: AppTheme.gold,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      ),
+                      const Text(
+                        "Prêt à tout casser ?",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color.fromRGBO(217, 190, 119, 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color.fromRGBO(217, 190, 119, 0.3)),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    /// TOP ROW - KEY METRICS (3 Cards)
-                    SizedBox(
-                      height: 100,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: _buildCompactStatCard(
-                              "Série",
-                              "$_streakWeeks sem.",
-                              Icons.local_fire_department,
-                              Colors.orangeAccent,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildCompactStatCard(
-                              "Progression",
-                              "${_volumeVariation > 0 ? '+' : ''}$_volumeVariation%",
-                              _volumeVariation >= 0 ? Icons.trending_up : Icons.trending_down,
-                              _volumeVariation >= 0 ? Colors.greenAccent : Colors.redAccent,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildCompactStatCard(
-                              "Intensité",
-                              "$_efficiency kg/min",
-                              Icons.speed,
-                              Colors.blueAccent,
-                            ),
-                          ),
-                        ],
+                    child: Text(
+                      _todayDate,
+                      style: const TextStyle(
+                        color: AppTheme.gold,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
+                ],
+              ),
 
-                    const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-                    /// MIDDLE - WEEKLY CHART (Expanded)
+              /// TOP ROW - KEY METRICS (3 Cards)
+              SizedBox(
+                height: 100,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildCompactStatCard(
+                        "Temps total",
+                        formatHeures(_totalHeures),
+                        Icons.timer,
+                        Colors.purpleAccent,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildCompactStatCard(
+                        "Progression",
+                        "${_volumeVariation > 0 ? '+' : ''}$_volumeVariation%",
+                        _volumeVariation >= 0 ? Icons.trending_up : Icons.trending_down,
+                        _volumeVariation >= 0 ? Colors.greenAccent : Colors.redAccent,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildCompactStatCard(
+                        "Série",
+                        "$_streakWeeks sem.",
+                        Icons.local_fire_department,
+                        Colors.orangeAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              /// MIDDLE - WEEKLY CHART (Expanded)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E1E1E),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Activité Semaine",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(
+                        child: _weeklyAttendance.isNotEmpty
+                            ? WeeklyBarChart(weeklyData: _weeklyAttendance)
+                            : const Center(child: Text("Aucune donnée", style: TextStyle(color: Colors.grey))),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              /// BOTTOM - PIE CHART & SUMMARY (Expanded)
+              Expanded(
+                flex: 2,
+                child: Row(
+                  children: [
                     Expanded(
                       flex: 3,
                       child: Container(
@@ -194,91 +242,53 @@ class _DashboardPageState extends State<DashboardPage> {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
                         ),
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: _muscleStats.isNotEmpty
+                            ? MusclePieChart(muscleStats: _muscleStats)
+                            : const Center(child: Text("Pas de données", style: TextStyle(color: Colors.grey))),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.gold,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            const Icon(Icons.emoji_events, color: Colors.black, size: 32),
+                            const SizedBox(height: 8),
                             const Text(
-                              "Activité Semaine",
+                              "Focus",
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
+                                color: Colors.black,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            Expanded(
-                              child: _weeklyAttendance.isNotEmpty
-                                  ? WeeklyBarChart(weeklyData: _weeklyAttendance)
-                                  : const Center(child: Text("Aucune donnée", style: TextStyle(color: Colors.grey))),
+                            const SizedBox(height: 4),
+                            Text(
+                              _muscleStats.isNotEmpty ? _muscleStats.first.muscleName : "--",
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                              ),
                             ),
                           ],
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    /// BOTTOM - PIE CHART & SUMMARY (Expanded)
-                    Expanded(
-                      flex: 2,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
-                              ),
-                              child: _muscleStats.isNotEmpty
-                                  ? MusclePieChart(muscleStats: _muscleStats)
-                                  : const Center(child: Text("Pas de données", style: TextStyle(color: Colors.grey))),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: AppTheme.gold,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.emoji_events, color: Colors.black, size: 32),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    "Focus",
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _muscleStats.isNotEmpty ? _muscleStats.first.muscleName : "--",
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
       ),
     );
   }
