@@ -1,3 +1,4 @@
+
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
 
@@ -66,17 +67,17 @@ class DashboardService {
     final endTs = _getNowTs();
 
     final result =
-        await db
-            .customSelect(
-              'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
-              variables: [
-                Variable.withInt(userId),
-                Variable.withInt(startTs),
-                Variable.withInt(endTs),
-              ],
-              readsFrom: {db.session},
-            )
-            .getSingle();
+    await db
+        .customSelect(
+      'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
+      variables: [
+        Variable.withInt(userId),
+        Variable.withInt(startTs),
+        Variable.withInt(endTs),
+      ],
+      readsFrom: {db.session},
+    )
+        .getSingle();
 
     return result.read<int>('cnt');
   }
@@ -86,13 +87,13 @@ class DashboardService {
     final startTs = _getStartOfWeekTs();
 
     final result =
-        await db
-            .customSelect(
-              'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ? AND date_ts >= ?',
-              variables: [Variable.withInt(userId), Variable.withInt(startTs)],
-              readsFrom: {db.session},
-            )
-            .getSingle();
+    await db
+        .customSelect(
+      'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ? AND date_ts >= ?',
+      variables: [Variable.withInt(userId), Variable.withInt(startTs)],
+      readsFrom: {db.session},
+    )
+        .getSingle();
 
     return result.read<int?>('total_min') ?? 0;
   }
@@ -102,18 +103,18 @@ class DashboardService {
     final startTs = _getStartOfWeekTs();
 
     final result =
-        await db
-            .customSelect(
-              '''
+    await db
+        .customSelect(
+      '''
       SELECT SUM(se.sets * se.reps * se.load) as total_vol 
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ? AND s.date_ts >= ?
       ''',
-              variables: [Variable.withInt(userId), Variable.withInt(startTs)],
-              readsFrom: {db.session, db.sessionExercise},
-            )
-            .getSingle();
+      variables: [Variable.withInt(userId), Variable.withInt(startTs)],
+      readsFrom: {db.session, db.sessionExercise},
+    )
+        .getSingle();
 
     return result.read<double?>('total_vol') ?? 0.0;
   }
@@ -125,13 +126,13 @@ class DashboardService {
   /// 4. Nombre total de programmes suivis (Historique)
   Future<int> getNbProgrammesSuivis(int userId) async {
     final result =
-        await db
-            .customSelect(
-              'SELECT COUNT(*) as cnt FROM user_program WHERE user_id = ?',
-              variables: [Variable.withInt(userId)],
-              readsFrom: {db.userProgram},
-            )
-            .getSingle();
+    await db
+        .customSelect(
+      'SELECT COUNT(*) as cnt FROM user_program WHERE user_id = ?',
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.userProgram},
+    )
+        .getSingle();
 
     return result.read<int>('cnt');
   }
@@ -139,19 +140,19 @@ class DashboardService {
   /// 5. Récupérer le nom du programme ACTIF
   Future<String> getProgrammeActifNom(int userId) async {
     final result =
-        await db
-            .customSelect(
-              '''
+    await db
+        .customSelect(
+      '''
       SELECT wp.name 
       FROM user_program up
       JOIN workout_program wp ON up.program_id = wp.id
       WHERE up.user_id = ? AND up.is_active = 1
       LIMIT 1
       ''',
-              variables: [Variable.withInt(userId)],
-              readsFrom: {db.userProgram, db.workoutProgram},
-            )
-            .getSingleOrNull();
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.userProgram, db.workoutProgram},
+    )
+        .getSingleOrNull();
 
     if (result == null) return "Aucun";
     return result.read<String>('name');
@@ -164,18 +165,18 @@ class DashboardService {
   /// Tonnage Total depuis le début (Somme de tous les kg soulevés)
   Future<double> getTotalTonnageAllTime(int userId) async {
     final result =
-        await db
-            .customSelect(
-              '''
+    await db
+        .customSelect(
+      '''
       SELECT SUM(se.sets * se.reps * se.load) as total_kg
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ?
       ''',
-              variables: [Variable.withInt(userId)],
-              readsFrom: {db.session, db.sessionExercise},
-            )
-            .getSingle();
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.session, db.sessionExercise},
+    )
+        .getSingle();
 
     return result.read<double?>('total_kg') ?? 0.0;
   }
@@ -183,13 +184,13 @@ class DashboardService {
   /// Temps total passé à la salle depuis le début (formatté en "XX h")
   Future<String> getTotalHeuresEntrainement(int userId) async {
     final result =
-        await db
-            .customSelect(
-              'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ?',
-              variables: [Variable.withInt(userId)],
-              readsFrom: {db.session},
-            )
-            .getSingle();
+    await db
+        .customSelect(
+      'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ?',
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.session},
+    )
+        .getSingle();
 
     final minutes = result.read<int?>('total_min') ?? 0;
     final hours = (minutes / 60).toStringAsFixed(1);
@@ -199,13 +200,13 @@ class DashboardService {
   /// Nombre total de séances terminées depuis le début
   Future<int> getTotalSeances(int userId) async {
     final result =
-        await db
-            .customSelect(
-              'SELECT COUNT(*) as cnt FROM session WHERE user_id = ?',
-              variables: [Variable.withInt(userId)],
-              readsFrom: {db.session},
-            )
-            .getSingle();
+    await db
+        .customSelect(
+      'SELECT COUNT(*) as cnt FROM session WHERE user_id = ?',
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.session},
+    )
+        .getSingle();
     return result.read<int>('cnt');
   }
 
@@ -220,12 +221,12 @@ class DashboardService {
         DateTime.now()
             .subtract(const Duration(days: 30))
             .millisecondsSinceEpoch ~/
-        1000;
+            1000;
 
     final rows =
-        await db
-            .customSelect(
-              '''
+    await db
+        .customSelect(
+      '''
       SELECT m.name as muscle_name, COUNT(*) as frequency
       FROM session s
       JOIN session_exercise se ON s.id = se.session_id
@@ -236,15 +237,15 @@ class DashboardService {
       ORDER BY frequency DESC
       LIMIT 6
       ''',
-              variables: [Variable.withInt(userId), Variable.withInt(limitTs)],
-              readsFrom: {
-                db.session,
-                db.sessionExercise,
-                db.exerciseMuscle,
-                db.muscle,
-              },
-            )
-            .get();
+      variables: [Variable.withInt(userId), Variable.withInt(limitTs)],
+      readsFrom: {
+        db.session,
+        db.sessionExercise,
+        db.exerciseMuscle,
+        db.muscle,
+      },
+    )
+        .get();
 
     return rows.map((row) {
       return MuscleStat(
@@ -269,17 +270,17 @@ class DashboardService {
       final endOfDay = startOfDay + 86400;
 
       final row =
-          await db
-              .customSelect(
-                'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts < ?',
-                variables: [
-                  Variable.withInt(userId),
-                  Variable.withInt(startOfDay),
-                  Variable.withInt(endOfDay),
-                ],
-                readsFrom: {db.session},
-              )
-              .getSingle();
+      await db
+          .customSelect(
+        'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts < ?',
+        variables: [
+          Variable.withInt(userId),
+          Variable.withInt(startOfDay),
+          Variable.withInt(endOfDay),
+        ],
+        readsFrom: {db.session},
+      )
+          .getSingle();
 
       String dayName = _getDayName(day.weekday);
       result[dayName] = row.read<int>('cnt');
@@ -294,13 +295,13 @@ class DashboardService {
   /// Moyenne du Feedback "Plaisir" (sur 5)
   Future<double> getMoyennePlaisir(int userId) async {
     final result =
-        await db
-            .customSelect(
-              'SELECT AVG(pleasant) as avg_fun FROM user_feedback WHERE user_id = ?',
-              variables: [Variable.withInt(userId)],
-              readsFrom: {db.userFeedback},
-            )
-            .getSingle();
+    await db
+        .customSelect(
+      'SELECT AVG(pleasant) as avg_fun FROM user_feedback WHERE user_id = ?',
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.userFeedback},
+    )
+        .getSingle();
 
     return result.read<double?>('avg_fun') ?? 0.0;
   }
@@ -308,13 +309,13 @@ class DashboardService {
   /// Moyenne du Feedback "Difficulté"
   Future<double> getMoyenneDifficulte(int userId) async {
     final result =
-        await db
-            .customSelect(
-              'SELECT AVG(difficult) as avg_diff FROM user_feedback WHERE user_id = ?',
-              variables: [Variable.withInt(userId)],
-              readsFrom: {db.userFeedback},
-            )
-            .getSingle();
+    await db
+        .customSelect(
+      'SELECT AVG(difficult) as avg_diff FROM user_feedback WHERE user_id = ?',
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.userFeedback},
+    )
+        .getSingle();
 
     return result.read<double?>('avg_diff') ?? 0.0;
   }
@@ -322,21 +323,21 @@ class DashboardService {
   /// Record personnel (Max Load) pour un exercice précis
   Future<double> getPersonalRecord(int userId, int exerciseId) async {
     final result =
-        await db
-            .customSelect(
-              '''
+    await db
+        .customSelect(
+      '''
       SELECT MAX(se.load) as max_load
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ? AND se.exercise_id = ?
       ''',
-              variables: [
-                Variable.withInt(userId),
-                Variable.withInt(exerciseId),
-              ],
-              readsFrom: {db.session, db.sessionExercise},
-            )
-            .getSingle();
+      variables: [
+        Variable.withInt(userId),
+        Variable.withInt(exerciseId),
+      ],
+      readsFrom: {db.session, db.sessionExercise},
+    )
+        .getSingle();
 
     return result.read<double?>('max_load') ?? 0.0;
   }
@@ -357,7 +358,7 @@ class DashboardService {
           startCurrentWeek.month,
           startCurrentWeek.day,
         ).millisecondsSinceEpoch ~/
-        1000;
+            1000;
 
     // Semaine précédente
     final startLastWeek = startCurrentWeek.subtract(const Duration(days: 7));
@@ -369,7 +370,7 @@ class DashboardService {
           startLastWeek.month,
           startLastWeek.day,
         ).millisecondsSinceEpoch ~/
-        1000;
+            1000;
     final endLastWeekTs =
         DateTime(
           endLastWeek.year,
@@ -379,29 +380,29 @@ class DashboardService {
           59,
           59,
         ).millisecondsSinceEpoch ~/
-        1000;
+            1000;
 
     // Volume Semaine Actuelle
     final volCurrent = await getVolumeTotalSemaine(userId);
 
     // Volume Semaine Précédente
     final resultLast =
-        await db
-            .customSelect(
-              '''
+    await db
+        .customSelect(
+      '''
       SELECT SUM(se.sets * se.reps * se.load) as total_vol 
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ? AND s.date_ts >= ? AND s.date_ts <= ?
       ''',
-              variables: [
-                Variable.withInt(userId),
-                Variable.withInt(startLastWeekTs),
-                Variable.withInt(endLastWeekTs),
-              ],
-              readsFrom: {db.session, db.sessionExercise},
-            )
-            .getSingle();
+      variables: [
+        Variable.withInt(userId),
+        Variable.withInt(startLastWeekTs),
+        Variable.withInt(endLastWeekTs),
+      ],
+      readsFrom: {db.session, db.sessionExercise},
+    )
+        .getSingle();
 
     final volLast = resultLast.read<double?>('total_vol') ?? 0.0;
 
@@ -441,21 +442,21 @@ class DashboardService {
             startOfWeek.month,
             startOfWeek.day,
           ).millisecondsSinceEpoch ~/
-          1000;
+              1000;
       final endTs = startTs + (7 * 24 * 3600) - 1;
 
       final result =
-          await db
-              .customSelect(
-                'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
-                variables: [
-                  Variable.withInt(userId),
-                  Variable.withInt(startTs),
-                  Variable.withInt(endTs),
-                ],
-                readsFrom: {db.session},
-              )
-              .getSingle();
+      await db
+          .customSelect(
+        'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
+        variables: [
+          Variable.withInt(userId),
+          Variable.withInt(startTs),
+          Variable.withInt(endTs),
+        ],
+        readsFrom: {db.session},
+      )
+          .getSingle();
 
       final count = result.read<int>('cnt');
       if (count > 0) {
