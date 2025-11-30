@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:recommandation_mobile/data/db/app_db.dart';
 import 'package:recommandation_mobile/services/planning_service.dart';
+import 'package:recommandation_mobile/ui/widgets/planning/scale_button.dart';
 
 class PlanningPage extends StatefulWidget {
   final AppDb db;
@@ -201,42 +202,46 @@ class _PlanningPageState extends State<PlanningPage> {
               ),
               const SizedBox(height: 20),
 
-              ListTile(
-                leading: _buildIcon(Icons.directions_run, Colors.blueAccent),
-                title: const Text(
-                  "Séance Cardio",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: const Text(
-                  "Ajoute 45 min",
-                  style: TextStyle(color: Colors.grey),
-                ),
+              ScaleButton(
                 onTap: () {
                   Navigator.pop(context);
-                  _ajouterSeanceLibre(45); // Ajoute directement
+                  _showDurationPickerDialog("Cardio libre");
                 },
+                child: ListTile(
+                  leading: _buildIcon(Icons.directions_run, Colors.blueAccent),
+                  title: const Text(
+                    "Séance Cardio",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    "Durée personnalisable",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ),
 
-              ListTile(
-                leading: _buildIcon(Icons.fitness_center, kGold),
-                title: const Text(
-                  "Séance Muscu",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: const Text(
-                  "Ajoute 60 min",
-                  style: TextStyle(color: Colors.grey),
-                ),
+              ScaleButton(
                 onTap: () {
                   Navigator.pop(context);
-                  _ajouterSeanceLibre(60); // Ajoute directement
+                  _showDurationPickerDialog("Muscu libre");
                 },
+                child: ListTile(
+                  leading: _buildIcon(Icons.fitness_center, kGold),
+                  title: const Text(
+                    "Séance Muscu",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    "Durée personnalisable",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               ),
             ],
           ),
@@ -245,8 +250,159 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
+  Future<void> _showDurationPickerDialog(
+    String type, {
+    int? initialDuration,
+    int? sessionId,
+  }) async {
+    int selectedDuration = initialDuration ?? 45;
+    String selectedType = type; // "Cardio libre" or "Muscu libre"
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: kCardColor,
+              title: Text(
+                sessionId == null ? "Nouvelle séance" : "Modifier la séance",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // SÉLECTION DU TYPE (Seulement si édition ou si on veut permettre de changer)
+                  // Pour simplifier, on permet de changer le type ici aussi
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildTypeSelector(
+                        "Cardio",
+                        Icons.directions_run,
+                        Colors.blueAccent,
+                        selectedType == "Cardio libre",
+                        () =>
+                            setStateDialog(() => selectedType = "Cardio libre"),
+                      ),
+                      _buildTypeSelector(
+                        "Muscu",
+                        Icons.fitness_center,
+                        kGold,
+                        selectedType == "Muscu libre",
+                        () =>
+                            setStateDialog(() => selectedType = "Muscu libre"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "$selectedDuration min",
+                    style: TextStyle(
+                      color: kGold,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: kGold,
+                      inactiveTrackColor: Colors.white24,
+                      thumbColor: Colors.white,
+                      overlayColor: kGold.withOpacity(0.2),
+                    ),
+                    child: Slider(
+                      value: selectedDuration.toDouble(),
+                      min: 10,
+                      max: 180,
+                      divisions: 34,
+                      label: "$selectedDuration min",
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          selectedDuration = value.round();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Annuler",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    if (sessionId == null) {
+                      _ajouterSeanceLibre(selectedDuration, selectedType);
+                    } else {
+                      _modifierSeanceLibre(
+                        sessionId,
+                        selectedDuration,
+                        selectedType,
+                      );
+                    }
+                  },
+                  child: Text(
+                    sessionId == null ? "Ajouter" : "Enregistrer",
+                    style: TextStyle(color: kGold, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTypeSelector(
+    String label,
+    IconData icon,
+    Color color,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? color : Colors.white12,
+                width: 2,
+              ),
+            ),
+            child: Icon(icon, color: isSelected ? color : Colors.grey),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? color : Colors.grey,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // --- AJOUT SIMPLE EN BDD ---
-  Future<void> _ajouterSeanceLibre(int duree) async {
+  Future<void> _ajouterSeanceLibre(int duree, String name) async {
     if (_currentUserId == null) return;
 
     final ts =
@@ -257,7 +413,6 @@ class _PlanningPageState extends State<PlanningPage> {
         ).millisecondsSinceEpoch ~/
         1000;
 
-    // Pas de colonne 'name' ici, on laisse faire le service qui mettra "Séance Libre"
     await widget.db
         .into(widget.db.session)
         .insert(
@@ -266,6 +421,7 @@ class _PlanningPageState extends State<PlanningPage> {
             programDayId: const drift.Value(null),
             dateTs: ts,
             durationMin: drift.Value(duree),
+            name: drift.Value(name),
           ),
         );
 
@@ -274,13 +430,60 @@ class _PlanningPageState extends State<PlanningPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          "Séance libre ($duree min) ajoutée !",
+          "Séance ajoutée : $name ($duree min) !",
           style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: kGold,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // --- MODIFICATION EN BDD ---
+  Future<void> _modifierSeanceLibre(
+    int sessionId,
+    int duree,
+    String name,
+  ) async {
+    await (widget.db.update(widget.db.session)
+      ..where((t) => t.id.equals(sessionId))).write(
+      SessionCompanion(
+        durationMin: drift.Value(duree),
+        name: drift.Value(name),
+      ),
+    );
+
+    _chargerDonnees();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          "Séance modifiée !",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: kGold,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // --- SUPPRESSION EN BDD ---
+  Future<void> _supprimerSession(int sessionId) async {
+    await (widget.db.delete(widget.db.session)
+      ..where((t) => t.id.equals(sessionId))).go();
+
+    _chargerDonnees();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "Séance supprimée",
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -337,14 +540,15 @@ class _PlanningPageState extends State<PlanningPage> {
                       ),
                     ],
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: IconButton(
-                      onPressed: _selectDateFromCalendar,
-                      icon: const Icon(
+                  ScaleButton(
+                    onTap: _selectDateFromCalendar,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: const Icon(
                         Icons.calendar_today,
                         size: 20,
                         color: Colors.white,
@@ -356,9 +560,12 @@ class _PlanningPageState extends State<PlanningPage> {
               const SizedBox(height: 24),
               Row(
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left, color: Colors.white),
-                    onPressed: () => _changeWeek(-1),
+                  ScaleButton(
+                    onTap: () => _changeWeek(-1),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(Icons.chevron_left, color: Colors.white),
+                    ),
                   ),
                   Expanded(
                     child: SizedBox(
@@ -381,9 +588,12 @@ class _PlanningPageState extends State<PlanningPage> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right, color: Colors.white),
-                    onPressed: () => _changeWeek(1),
+                  ScaleButton(
+                    onTap: () => _changeWeek(1),
+                    child: const Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Icon(Icons.chevron_right, color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -440,16 +650,30 @@ class _PlanningPageState extends State<PlanningPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: kGold,
-        child: const Icon(Icons.add, color: Colors.black),
-        onPressed: () => _showAddSessionSheet(),
+      floatingActionButton: ScaleButton(
+        onTap: () => _showAddSessionSheet(),
+        child: Container(
+          height: 56,
+          width: 56,
+          decoration: BoxDecoration(
+            color: kGold,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Icon(Icons.add, color: Colors.black),
+        ),
       ),
     );
   }
 
   Widget _buildDayButton(DateTime date, bool isSelected, bool hasActivity) {
-    return GestureDetector(
+    return ScaleButton(
       onTap: () => _onDaySelected(date),
       child: Container(
         width: 65,
@@ -619,6 +843,46 @@ class _PlanningPageState extends State<PlanningPage> {
               _buildMiniStat(Icons.fitness_center, "Programme", Colors.white70),
             ],
           ),
+          // --- MENU MODIFIER / SUPPRIMER (Si c'est une séance réelle) ---
+          if (item.sessionId != null) ...[
+            const SizedBox(height: 8),
+            const Divider(color: Colors.white12, height: 1),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () {
+                    _showDurationPickerDialog(
+                      item.title,
+                      initialDuration: item.duration,
+                      sessionId: item.sessionId,
+                    );
+                  },
+                  icon: const Icon(
+                    Icons.edit,
+                    size: 16,
+                    color: Colors.blueAccent,
+                  ),
+                  label: const Text(
+                    "Modifier",
+                    style: TextStyle(color: Colors.blueAccent, fontSize: 12),
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () => _supprimerSession(item.sessionId!),
+                  icon: const Icon(
+                    Icons.delete,
+                    size: 16,
+                    color: Colors.redAccent,
+                  ),
+                  label: const Text(
+                    "Supprimer",
+                    style: TextStyle(color: Colors.redAccent, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
