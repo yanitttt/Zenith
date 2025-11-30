@@ -25,6 +25,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String _todayDate = "";
   int? _userId;
   double _totalHeures = 0.0; // corrigé en double
+  int _totalSeances = 0;
 
   // Metrics
   int _streakWeeks = 0;
@@ -63,6 +64,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final weeklyAttendance = await _dashboardService.getAssiduiteSemaine(_userId!);
         final muscleStats = await _dashboardService.getRepartitionMusculaire(_userId!);
         final totalHeuresStr = await _dashboardService.getTotalHeuresEntrainement(_userId!);
+        final totalSeances = await _dashboardService.getTotalSeances(_userId!);
 
         if (mounted) {
           setState(() {
@@ -74,6 +76,7 @@ class _DashboardPageState extends State<DashboardPage> {
             _muscleStats = muscleStats;
             _totalHeures = double.tryParse(totalHeuresStr.replaceAll(" h", "")) ?? 0.0; // conversion
             _isLoading = false;
+            _totalSeances = totalSeances;
           });
         }
       } else {
@@ -183,9 +186,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildCompactStatCard(
-                        "Série",
-                        "$_streakWeeks sem.",
-                        Icons.local_fire_department,
+                        "Séances",
+                        "$_totalSeances",
+                        Icons.fitness_center,
                         Colors.orangeAccent,
                       ),
                     ),
