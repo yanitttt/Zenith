@@ -4985,6 +4985,15 @@ class $SessionTable extends Session with TableInfo<$SessionTable, SessionData> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4992,6 +5001,7 @@ class $SessionTable extends Session with TableInfo<$SessionTable, SessionData> {
     programDayId,
     dateTs,
     durationMin,
+    name,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5042,6 +5052,12 @@ class $SessionTable extends Session with TableInfo<$SessionTable, SessionData> {
         ),
       );
     }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
     return context;
   }
 
@@ -5074,6 +5090,10 @@ class $SessionTable extends Session with TableInfo<$SessionTable, SessionData> {
         DriftSqlType.int,
         data['${effectivePrefix}duration_min'],
       ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
     );
   }
 
@@ -5089,12 +5109,14 @@ class SessionData extends DataClass implements Insertable<SessionData> {
   final int? programDayId;
   final int dateTs;
   final int? durationMin;
+  final String? name;
   const SessionData({
     required this.id,
     required this.userId,
     this.programDayId,
     required this.dateTs,
     this.durationMin,
+    this.name,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5107,6 +5129,9 @@ class SessionData extends DataClass implements Insertable<SessionData> {
     map['date_ts'] = Variable<int>(dateTs);
     if (!nullToAbsent || durationMin != null) {
       map['duration_min'] = Variable<int>(durationMin);
+    }
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
     }
     return map;
   }
@@ -5124,6 +5149,7 @@ class SessionData extends DataClass implements Insertable<SessionData> {
           durationMin == null && nullToAbsent
               ? const Value.absent()
               : Value(durationMin),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
     );
   }
 
@@ -5138,6 +5164,7 @@ class SessionData extends DataClass implements Insertable<SessionData> {
       programDayId: serializer.fromJson<int?>(json['programDayId']),
       dateTs: serializer.fromJson<int>(json['dateTs']),
       durationMin: serializer.fromJson<int?>(json['durationMin']),
+      name: serializer.fromJson<String?>(json['name']),
     );
   }
   @override
@@ -5149,6 +5176,7 @@ class SessionData extends DataClass implements Insertable<SessionData> {
       'programDayId': serializer.toJson<int?>(programDayId),
       'dateTs': serializer.toJson<int>(dateTs),
       'durationMin': serializer.toJson<int?>(durationMin),
+      'name': serializer.toJson<String?>(name),
     };
   }
 
@@ -5158,12 +5186,14 @@ class SessionData extends DataClass implements Insertable<SessionData> {
     Value<int?> programDayId = const Value.absent(),
     int? dateTs,
     Value<int?> durationMin = const Value.absent(),
+    Value<String?> name = const Value.absent(),
   }) => SessionData(
     id: id ?? this.id,
     userId: userId ?? this.userId,
     programDayId: programDayId.present ? programDayId.value : this.programDayId,
     dateTs: dateTs ?? this.dateTs,
     durationMin: durationMin.present ? durationMin.value : this.durationMin,
+    name: name.present ? name.value : this.name,
   );
   SessionData copyWithCompanion(SessionCompanion data) {
     return SessionData(
@@ -5176,6 +5206,7 @@ class SessionData extends DataClass implements Insertable<SessionData> {
       dateTs: data.dateTs.present ? data.dateTs.value : this.dateTs,
       durationMin:
           data.durationMin.present ? data.durationMin.value : this.durationMin,
+      name: data.name.present ? data.name.value : this.name,
     );
   }
 
@@ -5186,14 +5217,15 @@ class SessionData extends DataClass implements Insertable<SessionData> {
           ..write('userId: $userId, ')
           ..write('programDayId: $programDayId, ')
           ..write('dateTs: $dateTs, ')
-          ..write('durationMin: $durationMin')
+          ..write('durationMin: $durationMin, ')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, userId, programDayId, dateTs, durationMin);
+      Object.hash(id, userId, programDayId, dateTs, durationMin, name);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5202,7 +5234,8 @@ class SessionData extends DataClass implements Insertable<SessionData> {
           other.userId == this.userId &&
           other.programDayId == this.programDayId &&
           other.dateTs == this.dateTs &&
-          other.durationMin == this.durationMin);
+          other.durationMin == this.durationMin &&
+          other.name == this.name);
 }
 
 class SessionCompanion extends UpdateCompanion<SessionData> {
@@ -5211,12 +5244,14 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
   final Value<int?> programDayId;
   final Value<int> dateTs;
   final Value<int?> durationMin;
+  final Value<String?> name;
   const SessionCompanion({
     this.id = const Value.absent(),
     this.userId = const Value.absent(),
     this.programDayId = const Value.absent(),
     this.dateTs = const Value.absent(),
     this.durationMin = const Value.absent(),
+    this.name = const Value.absent(),
   });
   SessionCompanion.insert({
     this.id = const Value.absent(),
@@ -5224,6 +5259,7 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
     this.programDayId = const Value.absent(),
     required int dateTs,
     this.durationMin = const Value.absent(),
+    this.name = const Value.absent(),
   }) : userId = Value(userId),
        dateTs = Value(dateTs);
   static Insertable<SessionData> custom({
@@ -5232,6 +5268,7 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
     Expression<int>? programDayId,
     Expression<int>? dateTs,
     Expression<int>? durationMin,
+    Expression<String>? name,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -5239,6 +5276,7 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
       if (programDayId != null) 'program_day_id': programDayId,
       if (dateTs != null) 'date_ts': dateTs,
       if (durationMin != null) 'duration_min': durationMin,
+      if (name != null) 'name': name,
     });
   }
 
@@ -5248,6 +5286,7 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
     Value<int?>? programDayId,
     Value<int>? dateTs,
     Value<int?>? durationMin,
+    Value<String?>? name,
   }) {
     return SessionCompanion(
       id: id ?? this.id,
@@ -5255,6 +5294,7 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
       programDayId: programDayId ?? this.programDayId,
       dateTs: dateTs ?? this.dateTs,
       durationMin: durationMin ?? this.durationMin,
+      name: name ?? this.name,
     );
   }
 
@@ -5276,6 +5316,9 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
     if (durationMin.present) {
       map['duration_min'] = Variable<int>(durationMin.value);
     }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
     return map;
   }
 
@@ -5286,7 +5329,8 @@ class SessionCompanion extends UpdateCompanion<SessionData> {
           ..write('userId: $userId, ')
           ..write('programDayId: $programDayId, ')
           ..write('dateTs: $dateTs, ')
-          ..write('durationMin: $durationMin')
+          ..write('durationMin: $durationMin, ')
+          ..write('name: $name')
           ..write(')'))
         .toString();
   }
@@ -14972,6 +15016,7 @@ typedef $$SessionTableCreateCompanionBuilder =
       Value<int?> programDayId,
       required int dateTs,
       Value<int?> durationMin,
+      Value<String?> name,
     });
 typedef $$SessionTableUpdateCompanionBuilder =
     SessionCompanion Function({
@@ -14980,6 +15025,7 @@ typedef $$SessionTableUpdateCompanionBuilder =
       Value<int?> programDayId,
       Value<int> dateTs,
       Value<int?> durationMin,
+      Value<String?> name,
     });
 
 final class $$SessionTableReferences
@@ -15085,6 +15131,11 @@ class $$SessionTableFilterComposer extends Composer<_$AppDb, $SessionTable> {
 
   ColumnFilters<int> get durationMin => $composableBuilder(
     column: $table.durationMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -15208,6 +15259,11 @@ class $$SessionTableOrderingComposer extends Composer<_$AppDb, $SessionTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$AppUserTableOrderingComposer get userId {
     final $$AppUserTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -15274,6 +15330,9 @@ class $$SessionTableAnnotationComposer
     column: $table.durationMin,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
 
   $$AppUserTableAnnotationComposer get userId {
     final $$AppUserTableAnnotationComposer composer = $composerBuilder(
@@ -15410,12 +15469,14 @@ class $$SessionTableTableManager
                 Value<int?> programDayId = const Value.absent(),
                 Value<int> dateTs = const Value.absent(),
                 Value<int?> durationMin = const Value.absent(),
+                Value<String?> name = const Value.absent(),
               }) => SessionCompanion(
                 id: id,
                 userId: userId,
                 programDayId: programDayId,
                 dateTs: dateTs,
                 durationMin: durationMin,
+                name: name,
               ),
           createCompanionCallback:
               ({
@@ -15424,12 +15485,14 @@ class $$SessionTableTableManager
                 Value<int?> programDayId = const Value.absent(),
                 required int dateTs,
                 Value<int?> durationMin = const Value.absent(),
+                Value<String?> name = const Value.absent(),
               }) => SessionCompanion.insert(
                 id: id,
                 userId: userId,
                 programDayId: programDayId,
                 dateTs: dateTs,
                 durationMin: durationMin,
+                name: name,
               ),
           withReferenceMapper:
               (p0) =>

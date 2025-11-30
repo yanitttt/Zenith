@@ -20,6 +20,10 @@ LazyDatabase _openConnection() {
         data.offsetInBytes,
         data.lengthInBytes,
       );
+      final bytes = data.buffer.asUint8List(
+        data.offsetInBytes,
+        data.lengthInBytes,
+      );
       await file.writeAsBytes(bytes, flush: true);
     }
     return NativeDatabase.createInBackground(file);
@@ -86,6 +90,8 @@ class GenderConverter extends TypeConverter<String, String> {
 // Instances réutilisables
 const _convType = EnumTextConverter(['poly', 'iso']);
 const _convLevel = EnumTextConverter(['debutant', 'intermediaire', 'avance']);
+const _convType = EnumTextConverter(['poly', 'iso']);
+const _convLevel = EnumTextConverter(['debutant', 'intermediaire', 'avance']);
 // Nouveau converter pour gender (mêmes valeurs que sex avant)
 const _convGender = GenderConverter();
 const _nullableGender = NullAwareTypeConverter.wrap(_convGender);
@@ -97,8 +103,16 @@ const _convRelationType = EnumTextConverter([
   'progression',
   'regression',
 ]);
+const _convMetabolism = EnumTextConverter(['rapide', 'lent']);
+const _convRelationType = EnumTextConverter([
+  'variation',
+  'substitute',
+  'progression',
+  'regression',
+]);
 
 // Wrappers null-aware (pour colonnes NULL)
+const _nullableLevel = NullAwareTypeConverter.wrap(_convLevel);
 const _nullableLevel = NullAwareTypeConverter.wrap(_convLevel);
 
 const _nullableMetabolism = NullAwareTypeConverter.wrap(_convMetabolism);
@@ -113,11 +127,17 @@ class Exercise extends Table {
       integer().named('difficulty').check(difficulty.isBetweenValues(1, 5))();
   RealColumn get cardio =>
       real().named('cardio').withDefault(const Constant(0.0))();
+  IntColumn get difficulty =>
+      integer().named('difficulty').check(difficulty.isBetweenValues(1, 5))();
+  RealColumn get cardio =>
+      real().named('cardio').withDefault(const Constant(0.0))();
 }
 
 class Muscle extends Table {
   IntColumn get id => integer().autoIncrement()();
   // IMPORTANT: garder NOT NULL en plus de UNIQUE
+  TextColumn get name =>
+      text().named('name').customConstraint('NOT NULL UNIQUE')();
   TextColumn get name =>
       text().named('name').customConstraint('NOT NULL UNIQUE')();
 }
@@ -126,10 +146,14 @@ class Equipment extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name =>
       text().named('name').customConstraint('NOT NULL UNIQUE')();
+  TextColumn get name =>
+      text().named('name').customConstraint('NOT NULL UNIQUE')();
 }
 
 class Objective extends Table {
   IntColumn get id => integer().autoIncrement()();
+  TextColumn get code =>
+      text().named('code').customConstraint('NOT NULL UNIQUE')();
   TextColumn get code =>
       text().named('code').customConstraint('NOT NULL UNIQUE')();
   TextColumn get name => text().named('name')();
@@ -138,6 +162,9 @@ class Objective extends Table {
 class TrainingModality extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get objectiveId =>
+      integer()
+          .named('objective_id')
+          .references(Objective, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('objective_id')
           .references(Objective, #id, onDelete: KeyAction.cascade)();
@@ -163,7 +190,13 @@ class ExerciseMuscle extends Table {
       integer()
           .named('exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
   IntColumn get muscleId =>
+      integer()
+          .named('muscle_id')
+          .references(Muscle, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('muscle_id')
           .references(Muscle, #id, onDelete: KeyAction.cascade)();
@@ -177,7 +210,13 @@ class ExerciseEquipment extends Table {
       integer()
           .named('exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
   IntColumn get equipmentId =>
+      integer()
+          .named('equipment_id')
+          .references(Equipment, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('equipment_id')
           .references(Equipment, #id, onDelete: KeyAction.cascade)();
@@ -190,7 +229,13 @@ class ExerciseObjective extends Table {
       integer()
           .named('exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
   IntColumn get objectiveId =>
+      integer()
+          .named('objective_id')
+          .references(Objective, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('objective_id')
           .references(Objective, #id, onDelete: KeyAction.cascade)();
@@ -205,13 +250,21 @@ class ExerciseRelation extends Table {
       integer()
           .named('src_exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('src_exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
 
   @ReferenceName('asDst')
   IntColumn get dstExerciseId =>
       integer()
           .named('dst_exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('dst_exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
 
+  TextColumn get relationType =>
+      text().named('relation_type').map(_convRelationType)();
   TextColumn get relationType =>
       text().named('relation_type').map(_convRelationType)();
   RealColumn get weight => real().named('weight')();
@@ -230,11 +283,17 @@ class AppUser extends Table {
   // NEW: on remplace sex par gender
   TextColumn get gender =>
       text().named('gender').map(_nullableGender).nullable()();
+  TextColumn get gender =>
+      text().named('gender').map(_nullableGender).nullable()();
 
   // NEW: birthDate (stocké en INTEGER/epoch par SQLite)
   DateTimeColumn get birthDate => dateTime().named('birth_date').nullable()();
 
   // Toujours là
+  TextColumn get level =>
+      text().named('level').map(_nullableLevel).nullable()();
+  TextColumn get metabolism =>
+      text().named('metabolism').map(_nullableMetabolism).nullable()();
   TextColumn get level =>
       text().named('level').map(_nullableLevel).nullable()();
   TextColumn get metabolism =>
@@ -247,6 +306,8 @@ class AppUser extends Table {
   // Singleton: un seul user dans l’app
   IntColumn get singleton =>
       integer().named('singleton').withDefault(const Constant(1))();
+  IntColumn get singleton =>
+      integer().named('singleton').withDefault(const Constant(1))();
 }
 
 class UserEquipment extends Table {
@@ -254,7 +315,13 @@ class UserEquipment extends Table {
       integer()
           .named('user_id')
           .references(AppUser, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('user_id')
+          .references(AppUser, #id, onDelete: KeyAction.cascade)();
   IntColumn get equipmentId =>
+      integer()
+          .named('equipment_id')
+          .references(Equipment, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('equipment_id')
           .references(Equipment, #id, onDelete: KeyAction.cascade)();
@@ -267,7 +334,13 @@ class UserGoal extends Table {
       integer()
           .named('user_id')
           .references(AppUser, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('user_id')
+          .references(AppUser, #id, onDelete: KeyAction.cascade)();
   IntColumn get objectiveId =>
+      integer()
+          .named('objective_id')
+          .references(Objective, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('objective_id')
           .references(Objective, #id, onDelete: KeyAction.cascade)();
@@ -283,6 +356,11 @@ class UserTrainingDay extends Table {
           .references(AppUser, #id, onDelete: KeyAction.cascade)();
   IntColumn get dayOfWeek =>
       integer().named('day_of_week').check(dayOfWeek.isBetweenValues(1, 7))();
+      integer()
+          .named('user_id')
+          .references(AppUser, #id, onDelete: KeyAction.cascade)();
+  IntColumn get dayOfWeek =>
+      integer().named('day_of_week').check(dayOfWeek.isBetweenValues(1, 7))();
   @override
   Set<Column> get primaryKey => {userId, dayOfWeek};
 }
@@ -292,7 +370,13 @@ class UserFeedback extends Table {
       integer()
           .named('user_id')
           .references(AppUser, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('user_id')
+          .references(AppUser, #id, onDelete: KeyAction.cascade)();
   IntColumn get exerciseId =>
+      integer()
+          .named('exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
@@ -301,7 +385,17 @@ class UserFeedback extends Table {
           .named('session_id')
           .references(Session, #id, onDelete: KeyAction.cascade)
           .nullable()();
+      integer()
+          .named('session_id')
+          .references(Session, #id, onDelete: KeyAction.cascade)
+          .nullable()();
   IntColumn get liked => integer().named('liked')(); // 0/1
+  IntColumn get difficult =>
+      integer().named('difficult').withDefault(const Constant(0))();
+  IntColumn get pleasant =>
+      integer().named('pleasant').withDefault(const Constant(0))();
+  IntColumn get useless =>
+      integer().named('useless').withDefault(const Constant(0))();
   IntColumn get difficult =>
       integer().named('difficult').withDefault(const Constant(0))();
   IntColumn get pleasant =>
@@ -321,13 +415,21 @@ class Session extends Table {
       integer()
           .named('user_id')
           .references(AppUser, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('user_id')
+          .references(AppUser, #id, onDelete: KeyAction.cascade)();
   IntColumn get programDayId =>
+      integer()
+          .named('program_day_id')
+          .references(ProgramDay, #id, onDelete: KeyAction.setNull)
+          .nullable()();
       integer()
           .named('program_day_id')
           .references(ProgramDay, #id, onDelete: KeyAction.setNull)
           .nullable()();
   IntColumn get dateTs => integer().named('date_ts')();
   IntColumn get durationMin => integer().named('duration_min').nullable()();
+  TextColumn get name => text().named('name').nullable()();
 }
 
 class SessionExercise extends Table {
@@ -335,7 +437,13 @@ class SessionExercise extends Table {
       integer()
           .named('session_id')
           .references(Session, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('session_id')
+          .references(Session, #id, onDelete: KeyAction.cascade)();
   IntColumn get exerciseId =>
+      integer()
+          .named('exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
@@ -361,12 +469,21 @@ class WorkoutProgram extends Table {
           .nullable()();
   TextColumn get level =>
       text().named('level').map(_nullableLevel).nullable()();
+      integer()
+          .named('objective_id')
+          .references(Objective, #id, onDelete: KeyAction.setNull)
+          .nullable()();
+  TextColumn get level =>
+      text().named('level').map(_nullableLevel).nullable()();
   IntColumn get durationWeeks => integer().named('duration_weeks').nullable()();
 }
 
 class ProgramDay extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get programId =>
+      integer()
+          .named('program_id')
+          .references(WorkoutProgram, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('program_id')
           .references(WorkoutProgram, #id, onDelete: KeyAction.cascade)();
@@ -380,12 +497,22 @@ class ProgramDayExercise extends Table {
       integer()
           .named('program_day_id')
           .references(ProgramDay, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('program_day_id')
+          .references(ProgramDay, #id, onDelete: KeyAction.cascade)();
   IntColumn get exerciseId =>
+      integer()
+          .named('exercise_id')
+          .references(Exercise, #id, onDelete: KeyAction.cascade)();
       integer()
           .named('exercise_id')
           .references(Exercise, #id, onDelete: KeyAction.cascade)();
   IntColumn get position => integer().named('position')();
   IntColumn get modalityId =>
+      integer()
+          .named('modality_id')
+          .references(TrainingModality, #id, onDelete: KeyAction.setNull)
+          .nullable()();
       integer()
           .named('modality_id')
           .references(TrainingModality, #id, onDelete: KeyAction.setNull)
@@ -406,6 +533,8 @@ class ProgramDayExercise extends Table {
   TextColumn get notes => text().named('notes').nullable()();
   DateTimeColumn get scheduledDate =>
       dateTime().named('scheduled_date').nullable()();
+  DateTimeColumn get scheduledDate =>
+      dateTime().named('scheduled_date').nullable()();
 }
 
 class UserProgram extends Table {
@@ -414,11 +543,19 @@ class UserProgram extends Table {
       integer()
           .named('user_id')
           .references(AppUser, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('user_id')
+          .references(AppUser, #id, onDelete: KeyAction.cascade)();
   IntColumn get programId =>
       integer()
           .named('program_id')
           .references(WorkoutProgram, #id, onDelete: KeyAction.cascade)();
+      integer()
+          .named('program_id')
+          .references(WorkoutProgram, #id, onDelete: KeyAction.cascade)();
   IntColumn get startDateTs => integer().named('start_date_ts')();
+  IntColumn get isActive =>
+      integer().named('is_active').withDefault(const Constant(1))();
   IntColumn get isActive =>
       integer().named('is_active').withDefault(const Constant(1))();
 }
@@ -460,6 +597,7 @@ class AppDb extends _$AppDb {
   /// Bump quand tu touches au schéma.
   @override
   int get schemaVersion => 39;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -475,11 +613,21 @@ class AppDb extends _$AppDb {
           'singleton',
           'INTEGER NOT NULL DEFAULT 1',
         );
+        await _addColumnIfMissing(
+          'app_user',
+          'singleton',
+          'INTEGER NOT NULL DEFAULT 1',
+        );
         // Ajouter la colonne birth_date si manquante
         await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
       }
       // Ajouter program_day_id à la table session si manquante
       if (await _tableExists('session')) {
+        await _addColumnIfMissing(
+          'session',
+          'program_day_id',
+          'INTEGER REFERENCES program_day(id) ON DELETE SET NULL',
+        );
         await _addColumnIfMissing(
           'session',
           'program_day_id',
@@ -526,8 +674,10 @@ class AppDb extends _$AppDb {
 
     onCreate: (m) async {
       await m.createAll(); // crée toutes les tables de @DriftDatabase
+      await m.createAll(); // crée toutes les tables de @DriftDatabase
       // Skip index creation for tests (tables are fresh)
       if (!_isTest) {
+        await _createAllIndexes(); // puis les index idempotents
         await _createAllIndexes(); // puis les index idempotents
       }
     },
@@ -542,6 +692,11 @@ class AppDb extends _$AppDb {
           'singleton',
           'INTEGER NOT NULL DEFAULT 1',
         );
+        await _addColumnIfMissing(
+          'app_user',
+          'singleton',
+          'INTEGER NOT NULL DEFAULT 1',
+        );
         // Ajouter la colonne birth_date si manquante
         await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
       }
@@ -551,9 +706,19 @@ class AppDb extends _$AppDb {
         'singleton',
         'INTEGER NOT NULL DEFAULT 1',
       );
+      await _addColumnIfMissing(
+        'app_user',
+        'singleton',
+        'INTEGER NOT NULL DEFAULT 1',
+      );
 
       // Ajouter program_day_id à la table session si manquante
       if (await _tableExists('session')) {
+        await _addColumnIfMissing(
+          'session',
+          'program_day_id',
+          'INTEGER REFERENCES program_day(id) ON DELETE SET NULL',
+        );
         await _addColumnIfMissing(
           'session',
           'program_day_id',
@@ -597,6 +762,11 @@ class AppDb extends _$AppDb {
           'session_id',
           'INTEGER REFERENCES session(id) ON DELETE CASCADE',
         );
+        await _addColumnIfMissing(
+          'user_feedback',
+          'session_id',
+          'INTEGER REFERENCES session(id) ON DELETE CASCADE',
+        );
       }
 
       // On évite toute magie sur tables existantes (source d'erreurs).
@@ -608,7 +778,10 @@ class AppDb extends _$AppDb {
   Future<void> _createSingletonIndexIfSafe() async {
     if (await _tableExists('app_user') &&
         await _columnExists('app_user', 'singleton')) {
+    if (await _tableExists('app_user') &&
+        await _columnExists('app_user', 'singleton')) {
       await customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);',
         'CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);',
       );
     }
@@ -622,6 +795,50 @@ class AppDb extends _$AppDb {
       }
     }
 
+    await _idxIf(
+      'exercise_muscle',
+      'CREATE INDEX IF NOT EXISTS idx_ex_muscle  ON exercise_muscle(exercise_id);',
+    );
+    await _idxIf(
+      'exercise_objective',
+      'CREATE INDEX IF NOT EXISTS idx_ex_obj     ON exercise_objective(exercise_id);',
+    );
+    await _idxIf(
+      'user_feedback',
+      'CREATE INDEX IF NOT EXISTS idx_fb_user    ON user_feedback(user_id, ts);',
+    );
+    await _idxIf(
+      'user_equipment',
+      'CREATE INDEX IF NOT EXISTS idx_user_eq    ON user_equipment(user_id);',
+    );
+    await _idxIf(
+      'user_goal',
+      'CREATE INDEX IF NOT EXISTS idx_user_goal  ON user_goal(user_id);',
+    );
+    await _idxIf(
+      'session',
+      'CREATE INDEX IF NOT EXISTS idx_sess_user  ON session(user_id, date_ts);',
+    );
+    await _idxIf(
+      'exercise_relation',
+      'CREATE INDEX IF NOT EXISTS idx_rel_src    ON exercise_relation(src_exercise_id);',
+    );
+    await _idxIf(
+      'training_modality',
+      'CREATE INDEX IF NOT EXISTS idx_modality   ON training_modality(objective_id, level);',
+    );
+    await _idxIf(
+      'program_day',
+      'CREATE INDEX IF NOT EXISTS idx_prog_day   ON program_day(program_id);',
+    );
+    await _idxIf(
+      'program_day_exercise',
+      'CREATE INDEX IF NOT EXISTS idx_prog_ex  ON program_day_exercise(program_day_id);',
+    );
+    await _idxIf(
+      'user_program',
+      'CREATE INDEX IF NOT EXISTS idx_user_prog  ON user_program(user_id, is_active);',
+    );
     await _idxIf(
       'exercise_muscle',
       'CREATE INDEX IF NOT EXISTS idx_ex_muscle  ON exercise_muscle(exercise_id);',
@@ -686,6 +903,11 @@ class AppDb extends _$AppDb {
           "SELECT name FROM sqlite_master WHERE type='table' AND name = ?;",
           variables: [Variable.withString(table)],
         ).get();
+    final r =
+        await customSelect(
+          "SELECT name FROM sqlite_master WHERE type='table' AND name = ?;",
+          variables: [Variable.withString(table)],
+        ).get();
     return r.isNotEmpty;
   }
 
@@ -694,6 +916,11 @@ class AppDb extends _$AppDb {
     return rows.any((e) => (e.data['name'] ?? '').toString() == column);
   }
 
+  Future<void> _addColumnIfMissing(
+    String table,
+    String column,
+    String sqlType,
+  ) async {
   Future<void> _addColumnIfMissing(
     String table,
     String column,
@@ -741,10 +968,12 @@ class AppDb extends _$AppDb {
       if (!hasSingleton) {
         await customStatement(
           'ALTER TABLE app_user ADD COLUMN singleton INTEGER NOT NULL DEFAULT 1;',
+          'ALTER TABLE app_user ADD COLUMN singleton INTEGER NOT NULL DEFAULT 1;',
         );
       }
       // L’index ne sera créé que si la colonne existe (maintenant c’est sûr)
       await customStatement(
+        'CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);',
         'CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);',
       );
     }

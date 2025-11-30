@@ -74,7 +74,7 @@ class PlanningService {
         PlanningItem(
           sessionId: session.id,
           programDayId: session.programDayId,
-          title: programDay?.name ?? "Séance Libre",
+          title: session.name ?? programDay?.name ?? "Séance Libre",
           duration: session.durationMin ?? 0,
           isDone: true,
           isScheduled: false,
