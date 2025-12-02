@@ -109,7 +109,7 @@ class ProgramGeneratorService {
   Future<int> generateUserProgram({
     required int userId,
     int? objectiveId,
-    int daysPerWeek = 3,
+    int? daysPerWeek,
     String? programName,
   }) async {
     // 1. Déterminer l'objectif et le niveau de l'utilisateur
@@ -119,6 +119,21 @@ class ProgramGeneratorService {
 
     if (user == null) {
       throw Exception('Utilisateur non trouvé');
+    }
+
+    // 1.5. Récupérer le nombre de jours d'entraînement depuis UserTrainingDay
+    int targetDaysPerWeek;
+    if (daysPerWeek != null) {
+      targetDaysPerWeek = daysPerWeek;
+    } else {
+      final userTrainingDays = await trainingDayDao.getDayNumbersForUser(userId);
+      if (userTrainingDays.isEmpty) {
+        debugPrint('[PROGRAM_GEN] Aucun jour d\'entraînement défini, utilisation de 3 jours par défaut');
+        targetDaysPerWeek = 3;
+      } else {
+        targetDaysPerWeek = userTrainingDays.length;
+        debugPrint('[PROGRAM_GEN] $targetDaysPerWeek jours d\'entraînement récupérés depuis UserTrainingDay');
+      }
     }
 
     // 2. Récupérer l'objectif
@@ -164,7 +179,7 @@ class ProgramGeneratorService {
       userId: userId,
       objectiveId: targetObjectiveId,
       userLevel: user.level ?? 'intermediaire',
-      daysPerWeek: daysPerWeek,
+      daysPerWeek: targetDaysPerWeek,
     );
 
     // 5. Associer le programme à l'utilisateur
@@ -602,7 +617,7 @@ class ProgramGeneratorService {
   Future<int> regenerateUserProgram({
     required int userId,
     int? objectiveId,
-    int daysPerWeek = 3,
+    int? daysPerWeek,
   }) async {
     // Désactiver tous les programmes existants
     await (db.update(db.userProgram)..where(
@@ -610,6 +625,8 @@ class ProgramGeneratorService {
     )).write(const UserProgramCompanion(isActive: Value(0)));
 
     // Générer un nouveau programme
+    // Si daysPerWeek n'est pas spécifié, generateUserProgram va automatiquement
+    // récupérer le nombre de jours depuis UserTrainingDay
     return await generateUserProgram(
       userId: userId,
       objectiveId: objectiveId,

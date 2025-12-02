@@ -93,9 +93,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       }
 
       // Générer le programme
+      // Le nombre de jours est récupéré automatiquement depuis UserTrainingDay
       final programId = await _programService.generateUserProgram(
         userId: userId,
-        daysPerWeek: 3,
       );
 
       // Recharger le programme
@@ -173,9 +173,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         final userId = widget.prefs.currentUserId;
         if (userId == null) return;
 
+        // Le nombre de jours est récupéré automatiquement depuis UserTrainingDay
         await _programService.regenerateUserProgram(
           userId: userId,
-          daysPerWeek: 3,
         );
 
         await _loadProgram();
