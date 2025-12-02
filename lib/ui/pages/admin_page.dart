@@ -4,25 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:recommandation_mobile/data/db/daos/user_equipment_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_training_day_dao.dart';
-import 'package:recommandation_mobile/ui/pages/onboarding/profile_basics_page.dart';
-import 'package:drift/drift.dart' show Value;
+
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
 import '../theme/app_theme.dart';
 import '../../services/ImcService.dart';
 import 'onboarding/onboarding_flow.dart';
 import '../../core/prefs/app_prefs.dart';
-import 'edit_user_page.dart'; 
+import 'edit_user_page.dart';
 import '../../services/notification_service.dart';
+import '../widgets/training_days_dialog.dart';
 
 class AdminPage extends StatefulWidget {
   final AppDb db;
   final AppPrefs prefs;
-  const AdminPage({
-    super.key,
-    required this.db,
-    required this.prefs,
-  });
+  const AdminPage({super.key, required this.db, required this.prefs});
 
   @override
   State<AdminPage> createState() => _AdminPageState();
@@ -44,58 +40,55 @@ class _AdminPageState extends State<AdminPage> {
   }
 
   Future<void> _confirmAndDelete(int userId) async {
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('Supprimer le profil ?'),
-      content: const Text(
-        'Cette action effacera entièrement votre profil et vos données. '
-        'Voulez-vous continuer ?',
-      ),
-      actions: [
-        TextButton(
-          style: TextButton.styleFrom(
-            foregroundColor: AppTheme.gold,
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Supprimer le profil ?'),
+            content: const Text(
+              'Cette action effacera entièrement votre profil et vos données. '
+              'Voulez-vous continuer ?',
+            ),
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: AppTheme.gold),
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Annuler'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Supprimer'),
+              ),
+            ],
           ),
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Annuler'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            foregroundColor: Colors.white,
-            backgroundColor: Colors.red,
-          ),
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('Supprimer'),
-        ),
-      ],
-    ),
-  );
+    );
 
- if (ok == true) {
-  await _userDao.deleteUserCascade(userId);
+    if (ok == true) {
+      await _userDao.deleteUserCascade(userId);
 
-  await NotificationService().showNotification(
+      await NotificationService().showNotification(
         id: 0,
         title: "Profil Supprimé",
         body: "Votre profil a été supprimé avec succès.",
       );
 
-  
-  await widget.prefs.setCurrentUserId(-1);
-  await widget.prefs.setOnboarded(false);
+      await widget.prefs.setCurrentUserId(-1);
+      await widget.prefs.setOnboarded(false);
 
-  if (!mounted) return;
+      if (!mounted) return;
 
-  Navigator.of(context).pushAndRemoveUntil(
-    MaterialPageRoute(
-      builder: (_) => OnboardingFlow(db: widget.db, prefs: widget.prefs),
-    ),
-    (route) => false,
-  );
-}
-
-}
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => OnboardingFlow(db: widget.db, prefs: widget.prefs),
+        ),
+        (route) => false,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,17 +103,17 @@ class _AdminPageState extends State<AdminPage> {
                 children: [
                   const Expanded(
                     child: Padding(
-                      padding:  EdgeInsets.only(left: 18),
-                    child: Text(
-                      "Profil",
-                      textAlign: TextAlign.left,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFD4B868),
+                      padding: EdgeInsets.only(left: 18),
+                      child: Text(
+                        "Profil",
+                        textAlign: TextAlign.left,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFD4B868),
+                        ),
                       ),
                     ),
-                  ),
                   ),
                   IconButton(
                     tooltip: 'Tester les notifications',
@@ -128,10 +121,14 @@ class _AdminPageState extends State<AdminPage> {
                       await NotificationService().showNotification(
                         id: 1,
                         title: "Test Notification",
-                        body: "Le service de notification fonctionne correctement !",
+                        body:
+                            "Le service de notification fonctionne correctement !",
                       );
                     },
-                    icon: const Icon(Icons.notifications_active, color: AppTheme.gold),
+                    icon: const Icon(
+                      Icons.notifications_active,
+                      color: AppTheme.gold,
+                    ),
                   ),
 
                   IconButton(
@@ -145,7 +142,6 @@ class _AdminPageState extends State<AdminPage> {
               const SizedBox(height: 20),
 
               Expanded(
-
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -155,23 +151,31 @@ class _AdminPageState extends State<AdminPage> {
                         stream: _userDao.watchAllOrdered(),
                         builder: (context, snap) {
                           if (snap.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
                           }
                           final users = snap.data ?? const <AppUserData>[];
                           if (users.isEmpty) {
                             return const Center(
-                              child: Text('Aucun utilisateur', style: TextStyle(color: Colors.white70)),
+                              child: Text(
+                                'Aucun utilisateur',
+                                style: TextStyle(color: Colors.white70),
+                              ),
                             );
                           }
 
                           return ListView.separated(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             itemCount: users.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 10),
-                            itemBuilder: (_, i) => _UserCard(
-                              u: users[i],
-                              onDelete: () => _confirmAndDelete(users[i].id),
-                            ),
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 10),
+                            itemBuilder:
+                                (_, i) => _UserCard(
+                                  u: users[i],
+                                  onDelete:
+                                      () => _confirmAndDelete(users[i].id),
+                                ),
                           );
                         },
                       ),
@@ -193,11 +197,7 @@ class _UserCard extends StatefulWidget {
   final AppUserData u;
   final VoidCallback? onDelete;
 
-  const _UserCard({
-    required this.u,
-    this.onDelete,
-    Key? key,
-  }) : super(key: key);
+  const _UserCard({required this.u, this.onDelete, Key? key}) : super(key: key);
 
   @override
   State<_UserCard> createState() => _UserCardState();
@@ -214,7 +214,8 @@ class _UserCardState extends State<_UserCard> {
 
   Future<void> _loadTrainingDays() async {
     // Accède directement au DAO via l'état du parent
-    final dao = context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
+    final dao =
+        context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
     final days = await dao.getDayNumbersForUser(widget.u.id);
     if (mounted) {
       setState(() => _selectedDays = days);
@@ -226,11 +227,12 @@ class _UserCardState extends State<_UserCard> {
 
     final result = await showDialog<List<int>>(
       context: context,
-      builder: (ctx) => _TrainingDaysDialog(selectedDays: tempSelected),
+      builder: (ctx) => TrainingDaysDialog(selectedDays: tempSelected),
     );
 
     if (result != null) {
-      final dao = context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
+      final dao =
+          context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
       await dao.replace(widget.u.id, result);
       setState(() => _selectedDays = result);
     }
@@ -246,7 +248,8 @@ class _UserCardState extends State<_UserCard> {
     final now = DateTime.now();
     int years = now.year - dob.year;
     final hadBirthday =
-        (now.month > dob.month) || (now.month == dob.month && now.day >= dob.day);
+        (now.month > dob.month) ||
+        (now.month == dob.month && now.day >= dob.day);
     if (!hadBirthday) years--;
     return years;
   }
@@ -279,10 +282,12 @@ class _UserCardState extends State<_UserCard> {
 
   @override
   Widget build(BuildContext context) {
-    final fullName = [
-      if ((widget.u.prenom ?? '').trim().isNotEmpty) widget.u.prenom!.trim(),
-      if ((widget.u.nom ?? '').trim().isNotEmpty) widget.u.nom!.trim(),
-    ].join(' ').trim();
+    final fullName =
+        [
+          if ((widget.u.prenom ?? '').trim().isNotEmpty)
+            widget.u.prenom!.trim(),
+          if ((widget.u.nom ?? '').trim().isNotEmpty) widget.u.nom!.trim(),
+        ].join(' ').trim();
 
     final age = _calcAge(widget.u.birthDate);
     final genderLabel = _genderLabel(widget.u.gender);
@@ -291,7 +296,10 @@ class _UserCardState extends State<_UserCard> {
     double? imcArrondi;
     String? imcCategory;
     if (widget.u.height != null && widget.u.weight != null) {
-      final calc = IMCcalculator(height: widget.u.height!, weight: widget.u.weight!);
+      final calc = IMCcalculator(
+        height: widget.u.height!,
+        weight: widget.u.weight!,
+      );
       final imc = calc.calculateIMC();
       imcArrondi = double.parse(imc.toStringAsFixed(2));
       imcCategory = calc.getIMCCategory();
@@ -302,14 +310,10 @@ class _UserCardState extends State<_UserCard> {
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A2E),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFD9BE77),
-          width: 1.5,
-        ),
+        border: Border.all(color: const Color(0xFFD9BE77), width: 1.5),
       ),
       child: Column(
         children: [
-
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -321,7 +325,6 @@ class _UserCardState extends State<_UserCard> {
             ),
             child: Row(
               children: [
-                
                 Container(
                   width: 50,
                   height: 50,
@@ -342,7 +345,9 @@ class _UserCardState extends State<_UserCard> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        fullName.isEmpty ? 'Utilisateur ${widget.u.id}' : fullName,
+                        fullName.isEmpty
+                            ? 'Utilisateur ${widget.u.id}'
+                            : fullName,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -426,7 +431,8 @@ class _UserCardState extends State<_UserCard> {
                 ),
 
                 // Métabolisme sur une ligne si disponible
-                if (widget.u.metabolism != null && widget.u.metabolism!.trim().isNotEmpty) ...[
+                if (widget.u.metabolism != null &&
+                    widget.u.metabolism!.trim().isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _StatCard(
                     icon: Icons.local_fire_department,
@@ -448,18 +454,21 @@ class _UserCardState extends State<_UserCard> {
                         label: 'Modifier',
                         isCompact: true,
                         onPressed: () {
-                          final adminState = context.findAncestorStateOfType<_AdminPageState>()!;
+                          final adminState =
+                              context
+                                  .findAncestorStateOfType<_AdminPageState>()!;
                           final db = adminState.widget.db;
-                          
+
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => EditProfilePage(
-                                user: widget.u,
-                                db: db, 
-                                userDao: adminState._userDao,
-                                goalDao: adminState._goalDao, 
-                                equipmentDao: adminState._equipmentDao, 
-                              ),
+                              builder:
+                                  (_) => EditProfilePage(
+                                    user: widget.u,
+                                    db: db,
+                                    userDao: adminState._userDao,
+                                    goalDao: adminState._goalDao,
+                                    equipmentDao: adminState._equipmentDao,
+                                  ),
                             ),
                           );
                         },
@@ -483,9 +492,10 @@ class _UserCardState extends State<_UserCard> {
                 // Bouton jours d'entraînement
                 _ModernButton(
                   icon: Icons.calendar_today_outlined,
-                  label: _selectedDays.isEmpty
-                      ? "Jours d'entraînement"
-                      : _selectedDays.map(_getDayName).join(', '),
+                  label:
+                      _selectedDays.isEmpty
+                          ? "Jours d'entraînement"
+                          : _selectedDays.map(_getDayName).join(', '),
                   isCompact: true,
                   onPressed: _showTrainingDaysDialog,
                 ),
@@ -494,7 +504,8 @@ class _UserCardState extends State<_UserCard> {
           ),
         ],
       ),
-    );  }
+    );
+  }
 }
 
 // Widget pour les cartes de statistiques
@@ -522,10 +533,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF0F0F1E),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFD9BE77),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFD9BE77), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,15 +603,13 @@ class _ModernButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = isDanger
-        ? Colors.red.shade900.withOpacity(0.3)
-        : const Color(0xFF0F0F1E);
-    final borderColor = isDanger
-        ? Colors.red.shade700
-        : const Color(0xFFD9BE77);
-    final textColor = isDanger
-        ? Colors.red.shade300
-        : const Color(0xFFD9BE77);
+    final backgroundColor =
+        isDanger
+            ? Colors.red.shade900.withOpacity(0.3)
+            : const Color(0xFF0F0F1E);
+    final borderColor =
+        isDanger ? Colors.red.shade700 : const Color(0xFFD9BE77);
+    final textColor = isDanger ? Colors.red.shade300 : const Color(0xFFD9BE77);
 
     return Container(
       width: double.infinity,
@@ -640,156 +646,6 @@ class _ModernButton extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// Widget de dialog pour sélectionner les jours d'entraînement
-class _TrainingDaysDialog extends StatefulWidget {
-  final List<int> selectedDays;
-
-  const _TrainingDaysDialog({required this.selectedDays});
-
-  @override
-  State<_TrainingDaysDialog> createState() => _TrainingDaysDialogState();
-}
-
-class _TrainingDaysDialogState extends State<_TrainingDaysDialog> {
-  late List<int> _tempSelected;
-
-  @override
-  void initState() {
-    super.initState();
-    _tempSelected = List.from(widget.selectedDays);
-  }
-
-  void _toggleDay(int dayNum) {
-    setState(() {
-      if (_tempSelected.contains(dayNum)) {
-        _tempSelected.remove(dayNum);
-      } else {
-        _tempSelected.add(dayNum);
-      }
-      _tempSelected.sort();
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const dayNames = [
-      'Lundi',
-      'Mardi',
-      'Mercredi',
-      'Jeudi',
-      'Vendredi',
-      'Samedi',
-      'Dimanche',
-    ];
-
-    return Dialog(
-      backgroundColor: const Color(0xFF020216),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFFD9BE77), width: 2),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.calendar_today, color: Color(0xFFD9BE77), size: 24),
-                const SizedBox(width: 12),
-                const Text(
-                  'Jours d\'entraînement',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFD9BE77),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Sélectionnez les jours où vous souhaitez vous entraîner',
-              style: TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-            const SizedBox(height: 24),
-            ...List.generate(7, (index) {
-              final dayNum = index + 1;
-              final isSelected = _tempSelected.contains(dayNum);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: InkWell(
-                  onTap: () => _toggleDay(dayNum),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFFD9BE77).withOpacity(0.2) : Colors.transparent,
-                      border: Border.all(
-                        color: isSelected ? const Color(0xFFD9BE77) : Colors.white24,
-                        width: isSelected ? 2 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          isSelected ? Icons.check_circle : Icons.circle_outlined,
-                          color: isSelected ? const Color(0xFFD9BE77) : Colors.white54,
-                          size: 24,
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          dayNames[index],
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? Colors.white : Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white70,
-                      side: const BorderSide(color: Colors.white24),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Annuler', style: TextStyle(fontSize: 16)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFD9BE77),
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    onPressed: () => Navigator.pop(context, _tempSelected),
-                    child: const Text('Valider', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );

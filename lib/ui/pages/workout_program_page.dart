@@ -4,6 +4,8 @@ import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
 import '../../services/program_generator_service.dart';
 import '../../services/session_tracking_service.dart';
+import '../../data/db/daos/user_training_day_dao.dart';
+import '../widgets/training_days_dialog.dart';
 import '../theme/app_theme.dart';
 import 'active_session_page.dart';
 
@@ -20,6 +22,7 @@ class WorkoutProgramPage extends StatefulWidget {
 class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
   late final ProgramGeneratorService _programService;
   late final SessionTrackingService _sessionService;
+  late final UserTrainingDayDao _trainingDayDao;
   WorkoutProgramData? _currentProgram;
   List<ProgramDaySession> _programDays = [];
   Map<int, SessionData> _completedSessions = {};
@@ -33,6 +36,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     super.initState();
     _programService = ProgramGeneratorService(widget.db);
     _sessionService = SessionTrackingService(widget.db);
+    _trainingDayDao = UserTrainingDayDao(widget.db);
     _loadProgram();
   }
 
@@ -51,9 +55,40 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       // Vérifier s'il existe un programme actif
       final program = await _programService.getActiveUserProgram(userId);
 
+      // Vérifier si l'utilisateur a des jours d'entraînement définis
+      final trainingDays = await _trainingDayDao.getDayNumbersForUser(userId);
+
+      // Si un programme existe mais qu'aucun jour d'entraînement n'est défini,
+      // c'est probablement un programme généré automatiquement par l'ancienne logique.
+      // On le supprime pour forcer l'état vide et la nouvelle procédure.
+      if (program != null && trainingDays.isEmpty) {
+        debugPrint(
+          '[WORKOUT_PAGE] Programme détecté sans jours définis -> Suppression pour forcer l\'état vide',
+        );
+
+        // Désactiver/Supprimer le programme
+        await (widget.db.delete(widget.db.userProgram)
+          ..where((tbl) => tbl.userId.equals(userId))).go();
+
+        if (mounted) {
+          setState(() {
+            _currentProgram = null;
+            _programDays = [];
+            _loading = false;
+          });
+        }
+        return;
+      }
+
       if (program == null) {
-        // Générer un nouveau programme
-        await _generateNewProgram();
+        // Ne rien faire, l'interface affichera l'état vide
+        if (mounted) {
+          setState(() {
+            _currentProgram = null;
+            _programDays = [];
+            _loading = false;
+          });
+        }
       } else {
         // Charger le programme existant
         final days = await _programService.getProgramDays(program.id);
@@ -174,9 +209,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         if (userId == null) return;
 
         // Le nombre de jours est récupéré automatiquement depuis UserTrainingDay
-        await _programService.regenerateUserProgram(
-          userId: userId,
-        );
+        await _programService.regenerateUserProgram(userId: userId);
 
         await _loadProgram();
       } catch (e) {
@@ -772,35 +805,88 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.fitness_center, color: Colors.grey, size: 64),
-            const SizedBox(height: 16),
-            const Text(
-              'Aucun programme',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.gold.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.fitness_center,
+                color: AppTheme.gold,
+                size: 48,
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'Génère ton premier programme personnalisé',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white70, fontSize: 14),
-            ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _generateNewProgram,
-              icon: const Icon(Icons.add),
-              label: const Text('Générer un programme'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.gold,
-                foregroundColor: Colors.black,
+            const Text(
+              'Aucun programme pour l\'instant',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Cliquez ci-dessous pour générer votre premier programme personnalisé et commencer votre transformation !',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _handleGenerateClick,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.gold,
+                  foregroundColor: Colors.black,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Générer mon premier programme',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _handleGenerateClick() async {
+    final userId = widget.prefs.currentUserId;
+    if (userId == null) return;
+
+    // Vérifier si l'utilisateur a des jours d'entraînement
+    final days = await _trainingDayDao.getDayNumbersForUser(userId);
+
+    if (days.isEmpty) {
+      if (!mounted) return;
+
+      // Afficher le dialog pour ajouter des jours
+      final result = await showDialog<List<int>>(
+        context: context,
+        builder: (ctx) => const TrainingDaysDialog(selectedDays: []),
+      );
+
+      if (result != null && result.isNotEmpty) {
+        await _trainingDayDao.replace(userId, result);
+        // Une fois les jours enregistrés, générer le programme
+        await _generateNewProgram();
+      }
+    } else {
+      // Si les jours existent déjà, générer directement
+      await _generateNewProgram();
+    }
   }
 }
