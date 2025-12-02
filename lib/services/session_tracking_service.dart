@@ -71,13 +71,40 @@ class SessionTrackingService {
     required int programDayId,
   }) async {
     final now = DateTime.now();
+    DateTime sessionDate = now;
+
+    // Vérifier si une date est prévue pour ce jour de programme
+    final scheduledExercise =
+        await (db.select(db.programDayExercise)
+              ..where(
+                (tbl) =>
+                    tbl.programDayId.equals(programDayId) &
+                    tbl.scheduledDate.isNotNull(),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (scheduledExercise != null && scheduledExercise.scheduledDate != null) {
+      final scheduled = scheduledExercise.scheduledDate!;
+      // On garde l'heure actuelle mais on force la date prévue
+      sessionDate = DateTime(
+        scheduled.year,
+        scheduled.month,
+        scheduled.day,
+        now.hour,
+        now.minute,
+        now.second,
+      );
+    }
 
     // Créer la session avec le lien vers le jour du programme
-    final sessionId = await db.into(db.session).insert(
+    final sessionId = await db
+        .into(db.session)
+        .insert(
           SessionCompanion(
             userId: Value(userId),
             programDayId: Value(programDayId),
-            dateTs: Value(now.millisecondsSinceEpoch ~/ 1000),
+            dateTs: Value(sessionDate.millisecondsSinceEpoch ~/ 1000),
             durationMin: const Value.absent(),
           ),
         );
@@ -87,29 +114,33 @@ class SessionTrackingService {
 
   /// Récupère les exercices d'un jour de programme pour la session
   Future<List<ActiveSessionExercise>> getSessionExercises(
-      int programDayId) async {
-    final programExercises = await (db.select(db.programDayExercise)
-          ..where((tbl) => tbl.programDayId.equals(programDayId))
-          ..orderBy([(t) => OrderingTerm.asc(t.position)]))
-        .get();
+    int programDayId,
+  ) async {
+    final programExercises =
+        await (db.select(db.programDayExercise)
+              ..where((tbl) => tbl.programDayId.equals(programDayId))
+              ..orderBy([(t) => OrderingTerm.asc(t.position)]))
+            .get();
 
     final List<ActiveSessionExercise> exercises = [];
 
     for (final programEx in programExercises) {
-      final exercise = await (db.select(db.exercise)
-            ..where((tbl) => tbl.id.equals(programEx.exerciseId)))
-          .getSingle();
+      final exercise =
+          await (db.select(db.exercise)
+            ..where((tbl) => tbl.id.equals(programEx.exerciseId))).getSingle();
 
-      exercises.add(ActiveSessionExercise(
-        exerciseId: exercise.id,
-        exerciseName: exercise.name,
-        exerciseType: exercise.type,
-        difficulty: exercise.difficulty,
-        position: programEx.position,
-        setsSuggestion: programEx.setsSuggestion,
-        repsSuggestion: programEx.repsSuggestion,
-        restSuggestionSec: programEx.restSuggestionSec,
-      ));
+      exercises.add(
+        ActiveSessionExercise(
+          exerciseId: exercise.id,
+          exerciseName: exercise.name,
+          exerciseType: exercise.type,
+          difficulty: exercise.difficulty,
+          position: programEx.position,
+          setsSuggestion: programEx.setsSuggestion,
+          repsSuggestion: programEx.repsSuggestion,
+          restSuggestionSec: programEx.restSuggestionSec,
+        ),
+      );
     }
 
     return exercises;
@@ -120,7 +151,9 @@ class SessionTrackingService {
     required int sessionId,
     required ActiveSessionExercise exercise,
   }) async {
-    await db.into(db.sessionExercise).insert(
+    await db
+        .into(db.sessionExercise)
+        .insert(
           SessionExerciseCompanion(
             sessionId: Value(sessionId),
             exerciseId: Value(exercise.exerciseId),
@@ -142,8 +175,9 @@ class SessionTrackingService {
     final now = DateTime.now();
     final durationMin = now.difference(startTime).inMinutes;
 
-    await (db.update(db.session)..where((tbl) => tbl.id.equals(sessionId)))
-        .write(SessionCompanion(durationMin: Value(durationMin)));
+    await (db.update(db.session)..where(
+      (tbl) => tbl.id.equals(sessionId),
+    )).write(SessionCompanion(durationMin: Value(durationMin)));
   }
 
   /// Récupère l'historique des sessions d'un utilisateur
@@ -177,14 +211,17 @@ class SessionTrackingService {
       LIMIT 5
     ''';
 
-    final results = await db.customSelect(
-      query,
-      variables: [
-        Variable.withInt(userId),
-        Variable.withInt(exerciseId),
-      ],
-      readsFrom: {db.session, db.sessionExercise},
-    ).get();
+    final results =
+        await db
+            .customSelect(
+              query,
+              variables: [
+                Variable.withInt(userId),
+                Variable.withInt(exerciseId),
+              ],
+              readsFrom: {db.session, db.sessionExercise},
+            )
+            .get();
 
     if (results.isEmpty) {
       return {
@@ -299,18 +336,21 @@ class SessionTrackingService {
   /// Supprime une session (si erreur ou annulation)
   Future<void> deleteSession(int sessionId) async {
     // Les SessionExercise seront supprimés en cascade
-    await (db.delete(db.session)..where((tbl) => tbl.id.equals(sessionId)))
-        .go();
+    await (db.delete(db.session)
+      ..where((tbl) => tbl.id.equals(sessionId))).go();
   }
 
   /// Vérifie si un jour de programme a déjà été complété
   Future<bool> isDayCompleted(int programDayId) async {
-    final sessions = await (db.select(db.session)
-          ..where((tbl) =>
-              tbl.programDayId.equals(programDayId) &
-              tbl.durationMin.isNotNull())
-          ..limit(1))
-        .get();
+    final sessions =
+        await (db.select(db.session)
+              ..where(
+                (tbl) =>
+                    tbl.programDayId.equals(programDayId) &
+                    tbl.durationMin.isNotNull(),
+              )
+              ..limit(1))
+            .get();
 
     return sessions.isNotEmpty;
   }
@@ -318,9 +358,11 @@ class SessionTrackingService {
   /// Récupère la dernière session complétée pour un jour
   Future<SessionData?> getLastCompletedSession(int programDayId) async {
     return await (db.select(db.session)
-          ..where((tbl) =>
-              tbl.programDayId.equals(programDayId) &
-              tbl.durationMin.isNotNull())
+          ..where(
+            (tbl) =>
+                tbl.programDayId.equals(programDayId) &
+                tbl.durationMin.isNotNull(),
+          )
           ..orderBy([(t) => OrderingTerm.desc(t.dateTs)])
           ..limit(1))
         .getSingleOrNull();
@@ -328,15 +370,19 @@ class SessionTrackingService {
 
   /// Récupère toutes les sessions complétées pour plusieurs jours
   Future<Map<int, SessionData>> getCompletedSessionsForDays(
-      List<int> programDayIds) async {
+    List<int> programDayIds,
+  ) async {
     if (programDayIds.isEmpty) return {};
 
-    final sessions = await (db.select(db.session)
-          ..where((tbl) =>
-              tbl.programDayId.isIn(programDayIds) &
-              tbl.durationMin.isNotNull())
-          ..orderBy([(t) => OrderingTerm.desc(t.dateTs)]))
-        .get();
+    final sessions =
+        await (db.select(db.session)
+              ..where(
+                (tbl) =>
+                    tbl.programDayId.isIn(programDayIds) &
+                    tbl.durationMin.isNotNull(),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.dateTs)]))
+            .get();
 
     // Créer une map avec seulement la session la plus récente par jour
     final Map<int, SessionData> result = {};

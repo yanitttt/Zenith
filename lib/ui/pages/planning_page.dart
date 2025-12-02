@@ -843,8 +843,8 @@ class _PlanningPageState extends State<PlanningPage> {
               _buildMiniStat(Icons.fitness_center, "Programme", Colors.white70),
             ],
           ),
-          // --- MENU MODIFIER / SUPPRIMER (Si c'est une séance réelle) ---
-          if (item.sessionId != null) ...[
+          // --- MENU MODIFIER / SUPPRIMER (Seulement pour les séances libres) ---
+          if (item.sessionId != null && item.programDayId == null) ...[
             const SizedBox(height: 8),
             const Divider(color: Colors.white12, height: 1),
             Row(
