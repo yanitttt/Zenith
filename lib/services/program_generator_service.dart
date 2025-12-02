@@ -65,13 +65,18 @@ class ProgramGeneratorService {
 
   /// Calcule les prochaines dates d'entraînement pour l'utilisateur
   /// Retourne une liste de dates futures basée sur les jours d'entraînement définis
+  /// [startFromDate] permet de calculer à partir d'une date spécifique (par défaut aujourd'hui)
   Future<List<DateTime>> _calculateTrainingDates({
     required int userId,
     required int numberOfDays,
+    DateTime? startFromDate,
   }) async {
     final List<DateTime> scheduledDates = [];
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final startDate = startFromDate != null
+        ? DateTime(startFromDate.year, startFromDate.month, startFromDate.day)
+        : today;
 
     // Récupérer les jours d'entraînement de l'utilisateur (1-7, où 1=Lundi)
     final userTrainingDays = await trainingDayDao.getDayNumbersForUser(userId);
@@ -79,7 +84,7 @@ class ProgramGeneratorService {
     if (userTrainingDays.isEmpty) {
       // Si aucun jour défini, générer tous les 2 jours
       for (int i = 0; i < numberOfDays; i++) {
-        scheduledDates.add(today.add(Duration(days: (i * 2) + 1)));
+        scheduledDates.add(startDate.add(Duration(days: (i * 2) + 1)));
       }
       return scheduledDates;
     }
@@ -88,7 +93,7 @@ class ProgramGeneratorService {
     final sortedDays = List<int>.from(userTrainingDays)..sort();
 
     // Générer les dates futures
-    DateTime currentDate = today;
+    DateTime currentDate = startDate;
 
     while (scheduledDates.length < numberOfDays) {
       currentDate = currentDate.add(const Duration(days: 1));
@@ -702,13 +707,37 @@ class ProgramGeneratorService {
     final objectiveId = program.objectiveId ?? 1;
     final userLevel = user.level ?? 'intermediaire';
 
-    // 5. Calculer les nouvelles dates pour les jours futurs
+    // 5. Trouver la dernière date planifiée parmi les jours complétés
+    DateTime? lastCompletedDate;
+    for (final completedDayId in completedDayIds) {
+      final exercises =
+          await (db.select(db.programDayExercise)
+                ..where((tbl) => tbl.programDayId.equals(completedDayId))
+                ..limit(1))
+              .get();
+
+      if (exercises.isNotEmpty && exercises.first.scheduledDate != null) {
+        final date = exercises.first.scheduledDate!;
+        if (lastCompletedDate == null || date.isAfter(lastCompletedDate)) {
+          lastCompletedDate = date;
+        }
+      }
+    }
+
+    debugPrint(
+      '[PROGRAM_REGEN] Dernière date complétée: $lastCompletedDate',
+    );
+
+    // 6. Calculer les nouvelles dates pour les jours futurs
+    // Si on a une date de dernier jour complété, on part de là
+    // Sinon on part d'aujourd'hui
     final scheduledDates = await _calculateTrainingDates(
       userId: userId,
       numberOfDays: futureDays.length,
+      startFromDate: lastCompletedDate,
     );
 
-    // 6. Régénérer chaque jour futur
+    // 7. Régénérer chaque jour futur
     for (int i = 0; i < futureDays.length; i++) {
       final day = futureDays[i];
       final scheduledDate = scheduledDates[i];
