@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' show Value;
+import '../theme/app_theme.dart';
 import 'package:recommandation_mobile/data/db/daos/user_equipment_dao.dart';
 import 'package:recommandation_mobile/data/db/daos/user_goal_dao.dart';
 import '../../data/db/app_db.dart';
@@ -8,7 +9,7 @@ import '../../services/ImcService.dart';
 import 'package:recommandation_mobile/ui/pages/onboarding/objectives_page.dart'; 
 import 'package:recommandation_mobile/ui/pages/onboarding/equipment_page.dart';
 
-const Color _goldColor = Colors.amber;
+const Color _goldColor = AppTheme.gold;
 
 class EditProfilePage extends StatefulWidget {
   final AppUserData user;
@@ -192,8 +193,8 @@ Future<void> _navigateToEquipmentPage() async {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.amber),
-        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
+        labelStyle: const TextStyle(color: _goldColor),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: _goldColor)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
       ),
       onChanged: (_) => setState(() {}),
@@ -208,8 +209,8 @@ Future<void> _navigateToEquipmentPage() async {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.amber),
-        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.amber)),
+        labelStyle: const TextStyle(color: _goldColor),
+        enabledBorder: const OutlineInputBorder(borderSide: BorderSide(color: _goldColor)),
         focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: Colors.white)),
       ),
       items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(color: Colors.white)))).toList(),
@@ -288,7 +289,7 @@ Future<void> _navigateToEquipmentPage() async {
             
             
             ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black, minimumSize: const Size(double.infinity, 55)),
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold, foregroundColor: Colors.black, minimumSize: const Size(double.infinity, 55)),
               onPressed: _save,
               icon: const Icon(Icons.save),
               label: const Text("Enregistrer"),
