@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -459,7 +460,7 @@ class AppDb extends _$AppDb {
 
   /// Bump quand tu touches au schéma.
   @override
-  int get schemaVersion => 39;
+  int get schemaVersion => 40;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -478,12 +479,18 @@ class AppDb extends _$AppDb {
         // Ajouter la colonne birth_date si manquante
         await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
       }
-      // Ajouter program_day_id à la table session si manquante
+      // Ajouter program_day_id et name à la table session si manquantes
       if (await _tableExists('session')) {
         await _addColumnIfMissing(
           'session',
           'program_day_id',
           'INTEGER REFERENCES program_day(id) ON DELETE SET NULL',
+        );
+        // V40: Ajouter la colonne name pour les séances libres (beforeOpen)
+        await _addColumnIfMissing(
+          'session',
+          'name',
+          'TEXT',
         );
       }
       // Ajouter scheduled_date à la table program_day_exercise si manquante
@@ -532,6 +539,7 @@ class AppDb extends _$AppDb {
       }
     },
     onUpgrade: (m, from, to) async {
+      debugPrint('[MIGRATION] onUpgrade appelé: version $from -> $to');
       // Skip upgrades for tests
       if (_isTest) return;
 
@@ -554,11 +562,20 @@ class AppDb extends _$AppDb {
 
       // Ajouter program_day_id à la table session si manquante
       if (await _tableExists('session')) {
+        debugPrint('[MIGRATION V40] Table session existe, ajout des colonnes...');
         await _addColumnIfMissing(
           'session',
           'program_day_id',
           'INTEGER REFERENCES program_day(id) ON DELETE SET NULL',
         );
+        // V40: Ajouter la colonne name pour nommer les séances libres
+        debugPrint('[MIGRATION V40] Ajout de la colonne name à session...');
+        await _addColumnIfMissing(
+          'session',
+          'name',
+          'TEXT',
+        );
+        debugPrint('[MIGRATION V40] Colonne name ajoutée avec succès');
       }
 
       // Ajouter scheduled_date à la table program_day_exercise si manquante
