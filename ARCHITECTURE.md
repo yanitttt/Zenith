@@ -275,6 +275,49 @@ lib/
 
 ---
 
+---
+
+## Stratégie de Tests
+
+L'application met en œuvre une stratégie de tests automatisés rigoureuse, concentrée sur la logique métier critique (Services). Les tests sont situés dans `test/services/` et utilisent une base de données en mémoire (`sqlite3` via `drift/native`) pour garantir l'isolation et la rapidité.
+
+### 1. Tests du Service de Recommandation (`recommendation_service_test.dart`)
+
+C'est la suite de tests la plus complète, validant le cœur de l'application. Elle couvre 10 scénarios d'utilisation réalistes :
+
+- **Scénarios Profils :**
+  - **Débutant (Poids du corps) :** Vérifie que seuls des exercices sans matériel sont proposés.
+  - **Intermédiaire (Hypertrophie) :** Vérifie la présence d'exercices d'isolation.
+  - **Avancé (Force) :** Vérifie la priorité aux exercices polyarticulaires lourds (Squat, Bench).
+  - **Perte de Poids :** Vérifie la priorité aux exercices cardio/intensifs (Burpees).
+- **Scénarios Techniques :**
+  - **Objectifs Multiples :** Vérifie que les recommandations s'adaptent si l'utilisateur change d'objectif principal vs secondaire.
+  - **Matériel Incompatible :** Vérifie qu'aucun exercice n'est proposé si le matériel requis est absent.
+  - **Génération de Séance :** Valide la structure d'une séance complète (ratio Poly/Iso ~60/40).
+  - **Calcul de Score :** Vérifie que le score de recommandation est cohérent (affinité >= score).
+
+### 2. Tests du Générateur de Programme (`program_generator_adjustment_test.dart` & `instant_update_test.dart`)
+
+Ces tests valident la capacité du système à s'adapter dynamiquement :
+
+- **Ajustement de Performance :** Simule une "mauvaise" séance (1 série, 1 rep, RPE 9) et vérifie que le générateur réduit les suggestions pour la prochaine séance (ex: passage de 3 à 2 séries).
+- **Mise à Jour Instantanée :** Vérifie que la régénération d'un programme en cours (suite à une séance) modifie bien les jours futurs sans altérer l'historique.
+
+### 3. Tests du Dashboard (`dashboard_service_test.dart`)
+
+Valide l'exactitude des calculs statistiques affichés à l'utilisateur. Le test utilise un jeu de données "seedé" complet (Utilisateur, Programme, Sessions passées) pour vérifier :
+
+- **Métriques Hebdomadaires :** Nombre de séances, durée totale, volume total.
+- **Records (PR) :** Récupération correcte de la charge maximale soulevée.
+- **Assiduité :** Vérification des données du graphique d'activité.
+- **Répartition Musculaire :** Calcul correct des muscles les plus travaillés.
+
+### 4. Tests Unitaires Divers (`service_test.dart`)
+
+- **IMCService :** Validation des formules de calcul de l'IMC et des catégories de poids (Sous-poids, Normal, Surpoids).
+
+---
+
 ## Schema de la Base de Donnees
 
 ### Architecture de la Base de Donnees
@@ -804,3 +847,4 @@ Pour mettre a jour le widget depuis Flutter:
 final widgetService = HomeWidgetService(db);
 await widgetService.updateHomeWidget();
 ```
+

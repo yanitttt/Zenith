@@ -371,6 +371,19 @@ Pour les détails techniques de l'implémentation du widget, veuillez consulter 
 
 ---
 
+## Tests et Qualité
+
+L'application dispose d'une suite de tests unitaires et d'intégration située dans `test/services/` pour garantir la fiabilité des algorithmes critiques :
+
+- **RecommendationService :** Tests complets de scénarios (débutant, avancé, perte de poids, etc.) pour valider la pertinence des exercices suggérés.
+- **ProgramGeneratorService :** Vérification de la génération de programmes et de l'adaptation dynamique (mise à jour instantanée) suite aux performances.
+- **DashboardService :** Validation du calcul des métriques (volume, assiduité, progression) via des données simulées.
+- **IMCService :** Tests unitaires des calculs de santé.
+
+Pour plus de détails sur la stratégie de test, consultez [ARCHITECTURE.md](ARCHITECTURE.md#strategie-de-tests).
+
+---
+
 ## Configuration et Installation
 
 ### Prerequis
@@ -415,6 +428,7 @@ flutter build ios --release
 ```
 
 ---
+
 
 ## Conclusion
 
