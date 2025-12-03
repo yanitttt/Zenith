@@ -279,7 +279,7 @@ lib/
 
 ## Stratégie de Tests
 
-L'application met en œuvre une stratégie de tests automatisés rigoureuse, concentrée sur la logique métier critique (Services). Les tests sont situés dans `test/services/` et utilisent une base de données en mémoire (`sqlite3` via `drift/native`) pour garantir l'isolation et la rapidité.
+L'application met en œuvre une stratégie de tests, concentrée sur la logique métier critique (Services). Les tests sont situés dans `test/services/` et utilisent une base de données en mémoire (`sqlite3` via `drift/native`) pour garantir l'isolation et la rapidité.
 
 ### 1. Tests du Service de Recommandation (`recommendation_service_test.dart`)
 
