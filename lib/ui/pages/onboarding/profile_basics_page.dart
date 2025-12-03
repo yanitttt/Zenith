@@ -219,7 +219,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Date de naissance
+
                         const Text(
                           'Date de naissance',
                           style: TextStyle(
@@ -251,7 +251,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Poids et Taille
+
                         const Text(
                           'Poids et taille',
                           style: TextStyle(
@@ -314,7 +314,7 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Genre
+
                         const Text(
                           'Genre',
                           style: TextStyle(

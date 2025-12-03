@@ -27,7 +27,7 @@ class _DashboardPageState extends State<DashboardPage> {
   int? _userId;
 
 
-  // Metrics
+
   Stream<DashboardData>? _dashboardStream;
 
   @override
@@ -98,7 +98,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 return Center(child: Text("Erreur: ${snapshot.error}"));
               }
 
-              // Valeurs par défaut si pas de data ou chargement
+
               final data = snapshot.data;
               final streakWeeks = data?.streakWeeks ?? 0;
               final volumeVariation = data?.volumeVariation ?? 0.0;
@@ -113,7 +113,7 @@ class _DashboardPageState extends State<DashboardPage> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  /// HEADER COMPACT
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -172,7 +172,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   const SizedBox(height: 16),
 
-                  /// TOP ROW - KEY METRICS (3 Cards)
+
                   SizedBox(
                     height: 100,
                     child: Row(
@@ -189,9 +189,9 @@ class _DashboardPageState extends State<DashboardPage> {
                         Expanded(
   child: _buildCompactStatCard(
     "Streak",
-    "$streakWeeks sem.", // nombre de semaines
-    Icons.local_fire_department, // ou un autre icône qui te plaît
-    Colors.redAccent, // couleur que tu veux
+    "$streakWeeks sem.",
+    Icons.local_fire_department,
+    Colors.redAccent,
   ),
 ),
 
@@ -210,7 +210,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   const SizedBox(height: 16),
 
-                  /// MIDDLE - WEEKLY CHART (Expanded)
+
                   Expanded(
                     flex: 3,
                     child: Container(
@@ -261,7 +261,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
                   const SizedBox(height: 16),
 
-                  /// BOTTOM - PIE CHART & SUMMARY (Expanded)
+
                   Expanded(
                     flex: 2,
                     child: Row(

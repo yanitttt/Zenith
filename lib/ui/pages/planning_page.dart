@@ -17,7 +17,7 @@ class PlanningPage extends StatefulWidget {
 class _PlanningPageState extends State<PlanningPage> {
   late PlanningService _service;
 
-  // COULEURS
+
   final Color kBackground = const Color(0xFF020216);
   final Color kCardColor = const Color(0xFF0F112B);
   final Color kGold = const Color(0xFFE4C87F);
@@ -25,7 +25,7 @@ class _PlanningPageState extends State<PlanningPage> {
 
   DateTime _selectedDate = DateTime.now();
   DateTime _startOfWeek = DateTime.now();
-  int? _currentUserId; // ID dynamique
+  int? _currentUserId;
 
   List<PlanningItem> _sessionsDuJour = [];
   Set<int> _joursAvecActivite = {};
@@ -54,9 +54,8 @@ class _PlanningPageState extends State<PlanningPage> {
     if (_scrollController != null) return;
 
     final now = DateTime.now();
-    // Calcul de la position de défilement pour centrer le jour actuel
-    // Item width (65) + Separator (12) = 77
-    final dayIndex = now.weekday - 1; // 0 for Monday, 6 for Sunday
+
+    final dayIndex = now.weekday - 1;
     final double initialOffset = (dayIndex * 77.0);
 
     _scrollController = ScrollController(
@@ -110,7 +109,7 @@ class _PlanningPageState extends State<PlanningPage> {
   void _changeWeek(int offset) {
     setState(() {
       _startOfWeek = _startOfWeek.add(Duration(days: 7 * offset));
-      // Reset scroll quand on change de semaine manuellement
+
       _ensureScrollController();
       if (_scrollController!.hasClients) {
         _scrollController!.animateTo(
@@ -155,7 +154,7 @@ class _PlanningPageState extends State<PlanningPage> {
           _startOfWeek.day,
         );
 
-        // Scroll vers le jour sélectionné
+
         _ensureScrollController();
         final dayIndex = picked.weekday - 1;
         if (_scrollController!.hasClients) {
@@ -177,7 +176,7 @@ class _PlanningPageState extends State<PlanningPage> {
     _chargerDonnees();
   }
 
-  // --- MENU AJOUT SIMPLE (SANS SLIDER, SANS NOM PERSONNALISÉ) ---
+
   void _showAddSessionSheet() {
     showModalBottomSheet(
       context: context,
@@ -256,7 +255,7 @@ class _PlanningPageState extends State<PlanningPage> {
     int? sessionId,
   }) async {
     int selectedDuration = initialDuration ?? 45;
-    String selectedType = type; // "Cardio libre" or "Muscu libre"
+    String selectedType = type;
 
     await showDialog(
       context: context,
@@ -275,8 +274,7 @@ class _PlanningPageState extends State<PlanningPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // SÉLECTION DU TYPE (Seulement si édition ou si on veut permettre de changer)
-                  // Pour simplifier, on permet de changer le type ici aussi
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -401,7 +399,7 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
-  // --- AJOUT SIMPLE EN BDD ---
+
   Future<void> _ajouterSeanceLibre(int duree, String name) async {
     if (_currentUserId == null) return;
 
@@ -442,7 +440,7 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
-  // --- MODIFICATION EN BDD ---
+
   Future<void> _modifierSeanceLibre(
     int sessionId,
     int duree,
@@ -470,7 +468,7 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
-  // --- SUPPRESSION EN BDD ---
+
   Future<void> _supprimerSession(int sessionId) async {
     await (widget.db.delete(widget.db.session)
       ..where((t) => t.id.equals(sessionId))).go();
@@ -843,7 +841,7 @@ class _PlanningPageState extends State<PlanningPage> {
               _buildMiniStat(Icons.fitness_center, "Programme", Colors.white70),
             ],
           ),
-          // --- MENU MODIFIER / SUPPRIMER (Seulement pour les séances libres) ---
+
           if (item.sessionId != null && item.programDayId == null) ...[
             const SizedBox(height: 8),
             const Divider(color: Colors.white12, height: 1),

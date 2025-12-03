@@ -1,6 +1,6 @@
 class IMCcalculator {
-  final double height; // in meters
-  final double weight; // in kilograms
+  final double height;
+  final double weight;
 
   IMCcalculator({required this.height, required this.weight});
 

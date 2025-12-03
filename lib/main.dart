@@ -24,18 +24,18 @@ void main() async {
 
   await initializeDateFormatting('fr_FR', null);
 
-  // Initialiser le widget avec les données
+
   final widgetService = HomeWidgetService(db);
   await widgetService.initializeWidget();
   
-  // Initialiser le Service de Notifications
+
   await NotificationService().init();
 
-  // Garde au plus 1 ligne dans app_user
+
   final userDao = UserDao(db);
   await userDao.ensureSingleton();
 
-  // Décision basée sur la BDD (source de vérité)
+
   final count = await userDao.countUsers();
   if (count > 0) {
     final existing = await userDao.firstUser();
@@ -59,7 +59,7 @@ void main() async {
     debugShowCheckedModeBanner: false,
     theme: AppTheme.dark,
 
-    // ⬇️ Localisations nécessaires au DatePicker & co.
+
     localizationsDelegates: const [
       GlobalMaterialLocalizations.delegate,
       GlobalWidgetsLocalizations.delegate,
@@ -69,7 +69,7 @@ void main() async {
       Locale('fr'),
       Locale('en'),
     ],
-    locale: const Locale('fr'), // optionnel: force l'UI en français
+    locale: const Locale('fr'),
 
     home: home,
   ));

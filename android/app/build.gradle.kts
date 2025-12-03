@@ -2,7 +2,7 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -10,7 +10,7 @@ android {
     namespace = "com.example.recommandation_mobile"
     compileSdk = flutter.compileSdkVersion
 
-    // ✅ Forcer l’NDK requis par path_provider_android & sqlite3_flutter_libs
+
     ndkVersion = "28.0.13004108"
 
     compileOptions {

@@ -35,7 +35,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
   bool _isDragging = false;
   bool _isAnimating = false;
 
-  // Seuil pour considérer un swipe comme like/dislike
+
   static const double _swipeThreshold = 100.0;
 
   @override
@@ -104,11 +104,11 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
       _isDragging = false;
     });
 
-    // Si le drag dépasse le seuil, déclencher le swipe
+
     if (_dragOffset.dx.abs() > _swipeThreshold) {
       _animateSwipe(_dragOffset.dx > 0);
     } else {
-      // Sinon, revenir à la position initiale
+
       _resetPosition();
     }
   }
@@ -145,7 +145,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
       curve: Curves.easeOut,
     ));
 
-    // Appeler le callback avant l'animation
+
     if (isLike) {
       widget.onLike();
     } else {
@@ -179,7 +179,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
         : _rotationAnimation.value;
     final scale = _isAnimating ? _scaleAnimation.value : 1.0;
 
-    // Calculer l'opacité des overlays like/dislike
+
     final likeOpacity = (_isDragging || _isAnimating)
         ? (offset.dx > 0 ? (offset.dx / _swipeThreshold).clamp(0.0, 1.0) : 0.0)
         : 0.0;
@@ -213,7 +213,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                           borderRadius: BorderRadius.circular(28),
                           child: Stack(
                             children: [
-                              // Image pleine largeur
+
                               Positioned.fill(
                                 child: Image(
                                   image: widget.imageProvider,
@@ -221,7 +221,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                 ),
                               ),
 
-                              // Overlay LIKE (vert, droite)
+
                               if (likeOpacity > 0)
                                 Positioned.fill(
                                   child: _SwipeOverlay(
@@ -230,7 +230,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                   ),
                                 ),
 
-                              // Overlay DISLIKE (rouge, gauche)
+
                               if (dislikeOpacity > 0)
                                 Positioned.fill(
                                   child: _SwipeOverlay(
@@ -239,7 +239,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                   ),
                                 ),
 
-                              // Bouton Undo (coin haut-gauche)
+
                               Positioned(
                                 top: 14,
                                 left: 14,
@@ -249,7 +249,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                 ),
                               ),
 
-                              // Dégradé pour lisibilité du texte en bas
+
                               Positioned(
                                 left: 0,
                                 right: 0,
@@ -269,7 +269,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                 ),
                               ),
 
-                              // Titre + description en bas
+
                               Positioned(
                                 left: 18,
                                 right: 18,
@@ -304,7 +304,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                 ),
                               ),
 
-                              // Boutons Like / Dislike
+
                               Positioned(
                                 left: 36,
                                 right: 36,
@@ -342,7 +342,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
   }
 }
 
-/* ---------- Overlay Like/Dislike ---------- */
+
 
 class _SwipeOverlay extends StatelessWidget {
   final double opacity;
@@ -365,7 +365,7 @@ class _SwipeOverlay extends StatelessWidget {
       color: color,
       child: Stack(
         children: [
-          // Icônes répétées en arrière-plan
+
           Positioned.fill(
             child: CustomPaint(
               painter: _IconPatternPainter(
@@ -375,7 +375,7 @@ class _SwipeOverlay extends StatelessWidget {
               ),
             ),
           ),
-          // Grande icône centrale
+
           Align(
             alignment: alignment,
             child: Padding(
@@ -396,7 +396,7 @@ class _SwipeOverlay extends StatelessWidget {
   }
 }
 
-/* ---------- Pattern painter pour répéter les icônes ---------- */
+
 
 class _IconPatternPainter extends CustomPainter {
   final IconData icon;
@@ -445,7 +445,7 @@ class _IconPatternPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/* ---------- Petits widgets réutilisables ---------- */
+
 
 class _RoundIcon extends StatelessWidget {
   final IconData icon;

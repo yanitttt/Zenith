@@ -102,7 +102,7 @@ class _MonthGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Janvier 2022 commence un samedi → offset visuel
+
     const startOffset = 5;
     final cells = <Widget>[];
     for (int i = 0; i < startOffset; i++) {

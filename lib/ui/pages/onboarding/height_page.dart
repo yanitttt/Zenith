@@ -53,7 +53,7 @@ class _HeightPageState extends State<HeightPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button
+
               InkResponse(
                 onTap: widget.onBack,
                 child: Container(
@@ -72,7 +72,7 @@ class _HeightPageState extends State<HeightPage> {
               ),
               const SizedBox(height: 40),
 
-              // Title
+
               const Text(
                 'Quelle est ta taille ?',
                 style: TextStyle(
@@ -91,7 +91,7 @@ class _HeightPageState extends State<HeightPage> {
               ),
               const SizedBox(height: 40),
 
-              // Form
+
               Form(
                 key: _formKey,
                 child: TextFormField(
@@ -119,7 +119,7 @@ class _HeightPageState extends State<HeightPage> {
 
               const Spacer(),
 
-              // Next button
+
               SizedBox(
                 width: double.infinity,
                 height: 56,

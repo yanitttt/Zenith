@@ -165,7 +165,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         metabolism: metabolism.name,
       );
 
-      // Insérer les objectifs dans user_goal
+
       for (final objectiveId in objectiveIds) {
         await widget.db
             .into(widget.db.userGoal)
@@ -178,7 +178,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             );
       }
 
-      // Insérer l'équipement dans user_equipment
+
       for (final equipmentId in equipmentIds) {
         await widget.db
             .into(widget.db.userEquipment)
@@ -190,14 +190,14 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             );
       }
 
-      // Supprimer tout programme existant pour cet utilisateur (pour garantir l'état vide)
+
       await (widget.db.delete(widget.db.userProgram)
         ..where((tbl) => tbl.userId.equals(id))).go();
 
       await widget.prefs.setCurrentUserId(id);
       await widget.prefs.setOnboarded(true);
 
-      // Mettre à jour le widget avec les données du profil
+
       final widgetService = HomeWidgetService(widget.db);
       await widgetService.updateHomeWidget();
 
@@ -239,7 +239,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
           Expanded(
             child: Center(
               child: Image.asset(
-                'assets/images/exercises/image.jpg', // ton image
+                'assets/images/exercises/image.jpg',
                 width: 500,
                 height: 500,
                 fit: BoxFit.contain,

@@ -45,14 +45,14 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
         throw Exception('Utilisateur non connecté');
       }
 
-      // Charger les objectifs de l'utilisateur
+
       final objectives =
           await _recommendationService.getUserObjectives(userId);
       if (objectives.isEmpty) {
         throw Exception('Aucun objectif défini');
       }
 
-      // Générer la séance avec l'objectif sélectionné ou le premier
+
       final workout = await _recommendationService.generateWorkoutSession(
         userId: userId,
         objectiveId: _selectedObjective?.id ?? objectives.first.id,

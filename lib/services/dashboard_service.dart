@@ -2,7 +2,7 @@
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
 
-/// Petite classe utilitaire pour transporter les données du graphique camembert
+
 class MuscleStat {
   final String muscleName;
   final int count;
@@ -37,11 +37,8 @@ class DashboardService {
 
   DashboardService(this.db);
 
-  // =================================================================
-  // A. UTILITAIRES DE DATE
-  // =================================================================
 
-  /// Timestamp du début de la semaine (Lundi 00:00)
+
   int _getStartOfWeekTs() {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
@@ -53,22 +50,20 @@ class DashboardService {
     return startOfDay.millisecondsSinceEpoch ~/ 1000;
   }
 
-  /// Timestamp actuel
+
   int _getNowTs() {
     return DateTime.now().millisecondsSinceEpoch ~/ 1000;
   }
 
-  /// Helper pour les noms de jours (Lun, Mar...)
+
   String _getDayName(int weekday) {
     const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
     return days[weekday - 1];
   }
 
-  // =================================================================
-  // B. STATS "FOCUS SEMAINE" (Ton code existant)
-  // =================================================================
 
-  /// 1. Nombre de séances TERMINÉES cette semaine
+
+
   Future<int> getSessionsRealiseesSemaine(int userId) async {
     final startTs = _getStartOfWeekTs();
     final endTs = _getNowTs();
@@ -89,7 +84,7 @@ class DashboardService {
     return result.read<int>('cnt');
   }
 
-  /// 2. Durée totale d'entrainement cette semaine (en minutes)
+
   Future<int> getDureeTotaleSemaine(int userId) async {
     final startTs = _getStartOfWeekTs();
 
@@ -105,7 +100,7 @@ class DashboardService {
     return result.read<int?>('total_min') ?? 0;
   }
 
-  /// 3. Volume total soulevé cette semaine (Tonnage)
+
   Future<double> getVolumeTotalSemaine(int userId) async {
     final startTs = _getStartOfWeekTs();
 
@@ -126,11 +121,9 @@ class DashboardService {
     return result.read<double?>('total_vol') ?? 0.0;
   }
 
-  // =================================================================
-  // C. PROGRAMMES & SUIVI (Ton code existant)
-  // =================================================================
 
-  /// 4. Nombre total de programmes suivis (Historique)
+
+
   Future<int> getNbProgrammesSuivis(int userId) async {
     final result =
     await db
@@ -144,7 +137,7 @@ class DashboardService {
     return result.read<int>('cnt');
   }
 
-  /// 5. Récupérer le nom du programme ACTIF
+
   Future<String> getProgrammeActifNom(int userId) async {
     final result =
     await db
@@ -165,11 +158,7 @@ class DashboardService {
     return result.read<String>('name');
   }
 
-  // =================================================================
-  // D. STATS GLOBALES (All Time) - NOUVEAU
-  // =================================================================
 
-  /// Tonnage Total depuis le début (Somme de tous les kg soulevés)
   Future<double> getTotalTonnageAllTime(int userId) async {
     final result =
     await db
@@ -188,7 +177,7 @@ class DashboardService {
     return result.read<double?>('total_kg') ?? 0.0;
   }
 
-  /// Temps total passé à la salle depuis le début (formatté en "XX h")
+
   Future<double> getTotalHeuresEntrainement(int userId) async {
     final result = await db.customSelect(
       'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ?',
@@ -200,7 +189,7 @@ class DashboardService {
     return minutes / 60;
   }
 
-  /// Nombre total de séances terminées depuis le début
+
   Future<int> getTotalSeances(int userId) async {
     final result =
     await db
@@ -213,13 +202,11 @@ class DashboardService {
     return result.read<int>('cnt');
   }
 
-  // =================================================================
-  // E. ANALYSE & GRAPHIQUES - NOUVEAU
-  // =================================================================
 
-  /// Répartition musculaire (Top 6 muscles) pour Pie Chart
+
+
   Future<List<MuscleStat>> getRepartitionMusculaire(int userId) async {
-    // Sur les 30 derniers jours pour que ce soit pertinent
+
     final limitTs =
         DateTime.now()
             .subtract(const Duration(days: 30))
@@ -258,13 +245,12 @@ class DashboardService {
     }).toList();
   }
 
-  /// Assiduité sur les 7 derniers jours (pour Bar Chart)
-  /// Retourne Map : {'Lun': 1, 'Mar': 0, ...}
+
   Future<Map<String, int>> getAssiduiteSemaine(int userId) async {
     final now = DateTime.now();
     Map<String, int> result = {};
 
-    // On boucle sur les 7 derniers jours (J-6 à Aujourd'hui)
+
     for (int i = 6; i >= 0; i--) {
       final day = now.subtract(Duration(days: i));
 
@@ -291,11 +277,7 @@ class DashboardService {
     return result;
   }
 
-  // =================================================================
-  // F. FEEDBACK & RECORDS - NOUVEAU
-  // =================================================================
 
-  /// Moyenne du Feedback "Plaisir" (sur 5)
   Future<double> getMoyennePlaisir(int userId) async {
     final result =
     await db
@@ -309,7 +291,7 @@ class DashboardService {
     return result.read<double?>('avg_fun') ?? 0.0;
   }
 
-  /// Moyenne du Feedback "Difficulté"
+
   Future<double> getMoyenneDifficulte(int userId) async {
     final result =
     await db
@@ -323,7 +305,7 @@ class DashboardService {
     return result.read<double?>('avg_diff') ?? 0.0;
   }
 
-  /// Record personnel (Max Load) pour un exercice précis
+
   Future<double> getPersonalRecord(int userId, int exerciseId) async {
     final result =
     await db
@@ -344,16 +326,11 @@ class DashboardService {
 
     return result.read<double?>('max_load') ?? 0.0;
   }
-  // =================================================================
-  // G. METRIQUES AVANCEES & COMPLEXES - NOUVEAU
-  // =================================================================
 
-  /// 1. Variation du Volume (vs Semaine Précédente) en %
-  /// Retourne un pourcentage (ex: 15.5 pour +15.5%, -10.0 pour -10%)
   Future<double> getVolumeVariationPercentage(int userId) async {
     final now = DateTime.now();
 
-    // Semaine actuelle
+
     final startCurrentWeek = now.subtract(Duration(days: now.weekday - 1));
     final startCurrentWeekTs =
         DateTime(
@@ -363,7 +340,7 @@ class DashboardService {
         ).millisecondsSinceEpoch ~/
             1000;
 
-    // Semaine précédente
+
     final startLastWeek = startCurrentWeek.subtract(const Duration(days: 7));
     final endLastWeek = startCurrentWeek.subtract(const Duration(seconds: 1));
 
@@ -385,10 +362,10 @@ class DashboardService {
         ).millisecondsSinceEpoch ~/
             1000;
 
-    // Volume Semaine Actuelle
+
     final volCurrent = await getVolumeTotalSemaine(userId);
 
-    // Volume Semaine Précédente
+
     final resultLast =
     await db
         .customSelect(
@@ -419,25 +396,23 @@ class DashboardService {
     return double.parse(variation.toStringAsFixed(1));
   }
 
-  /// 2. Streak (Semaines consécutives avec au moins 1 séance)
+
   Future<int> getCurrentStreakWeeks(int userId) async {
     int streak = 0;
     final now = DateTime.now();
-    // On commence à vérifier à partir de la semaine dernière (car la semaine courante peut être en cours)
-    // Si l'utilisateur a fait une séance cette semaine, ça compte pour le streak actuel.
 
-    // Vérifions d'abord cette semaine
+
+
     final sessionsThisWeek = await getSessionsRealiseesSemaine(userId);
     if (sessionsThisWeek > 0) {
       streak++;
     }
 
-    // Remonter dans le temps semaine par semaine
-    // On commence à -1 semaine
+
     int weeksBack = 1;
     while (true) {
       final d = now.subtract(Duration(days: 7 * weeksBack));
-      // Début de cette semaine là
+
       final startOfWeek = d.subtract(Duration(days: d.weekday - 1));
       final startTs =
           DateTime(
@@ -466,7 +441,7 @@ class DashboardService {
         streak++;
         weeksBack++;
       } else {
-        // Streak brisé
+
         break;
       }
 
@@ -477,7 +452,7 @@ class DashboardService {
     return streak;
   }
 
-  /// 3. Efficacité d'entraînement (Volume / Minute) cette semaine
+
   Future<double> getTrainingEfficiency(int userId) async {
     final vol = await getVolumeTotalSemaine(userId);
     final duration = await getDureeTotaleSemaine(userId);
@@ -488,12 +463,10 @@ class DashboardService {
     return double.parse(eff.toStringAsFixed(1));
   }
 
-  // =================================================================
-  // H. STREAMING - NOUVEAU
-  // =================================================================
+
 
   Stream<DashboardData> watchDashboardData(int userId) {
-    // On surveille la table Session (et SessionExercise indirectement via les requêtes)
+
     return db.select(db.session).watch().asyncMap((_) async {
       final streak = await getCurrentStreakWeeks(userId);
       final variation = await getVolumeVariationPercentage(userId);

@@ -43,7 +43,7 @@ class _MetabolismPageState extends State<MetabolismPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button
+
               InkResponse(
                 onTap: widget.onBack,
                 child: Container(
@@ -62,7 +62,7 @@ class _MetabolismPageState extends State<MetabolismPage> {
               ),
               const SizedBox(height: 40),
 
-              // Title
+
               const Text(
                 'Quel est ton métabolisme ?',
                 style: TextStyle(
@@ -81,7 +81,7 @@ class _MetabolismPageState extends State<MetabolismPage> {
               ),
               const SizedBox(height: 80),
 
-              // Metabolism buttons
+
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -107,7 +107,7 @@ class _MetabolismPageState extends State<MetabolismPage> {
 
               const SizedBox(height: 20),
 
-              // Next button
+
               SizedBox(
                 width: double.infinity,
                 height: 56,

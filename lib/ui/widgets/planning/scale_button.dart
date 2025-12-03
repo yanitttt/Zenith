@@ -11,7 +11,7 @@ class ScaleButton extends StatefulWidget {
     required this.child,
     required this.onTap,
     this.duration = const Duration(milliseconds: 100),
-    this.scale = 0.90, // More visible scale
+    this.scale = 0.90,
   });
 
   @override
@@ -52,7 +52,7 @@ class _ScaleButtonState extends State<ScaleButton>
 
   void _onTapUp(TapUpDetails details) {
     if (widget.onTap != null) {
-      // Ensure we reverse even if the forward animation isn't done
+
       _controller.reverse();
       widget.onTap!();
     }
@@ -67,7 +67,7 @@ class _ScaleButtonState extends State<ScaleButton>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      behavior: HitTestBehavior.translucent, // Catch taps on empty space
+      behavior: HitTestBehavior.translucent,
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,

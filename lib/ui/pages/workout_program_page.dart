@@ -52,21 +52,18 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         throw Exception('Utilisateur non connecté');
       }
 
-      // Vérifier s'il existe un programme actif
+
       final program = await _programService.getActiveUserProgram(userId);
 
-      // Vérifier si l'utilisateur a des jours d'entraînement définis
+
       final trainingDays = await _trainingDayDao.getDayNumbersForUser(userId);
 
-      // Si un programme existe mais qu'aucun jour d'entraînement n'est défini,
-      // c'est probablement un programme généré automatiquement par l'ancienne logique.
-      // On le supprime pour forcer l'état vide et la nouvelle procédure.
       if (program != null && trainingDays.isEmpty) {
         debugPrint(
           '[WORKOUT_PAGE] Programme détecté sans jours définis -> Suppression pour forcer l\'état vide',
         );
 
-        // Désactiver/Supprimer le programme
+
         await (widget.db.delete(widget.db.userProgram)
           ..where((tbl) => tbl.userId.equals(userId))).go();
 
@@ -81,7 +78,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       }
 
       if (program == null) {
-        // Ne rien faire, l'interface affichera l'état vide
+
         if (mounted) {
           setState(() {
             _currentProgram = null;
@@ -90,10 +87,10 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           });
         }
       } else {
-        // Charger le programme existant
+
         final days = await _programService.getProgramDays(program.id);
 
-        // Charger les sessions complétées pour chaque jour
+
         final dayIds = days.map((d) => d.programDayId).toList();
         final completedSessions = await _sessionService
             .getCompletedSessionsForDays(dayIds);
@@ -127,13 +124,12 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         throw Exception('Utilisateur non connecté');
       }
 
-      // Générer le programme
-      // Le nombre de jours est récupéré automatiquement depuis UserTrainingDay
+
       final programId = await _programService.generateUserProgram(
         userId: userId,
       );
 
-      // Recharger le programme
+
       final program =
           await (widget.db.select(widget.db.workoutProgram)
             ..where((tbl) => tbl.id.equals(programId))).getSingle();
@@ -208,7 +204,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         final userId = widget.prefs.currentUserId;
         if (userId == null) return;
 
-        // Le nombre de jours est récupéré automatiquement depuis UserTrainingDay
+
         await _programService.regenerateUserProgram(userId: userId);
 
         await _loadProgram();
@@ -247,9 +243,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       ),
     );
 
-    // Si la session est terminée, recharger le programme
+
     if (result == true && mounted) {
-      // Afficher un message de succès
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Séance enregistrée et programme mis à jour !'),
@@ -261,10 +257,10 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         '[WORKOUT_PROGRAM] Retour de session, rechargement du programme...',
       );
 
-      // Recharger pour mettre à jour l'état de complétion et les nouveaux exercices
+
       await _loadProgram();
 
-      // Debug: Afficher les suggestions du prochain jour pour vérification
+
       if (_programDays.length > 1) {
         final nextDay = _programDays.firstWhere(
           (d) => !_completedSessions.containsKey(d.programDayId),
@@ -867,13 +863,13 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     final userId = widget.prefs.currentUserId;
     if (userId == null) return;
 
-    // Vérifier si l'utilisateur a des jours d'entraînement
+
     final days = await _trainingDayDao.getDayNumbersForUser(userId);
 
     if (days.isEmpty) {
       if (!mounted) return;
 
-      // Afficher le dialog pour ajouter des jours
+
       final result = await showDialog<List<int>>(
         context: context,
         builder: (ctx) => const TrainingDaysDialog(selectedDays: []),
@@ -881,11 +877,11 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
 
       if (result != null && result.isNotEmpty) {
         await _trainingDayDao.replace(userId, result);
-        // Une fois les jours enregistrés, générer le programme
+
         await _generateNewProgram();
       }
     } else {
-      // Si les jours existent déjà, générer directement
+
       await _generateNewProgram();
     }
   }

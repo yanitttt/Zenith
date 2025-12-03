@@ -66,13 +66,13 @@ class _BottomItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4), // -4px
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: gold, size: 24), // -2px
+            Icon(icon, color: gold, size: 24),
             const SizedBox(height: 4),
-            // Le FittedBox évite l’overflow des libellés longs
+
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
@@ -83,7 +83,7 @@ class _BottomItem extends StatelessWidget {
                 style: const TextStyle(
                   color: gold,
                   fontWeight: FontWeight.w600,
-                  fontSize: 12, // tu peux descendre à 11 si besoin
+                  fontSize: 12,
                 ),
               ),
             ),

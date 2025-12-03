@@ -72,7 +72,7 @@ class _RootShellState extends State<RootShell> {
             setState(() {
               _index = i;
               if (i == 1) {
-                // Force le rechargement du planning
+
                 _planningKey = UniqueKey();
               }
             });
