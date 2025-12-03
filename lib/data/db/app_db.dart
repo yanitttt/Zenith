@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 part 'app_db.g.dart';
 
-/// ---------- Ouverture DB (copie depuis assets si nécessaire) ----------
+
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -27,10 +27,7 @@ LazyDatabase _openConnection() {
   });
 }
 
-/* ===================== Converters (fromSql/toSql) ===================== */
 
-/// Convertisseur texte ↔ texte avec liste fermée de valeurs autorisées.
-/// Non-nullable. Utiliser la version null-aware pour les colonnes NULL.
 class EnumTextConverter extends TypeConverter<String, String> {
   final List<String> allowed;
   const EnumTextConverter(this.allowed);
@@ -52,7 +49,7 @@ class EnumTextConverter extends TypeConverter<String, String> {
   }
 }
 
-/// Converter tolérant pour gender: accepte male/female, m/f, etc., et normalise.
+
 class GenderConverter extends TypeConverter<String, String> {
   const GenderConverter();
 
@@ -84,10 +81,10 @@ class GenderConverter extends TypeConverter<String, String> {
   String toSql(String value) => _normalize(value);
 }
 
-// Instances réutilisables
+
 const _convType = EnumTextConverter(['poly', 'iso']);
 const _convLevel = EnumTextConverter(['debutant', 'intermediaire', 'avance']);
-// Nouveau converter pour gender (mêmes valeurs que sex avant)
+
 const _convGender = GenderConverter();
 const _nullableGender = NullAwareTypeConverter.wrap(_convGender);
 
@@ -99,11 +96,11 @@ const _convRelationType = EnumTextConverter([
   'regression',
 ]);
 
-// Wrappers null-aware (pour colonnes NULL)
+
 const _nullableLevel = NullAwareTypeConverter.wrap(_convLevel);
 const _nullableMetabolism = NullAwareTypeConverter.wrap(_convMetabolism);
 
-/* ===================== TABLES — PARTIE 1 : CATALOGUE ===================== */
+
 
 class Exercise extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -117,7 +114,7 @@ class Exercise extends Table {
 
 class Muscle extends Table {
   IntColumn get id => integer().autoIncrement()();
-  // IMPORTANT: garder NOT NULL en plus de UNIQUE
+
   TextColumn get name =>
       text().named('name').customConstraint('NOT NULL UNIQUE')();
 }
@@ -156,7 +153,7 @@ class TrainingModality extends Table {
   List<String> get customConstraints => ['UNIQUE(objective_id, level, name)'];
 }
 
-/* ===================== PARTIE 2 : LIAISONS CATALOGUE ===================== */
+
 
 class ExerciseMuscle extends Table {
   IntColumn get exerciseId =>
@@ -219,7 +216,7 @@ class ExerciseRelation extends Table {
   Set<Column> get primaryKey => {srcExerciseId, dstExerciseId, relationType};
 }
 
-/* ===================== PARTIE 3 : UTILISATEUR & PRÉFÉRENCES ===================== */
+
 
 class AppUser extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -227,24 +224,24 @@ class AppUser extends Table {
   RealColumn get weight => real().named('weight').nullable()();
   RealColumn get height => real().named('height').nullable()();
 
-  // NEW: on remplace sex par gender
+
   TextColumn get gender =>
       text().named('gender').map(_nullableGender).nullable()();
 
-  // NEW: birthDate (stocké en INTEGER/epoch par SQLite)
+
   DateTimeColumn get birthDate => dateTime().named('birth_date').nullable()();
 
-  // Toujours là
+
   TextColumn get level =>
       text().named('level').map(_nullableLevel).nullable()();
   TextColumn get metabolism =>
       text().named('metabolism').map(_nullableMetabolism).nullable()();
 
-  // Ajout(s) précédents
+
   TextColumn get nom => text().named('nom').nullable()();
   TextColumn get prenom => text().named('prenom').nullable()();
 
-  // Singleton: un seul user dans l’app
+
   IntColumn get singleton =>
       integer().named('singleton').withDefault(const Constant(1))();
 }
@@ -313,7 +310,7 @@ class UserFeedback extends Table {
   Set<Column> get primaryKey => {userId, exerciseId, ts};
 }
 
-/* ===================== PARTIE 4 : JOURNAL (SÉANCES) ===================== */
+
 
 class Session extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -349,7 +346,7 @@ class SessionExercise extends Table {
   Set<Column> get primaryKey => {sessionId, exerciseId, position};
 }
 
-/* ===================== PARTIE 5 : MODULE PROGRAMMES ===================== */
+
 
 class WorkoutProgram extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -396,7 +393,7 @@ class ProgramDayExercise extends Table {
   IntColumn get restSuggestionSec =>
       integer().named('rest_suggestion_sec').nullable()();
 
-  // Colonnes pour stocker les anciennes valeurs après adaptation
+
   TextColumn get previousSetsSuggestion =>
       text().named('previous_sets_suggestion').nullable()();
   TextColumn get previousRepsSuggestion =>
@@ -424,7 +421,7 @@ class UserProgram extends Table {
       integer().named('is_active').withDefault(const Constant(1))();
 }
 
-/* ===================== BASE DE DONNÉES ===================== */
+
 
 @DriftDatabase(
   tables: [
@@ -455,10 +452,10 @@ class AppDb extends _$AppDb {
 
   AppDb() : _isTest = false, super(_openConnection());
 
-  /// Constructeur pour les tests avec une base de données en mémoire
+
   AppDb.forTesting(super.executor) : _isTest = true;
 
-  /// Bump quand tu touches au schéma.
+
   @override
   int get schemaVersion => 40;
 
@@ -466,7 +463,7 @@ class AppDb extends _$AppDb {
   MigrationStrategy get migration => MigrationStrategy(
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON;');
-      // Skip complex migrations for tests
+
       if (_isTest) return;
 
       await _ensureAppUserSingletonColumnAndIndex(); // <<--- AJOUT CLEF
@@ -476,24 +473,24 @@ class AppDb extends _$AppDb {
           'singleton',
           'INTEGER NOT NULL DEFAULT 1',
         );
-        // Ajouter la colonne birth_date si manquante
+
         await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
       }
-      // Ajouter program_day_id et name à la table session si manquantes
+
       if (await _tableExists('session')) {
         await _addColumnIfMissing(
           'session',
           'program_day_id',
           'INTEGER REFERENCES program_day(id) ON DELETE SET NULL',
         );
-        // V40: Ajouter la colonne name pour les séances libres (beforeOpen)
+
         await _addColumnIfMissing(
           'session',
           'name',
           'TEXT',
         );
       }
-      // Ajouter scheduled_date à la table program_day_exercise si manquante
+
       if (await _tableExists('program_day_exercise')) {
         await _addColumnIfMissing(
           'program_day_exercise',
@@ -501,7 +498,7 @@ class AppDb extends _$AppDb {
           'INTEGER',
         );
 
-        // Assurer la présence des colonnes previous_* (Fix pour éviter les crashs si migration ratée)
+
         await _addColumnIfMissing(
           'program_day_exercise',
           'previous_sets_suggestion',
@@ -518,9 +515,9 @@ class AppDb extends _$AppDb {
           'INTEGER',
         );
       }
-      // Créer la table user_training_day si manquante
+
       await _ensureUserTrainingDayTable();
-      // Ajouter session_id à la table user_feedback si manquante
+
       if (await _tableExists('user_feedback')) {
         await _addColumnIfMissing(
           'user_feedback',
@@ -532,35 +529,35 @@ class AppDb extends _$AppDb {
     },
 
     onCreate: (m) async {
-      await m.createAll(); // crée toutes les tables de @DriftDatabase
-      // Skip index creation for tests (tables are fresh)
+      await m.createAll();
+
       if (!_isTest) {
-        await _createAllIndexes(); // puis les index idempotents
+        await _createAllIndexes();
       }
     },
     onUpgrade: (m, from, to) async {
       debugPrint('[MIGRATION] onUpgrade appelé: version $from -> $to');
-      // Skip upgrades for tests
+
       if (_isTest) return;
 
-      await _ensureAppUserSingletonColumnAndIndex(); // assure colonne+index
+      await _ensureAppUserSingletonColumnAndIndex();
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing(
           'app_user',
           'singleton',
           'INTEGER NOT NULL DEFAULT 1',
         );
-        // Ajouter la colonne birth_date si manquante
+
         await _addColumnIfMissing('app_user', 'birth_date', 'INTEGER');
       }
-      // Garantir la colonne singleton avant de créer l'index unique
+
       await _addColumnIfMissing(
         'app_user',
         'singleton',
         'INTEGER NOT NULL DEFAULT 1',
       );
 
-      // Ajouter program_day_id à la table session si manquante
+
       if (await _tableExists('session')) {
         debugPrint('[MIGRATION V40] Table session existe, ajout des colonnes...');
         await _addColumnIfMissing(
@@ -568,7 +565,7 @@ class AppDb extends _$AppDb {
           'program_day_id',
           'INTEGER REFERENCES program_day(id) ON DELETE SET NULL',
         );
-        // V40: Ajouter la colonne name pour nommer les séances libres
+
         debugPrint('[MIGRATION V40] Ajout de la colonne name à session...');
         await _addColumnIfMissing(
           'session',
@@ -578,7 +575,7 @@ class AppDb extends _$AppDb {
         debugPrint('[MIGRATION V40] Colonne name ajoutée avec succès');
       }
 
-      // Ajouter scheduled_date à la table program_day_exercise si manquante
+
       if (await _tableExists('program_day_exercise')) {
         await _addColumnIfMissing(
           'program_day_exercise',
@@ -586,7 +583,7 @@ class AppDb extends _$AppDb {
           'INTEGER',
         );
 
-        // V38: Ajouter les colonnes previous_*
+
         await _addColumnIfMissing(
           'program_day_exercise',
           'previous_sets_suggestion',
@@ -607,7 +604,7 @@ class AppDb extends _$AppDb {
       await _ensureExerciseRelationTable();
       await _ensureUserTrainingDayTable();
 
-      // Ajouter session_id à la table user_feedback si manquante
+
       if (await _tableExists('user_feedback')) {
         await _addColumnIfMissing(
           'user_feedback',
@@ -616,8 +613,7 @@ class AppDb extends _$AppDb {
         );
       }
 
-      // On évite toute magie sur tables existantes (source d'erreurs).
-      // On ne crée que les INDEX manquants, de façon idempotente.
+
       await _createAllIndexes();
     },
   );
@@ -685,7 +681,7 @@ class AppDb extends _$AppDb {
     );
   }
 
-  /// ---------- Utilitaires ----------
+
   Future<String> integrityCheck() async {
     final row = await customSelect('PRAGMA integrity_check;').getSingle();
     return (row.data.values.first ?? '').toString();
@@ -722,7 +718,7 @@ class AppDb extends _$AppDb {
   }
 
   Future<void> _ensureExerciseRelationTable() async {
-    // crée la table si absente (schéma V3)
+
     if (!await _tableExists('exercise_relation')) {
       await customStatement('''
       CREATE TABLE IF NOT EXISTS exercise_relation (
@@ -739,7 +735,7 @@ class AppDb extends _$AppDb {
   }
 
   Future<void> _ensureUserTrainingDayTable() async {
-    // crée la table user_training_day si absente
+
     if (!await _tableExists('user_training_day')) {
       await customStatement('''
       CREATE TABLE IF NOT EXISTS user_training_day (
@@ -760,7 +756,7 @@ class AppDb extends _$AppDb {
           'ALTER TABLE app_user ADD COLUMN singleton INTEGER NOT NULL DEFAULT 1;',
         );
       }
-      // L’index ne sera créé que si la colonne existe (maintenant c’est sûr)
+
       await customStatement(
         'CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);',
       );

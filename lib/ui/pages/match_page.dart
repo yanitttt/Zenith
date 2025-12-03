@@ -48,7 +48,7 @@ class _MatchPageState extends State<MatchPage> {
       }
 
       debugPrint('[MATCH] Génération de la pile de cartes...');
-      // D'abord assigner _allExercises AVANT d'appeler _generateInitialStack()
+
       _allExercises = exercises;
       _allExercises.shuffle(_random);
       final stack = _generateInitialStack();
@@ -80,7 +80,7 @@ class _MatchPageState extends State<MatchPage> {
       debugPrint('[MATCH] _allExercises is empty, returning empty stack');
       return [];
     }
-    // Créer une pile de 3 cartes avec exercices aléatoires
+
     final shuffled = List.of(_allExercises)..shuffle(_random);
     return shuffled.take(3).toList();
   }
@@ -88,7 +88,7 @@ class _MatchPageState extends State<MatchPage> {
   void _onSwipe() {
     setState(() {
       _currentIndex++;
-      // Retirer la première carte et en ajouter une nouvelle aléatoire
+
       if (_cardStack.isNotEmpty) {
         final removed = _cardStack.removeAt(0);
         _history.add(removed);
@@ -122,7 +122,7 @@ class _MatchPageState extends State<MatchPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Column(
             children: [
-              // Header sombre avec engrenage (comme la maquette)
+
               Container(
                 decoration: BoxDecoration(
                   color: AppTheme.surface,
@@ -152,7 +152,7 @@ class _MatchPageState extends State<MatchPage> {
               ),
               const SizedBox(height: 10),
 
-              // Pile de cartes swipables
+
               Expanded(
                 child:
                     _isLoading
@@ -214,7 +214,7 @@ class _MatchPageState extends State<MatchPage> {
                             return Stack(
                               fit: StackFit.expand,
                               children: [
-                                // Carte suivante en preview (DERRIÈRE) - si elle existe
+
                                 if (_cardStack.length > 1)
                                   Positioned(
                                     top: 8,
@@ -243,7 +243,7 @@ class _MatchPageState extends State<MatchPage> {
                                       ),
                                     ),
                                   ),
-                                // Carte du dessus (swipable) - DEVANT
+
                                 ExerciseSwipeCard(
                                   key: ValueKey(
                                     '${_cardStack[0].id}_$_currentIndex',

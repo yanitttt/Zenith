@@ -75,7 +75,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _loadGoalsAndEquipment() async {
-    // Charge toutes les options et la sélection actuelle
+
     allObjectives = await widget.goalDao.allObjectivesList();
     allEquipments = await widget.equipmentDao.allEquipmentList();
 
@@ -243,7 +243,7 @@ Future<void> _navigateToEquipmentPage() async {
             _selector(label: "Métabolisme", value: metabolism, items: const ["Lent", "Normal", "Rapide"], onChanged: (v) => setState(() => metabolism = v)),
             const SizedBox(height: 12),
 
-            // Date naissance
+
             Row(
               children: [
                 const Icon(Icons.cake, color: Colors.white),
@@ -260,7 +260,7 @@ Future<void> _navigateToEquipmentPage() async {
               leading: const Icon(Icons.sports_gymnastics, color: _goldColor),
               title: const Text("Modifier l'objectif", style: TextStyle(color: Colors.white)),
               subtitle: Text(
-                _getSelectedGoalName(), // Affiche le nom de l'objectif sélectionné (si chargé)
+                _getSelectedGoalName(),
                 style: const TextStyle(color: Colors.white70),
               ),
               trailing: const Icon(Icons.chevron_right, color: Colors.white),
@@ -274,7 +274,7 @@ Future<void> _navigateToEquipmentPage() async {
               leading: const Icon(Icons.fitness_center, color: _goldColor),
               title: const Text("Modifier l'équipement", style: TextStyle(color: Colors.white)),
               subtitle: Text(
-                "${selectedEquipmentIds.length} équipement(s) sélectionné(s)", // Affiche le compte
+                "${selectedEquipmentIds.length} équipement(s) sélectionné(s)",
                 style: const TextStyle(color: Colors.white70),
               ),
               trailing: const Icon(Icons.chevron_right, color: Colors.white),

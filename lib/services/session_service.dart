@@ -4,15 +4,15 @@ import '../data/db/app_db.dart';
 import '../data/repositories/exercise_repository.dart';
 import '../ui/widgets/session/session_card.dart';
 
-/// Service pour gérer les données de séance
+
 class SessionService {
   final AppDb db;
   SessionService(this.db);
 
-  /// Récupère une session aléatoire avec des exercices
+
   Future<SessionInfo> getRandomSessionInfo({int exerciseCount = 4}) async {
     try {
-      // Récupérer des exercices aléatoires
+
       final exerciseRepo = ExerciseRepository(db);
       final allExercises = await exerciseRepo.all();
 
@@ -20,11 +20,11 @@ class SessionService {
         return _getFallbackSession();
       }
 
-      // Mélanger et prendre le nombre d'exercices demandés
+
       allExercises.shuffle();
       final selectedExercises = allExercises.take(exerciseCount).toList();
 
-      // Convertir en ExerciseItem
+
       final exerciseItems = selectedExercises.map((e) {
         return ExerciseItem(
           name: e.name,
@@ -36,7 +36,7 @@ class SessionService {
         );
       }).toList();
 
-      // Générer les infos de date et heure
+
       final now = DateTime.now();
       final daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
       const monthsOfYear = [
@@ -44,7 +44,7 @@ class SessionService {
         'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
       ];
 
-      // Jour aléatoire dans les 7 prochains jours
+
       final futureDate = now.add(Duration(days: _randomInt(1, 7)));
       final dayName = daysOfWeek[futureDate.weekday % 7];
       final monthName = monthsOfYear[futureDate.month - 1];
@@ -66,7 +66,7 @@ class SessionService {
     }
   }
 
-  /// Session par défaut en cas d'erreur
+
   SessionInfo _getFallbackSession() {
     return SessionInfo(
       dayName: 'Lundi',
@@ -95,7 +95,7 @@ class SessionService {
     );
   }
 
-  /// Retourne une icône en fonction du nom de l'exercice
+
   IconData _getExerciseIcon(String exerciseName) {
     final lowerName = exerciseName.toLowerCase();
 
@@ -120,7 +120,7 @@ class SessionService {
     return Icons.fit_screen;
   }
 
-  /// Génère un nombre aléatoire entre min et max (inclus)
+
   int _randomInt(int min, int max) {
     return min + Random().nextInt(max - min + 1);
   }

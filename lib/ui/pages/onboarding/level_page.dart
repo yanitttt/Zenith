@@ -43,7 +43,7 @@ class _LevelPageState extends State<LevelPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button
+
               InkResponse(
                 onTap: widget.onBack,
                 child: Container(
@@ -62,7 +62,7 @@ class _LevelPageState extends State<LevelPage> {
               ),
               const SizedBox(height: 40),
 
-              // Title
+
               const Text(
                 'Quel est ton niveau ?',
                 style: TextStyle(
@@ -81,7 +81,7 @@ class _LevelPageState extends State<LevelPage> {
               ),
               const SizedBox(height: 60),
 
-              // Level buttons
+
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
@@ -115,7 +115,7 @@ class _LevelPageState extends State<LevelPage> {
 
               const SizedBox(height: 20),
 
-              // Next button
+
               SizedBox(
                 width: double.infinity,
                 height: 56,

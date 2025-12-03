@@ -26,16 +26,16 @@ class AdminPage extends StatefulWidget {
 
 class _AdminPageState extends State<AdminPage> {
   late final UserDao _userDao;
-  late final UserGoalDao _goalDao; // DAO pour les objectifs
-  late final UserEquipmentDao _equipmentDao; // DAO pour les équipements
+  late final UserGoalDao _goalDao;
+  late final UserEquipmentDao _equipmentDao;
   late final UserTrainingDayDao _trainingDayDao;
 
   @override
   void initState() {
     super.initState();
     _userDao = UserDao(widget.db);
-    _goalDao = UserGoalDao(widget.db); // Initialisation
-    _equipmentDao = UserEquipmentDao(widget.db); // Initialisation
+    _goalDao = UserGoalDao(widget.db);
+    _equipmentDao = UserEquipmentDao(widget.db);
     _trainingDayDao = UserTrainingDayDao(widget.db);
   }
 
@@ -130,7 +130,7 @@ class _AdminPageState extends State<AdminPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Liste
+
                     Expanded(
                       child: StreamBuilder<List<AppUserData>>(
                         stream: _userDao.watchAllOrdered(),
@@ -198,7 +198,7 @@ class _UserCardState extends State<_UserCard> {
   }
 
   Future<void> _loadTrainingDays() async {
-    // Accède directement au DAO via l'état du parent
+
     final dao =
         context.findAncestorStateOfType<_AdminPageState>()!._trainingDayDao;
     final days = await dao.getDayNumbersForUser(widget.u.id);
@@ -324,7 +324,7 @@ class _UserCardState extends State<_UserCard> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Nom et infos
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,13 +354,13 @@ class _UserCardState extends State<_UserCard> {
             ),
           ),
 
-          // Section des statistiques compacte
+
           Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Grille 2x2 ou 2x3 pour les stats
+
                 Row(
                   children: [
                     if (widget.u.height != null)
@@ -388,7 +388,7 @@ class _UserCardState extends State<_UserCard> {
 
                 const SizedBox(height: 8),
 
-                // Deuxième ligne
+
                 Row(
                   children: [
                     if (imcArrondi != null)
@@ -415,7 +415,7 @@ class _UserCardState extends State<_UserCard> {
                   ],
                 ),
 
-                // Métabolisme sur une ligne si disponible
+
                 if (widget.u.metabolism != null &&
                     widget.u.metabolism!.trim().isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -430,7 +430,7 @@ class _UserCardState extends State<_UserCard> {
 
                 const SizedBox(height: 12),
 
-                // Boutons d'action compacts
+
                 Row(
                   children: [
                     Expanded(
@@ -474,7 +474,7 @@ class _UserCardState extends State<_UserCard> {
 
                 const SizedBox(height: 8),
 
-                // Bouton jours d'entraînement
+
                 _ModernButton(
                   icon: Icons.calendar_today_outlined,
                   label:
@@ -493,7 +493,7 @@ class _UserCardState extends State<_UserCard> {
   }
 }
 
-// Widget pour les cartes de statistiques
+
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -570,7 +570,7 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-// Widget pour les boutons compacts
+
 class _ModernButton extends StatelessWidget {
   final IconData icon;
   final String label;

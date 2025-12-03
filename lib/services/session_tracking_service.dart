@@ -65,7 +65,7 @@ class SessionTrackingService {
 
   SessionTrackingService(this.db);
 
-  /// Démarre une nouvelle session pour un jour de programme donné
+
   Future<int> startSession({
     required int userId,
     required int programDayId,
@@ -73,7 +73,7 @@ class SessionTrackingService {
     final now = DateTime.now();
     DateTime sessionDate = now;
 
-    // Vérifier si une date est prévue pour ce jour de programme
+
     final scheduledExercise =
         await (db.select(db.programDayExercise)
               ..where(
@@ -86,7 +86,7 @@ class SessionTrackingService {
 
     if (scheduledExercise != null && scheduledExercise.scheduledDate != null) {
       final scheduled = scheduledExercise.scheduledDate!;
-      // On garde l'heure actuelle mais on force la date prévue
+
       sessionDate = DateTime(
         scheduled.year,
         scheduled.month,
@@ -97,7 +97,7 @@ class SessionTrackingService {
       );
     }
 
-    // Créer la session avec le lien vers le jour du programme
+
     final sessionId = await db
         .into(db.session)
         .insert(
@@ -112,7 +112,7 @@ class SessionTrackingService {
     return sessionId;
   }
 
-  /// Récupère les exercices d'un jour de programme pour la session
+
   Future<List<ActiveSessionExercise>> getSessionExercises(
     int programDayId,
   ) async {
@@ -146,7 +146,7 @@ class SessionTrackingService {
     return exercises;
   }
 
-  /// Enregistre les performances d'un exercice dans la session
+
   Future<void> saveExercisePerformance({
     required int sessionId,
     required ActiveSessionExercise exercise,
@@ -167,7 +167,7 @@ class SessionTrackingService {
         );
   }
 
-  /// Finalise la session en calculant la durée totale
+
   Future<void> completeSession({
     required int sessionId,
     required DateTime startTime,
@@ -180,7 +180,7 @@ class SessionTrackingService {
     )).write(SessionCompanion(durationMin: Value(durationMin)));
   }
 
-  /// Récupère l'historique des sessions d'un utilisateur
+
   Future<List<SessionData>> getUserSessions(int userId) async {
     return await (db.select(db.session)
           ..where((tbl) => tbl.userId.equals(userId))
@@ -188,7 +188,7 @@ class SessionTrackingService {
         .get();
   }
 
-  /// Récupère les détails d'une session spécifique
+
   Future<List<SessionExerciseData>> getSessionDetails(int sessionId) async {
     return await (db.select(db.sessionExercise)
           ..where((tbl) => tbl.sessionId.equals(sessionId))
@@ -196,12 +196,12 @@ class SessionTrackingService {
         .get();
   }
 
-  /// Analyse les performances pour ajuster les recommandations futures
+
   Future<Map<String, dynamic>> analyzePerformance({
     required int exerciseId,
     required int userId,
   }) async {
-    // Récupérer les 5 dernières sessions avec cet exercice
+
     final query = '''
       SELECT se.sets, se.reps, se.load, se.rpe, se.position, s.date_ts
       FROM session_exercise se
@@ -234,7 +234,7 @@ class SessionTrackingService {
       };
     }
 
-    // Calculer les moyennes
+
     double totalSets = 0;
     double totalReps = 0;
     double totalLoad = 0;
@@ -261,7 +261,7 @@ class SessionTrackingService {
     final avgLoad = count > 0 ? totalLoad / count : 0;
     final avgRpe = count > 0 ? totalRpe / count : 0;
 
-    // Déterminer la tendance (si la charge augmente = progression)
+
     String trend = 'neutral';
     if (results.length >= 3) {
       final firstLoad = results.last.read<double?>('load') ?? 0;
@@ -284,7 +284,7 @@ class SessionTrackingService {
     };
   }
 
-  /// Suggère des ajustements basés sur les performances passées
+
   Future<Map<String, dynamic>> getSuggestedAdjustments({
     required int exerciseId,
     required int userId,
@@ -305,7 +305,7 @@ class SessionTrackingService {
     final avgRpe = performance['averageRpe'] as double;
     final trend = performance['trend'] as String;
 
-    // Si RPE moyen > 8.5 : trop difficile, diminuer
+
     if (avgRpe > 8.5) {
       return {
         'shouldIncrease': false,
@@ -315,7 +315,7 @@ class SessionTrackingService {
       };
     }
 
-    // Si RPE moyen < 6.5 et tendance improving : trop facile, augmenter
+
     if (avgRpe < 6.5 && trend == 'improving') {
       return {
         'shouldIncrease': true,
@@ -333,14 +333,14 @@ class SessionTrackingService {
     };
   }
 
-  /// Supprime une session (si erreur ou annulation)
+
   Future<void> deleteSession(int sessionId) async {
-    // Les SessionExercise seront supprimés en cascade
+
     await (db.delete(db.session)
       ..where((tbl) => tbl.id.equals(sessionId))).go();
   }
 
-  /// Vérifie si un jour de programme a déjà été complété
+
   Future<bool> isDayCompleted(int programDayId) async {
     final sessions =
         await (db.select(db.session)
@@ -355,7 +355,7 @@ class SessionTrackingService {
     return sessions.isNotEmpty;
   }
 
-  /// Récupère la dernière session complétée pour un jour
+
   Future<SessionData?> getLastCompletedSession(int programDayId) async {
     return await (db.select(db.session)
           ..where(
@@ -368,7 +368,7 @@ class SessionTrackingService {
         .getSingleOrNull();
   }
 
-  /// Récupère toutes les sessions complétées pour plusieurs jours
+
   Future<Map<int, SessionData>> getCompletedSessionsForDays(
     List<int> programDayIds,
   ) async {
@@ -384,7 +384,7 @@ class SessionTrackingService {
               ..orderBy([(t) => OrderingTerm.desc(t.dateTs)]))
             .get();
 
-    // Créer une map avec seulement la session la plus récente par jour
+
     final Map<int, SessionData> result = {};
     for (final session in sessions) {
       final dayId = session.programDayId;

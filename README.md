@@ -383,7 +383,7 @@ Pour les détails techniques de l'implémentation du widget, veuillez consulter 
 
 1. Cloner le depot:
 ```bash
-git clone [URL_DU_DEPOT]
+git clone https://github.com/yanitttt/recommandation_mobile.git
 cd recommandation_mobile
 ```
 

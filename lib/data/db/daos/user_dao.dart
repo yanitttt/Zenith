@@ -55,12 +55,12 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
     return q.watch();
   }
 
-  /// Supprime un utilisateur et toutes ses dépendances, de façon sûre.
+
   Future<void> deleteUserCascade(int userId) async {
     await transaction(() async {
       await customStatement('PRAGMA foreign_keys = ON;');
 
-      // 1) Détails de séance
+
       await customUpdate(
         'DELETE FROM session_exercise '
             'WHERE session_id IN (SELECT id FROM session WHERE user_id = ?)',
@@ -69,7 +69,7 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-      // 2) Journal des séances
+
       await customUpdate(
         'DELETE FROM session WHERE user_id = ?',
         variables: [Variable.withInt(userId)],
@@ -77,7 +77,7 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-      // 3) Feedbacks
+
       await customUpdate(
         'DELETE FROM user_feedback WHERE user_id = ?',
         variables: [Variable.withInt(userId)],
@@ -85,7 +85,7 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-      // 4) Matériel possédé
+
       await customUpdate(
         'DELETE FROM user_equipment WHERE user_id = ?',
         variables: [Variable.withInt(userId)],
@@ -93,7 +93,7 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-      // 5) Objectifs utilisateur
+
       await customUpdate(
         'DELETE FROM user_goal WHERE user_id = ?',
         variables: [Variable.withInt(userId)],
@@ -101,7 +101,7 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-      // 6) Programmes affectés
+
       await customUpdate(
         'DELETE FROM user_program WHERE user_id = ?',
         variables: [Variable.withInt(userId)],
@@ -109,7 +109,7 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-      // 7) Enfin, l’utilisateur
+
       await (delete(db.appUser)
         ..where((t) => t.id.equals(userId))).go();
     });
@@ -117,9 +117,9 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
 }
 
 
-/// Helpers d’affichage sur le modèle AppUser
+
 extension AppUserDataX on AppUserData {
-  /// Construit "prenom nom" si possible, sinon utilise les fallbacks.
+
   String get fullName {
     final p = (prenom ?? '').trim();
     final n = (nom ?? '').trim();

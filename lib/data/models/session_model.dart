@@ -1,5 +1,4 @@
-/// Modèle de données pour les sessions d'entraînement
-/// Utile pour la sérialisation/désérialisation avec JSON ou pour le stockage
+
 class SessionModel {
   final String id;
   final String dayName;
@@ -21,7 +20,7 @@ class SessionModel {
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
-  /// Convertir en JSON
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -35,7 +34,7 @@ class SessionModel {
     };
   }
 
-  /// Créer depuis JSON
+
   factory SessionModel.fromJson(Map<String, dynamic> json) {
     return SessionModel(
       id: json['id'] as String,
@@ -51,7 +50,7 @@ class SessionModel {
     );
   }
 
-  /// Copie avec modifications
+
   SessionModel copyWith({
     String? id,
     String? dayName,
@@ -82,7 +81,7 @@ class ExerciseModel {
   final int reps;
   final int restSeconds;
   final double loadKg;
-  final String iconName; // Stocké comme string pour sérialisation
+  final String iconName;
 
   ExerciseModel({
     required this.id,
@@ -94,7 +93,7 @@ class ExerciseModel {
     required this.iconName,
   });
 
-  /// Convertir en JSON
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -107,7 +106,7 @@ class ExerciseModel {
     };
   }
 
-  /// Créer depuis JSON
+
   factory ExerciseModel.fromJson(Map<String, dynamic> json) {
     return ExerciseModel(
       id: json['id'] as String,
@@ -120,7 +119,7 @@ class ExerciseModel {
     );
   }
 
-  /// Copie avec modifications
+
   ExerciseModel copyWith({
     String? id,
     String? name,

@@ -4,8 +4,7 @@ import '../../services/session_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/session/session_card.dart';
 
-/// Page d'exemple pour afficher une carte de séance
-/// Cet exemple montre comment utiliser le widget SessionCard de manière réutilisable
+
 class SessionPreviewPage extends StatefulWidget {
   final AppDb db;
   const SessionPreviewPage({super.key, required this.db});
@@ -45,8 +44,7 @@ class _SessionPreviewPageState extends State<SessionPreviewPage> {
   }
 
   void _handleNextPressed() {
-    // Action au clic du bouton "Suite"
-    // Vous pouvez naviguer vers la page de séance réelle ici
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Redirection vers la séance...')),
     );
@@ -86,7 +84,7 @@ class _SessionPreviewPageState extends State<SessionPreviewPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Bouton pour recharger une nouvelle séance
+
                         SizedBox(
                           width: double.infinity,
                           height: 44,

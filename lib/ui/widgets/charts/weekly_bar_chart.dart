@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
 class WeeklyBarChart extends StatelessWidget {
-  final Map<String, int> weeklyData; // e.g., {'Lun': 1, 'Mar': 0, ...}
+  final Map<String, int> weeklyData;
 
   const WeeklyBarChart({super.key, required this.weeklyData});
 
   @override
   Widget build(BuildContext context) {
-    print("📊 WeeklyBarChart - Données reçues : $weeklyData");
-    // ---------------- FAKE DATA IF EMPTY ----------------
+    print(" WeeklyBarChart - Données reçues : $weeklyData");
+
     final correctedData = weeklyData.isEmpty
         ? {
       "Lun": 1,
@@ -22,7 +22,7 @@ class WeeklyBarChart extends StatelessWidget {
       "Dim": 0,
     }
         : weeklyData;
-    // -----------------------------------------------------
+
 
     final days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
     List<BarChartGroupData> barGroups = [];
@@ -30,7 +30,7 @@ class WeeklyBarChart extends StatelessWidget {
     int index = 0;
     for (var day in days) {
       final count = correctedData[day] ?? 0;
-      print("➡️ $day : $count séance(s)");
+      print(" $day : $count séance(s)");
       barGroups.add(
         BarChartGroupData(
           x: index,
@@ -125,7 +125,7 @@ class WeeklyBarChart extends StatelessWidget {
     for (var val in data.values) {
       if (val > max) max = val;
     }
-    print("📏 Hauteur max du graphique : ${max < 5 ? 5 : max + 1}");
+    print(" Hauteur max du graphique : ${max < 5 ? 5 : max + 1}");
     return (max < 5 ? 5 : max + 1).toDouble();
   }
 }

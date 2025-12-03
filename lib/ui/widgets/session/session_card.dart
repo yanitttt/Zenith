@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_theme.dart';
 
-/// Modèle pour les informations d'une séance
+
 class SessionInfo {
-  final String dayName; // "Lundi"
-  final int dayNumber; // 15
-  final String monthName; // "Novembre"
-  final int durationMinutes; // 60
-  final String sessionType; // "PUSH", "PULL", "LEGS", etc.
+  final String dayName;
+  final int dayNumber;
+  final String monthName;
+  final int durationMinutes;
+  final String sessionType;
   final List<ExerciseItem> exercises;
 
   const SessionInfo({
@@ -20,13 +20,13 @@ class SessionInfo {
   });
 }
 
-/// Modèle pour un exercice dans la séance
+
 class ExerciseItem {
   final String name;
-  final String sets; // "4 séries"
-  final String reps; // "8 répétitions"
-  final String rest; // "1min de repos"
-  final String load; // "60kg de charge"
+  final String sets;
+  final String reps;
+  final String rest;
+  final String load;
   final IconData icon;
 
   const ExerciseItem({
@@ -39,7 +39,7 @@ class ExerciseItem {
   });
 }
 
-/// Widget réutilisable pour afficher une carte de séance
+
 class SessionCard extends StatelessWidget {
   final SessionInfo sessionInfo;
   final VoidCallback? onNextPressed;
@@ -61,7 +61,7 @@ class SessionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header avec titre
+
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
@@ -138,7 +138,7 @@ class SessionCard extends StatelessWidget {
             ),
           ),
 
-          // Liste des exercices
+
           Container(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -153,7 +153,7 @@ class SessionCard extends StatelessWidget {
             ),
           ),
 
-          // Bouton Suite
+
           Padding(
             padding: const EdgeInsets.all(16),
             child: SizedBox(
@@ -210,7 +210,7 @@ class SessionCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            // Icon
+
             Container(
               width: 40,
               height: 40,
@@ -225,7 +225,7 @@ class SessionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Contenu
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

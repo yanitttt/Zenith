@@ -27,7 +27,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
       color: AppTheme.scaffold,
       child: Column(
         children: [
-          // Header simple + champ de recherche
+
           Container(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             alignment: Alignment.centerLeft,
@@ -48,10 +48,10 @@ class _ExercisesPageState extends State<ExercisesPage> {
             ),
           ),
 
-          // Liste
+
           Expanded(
             child: StreamBuilder<List<ExerciseData>>(
-              stream: repo.watchAll(), // réactif si la BDD change
+              stream: repo.watchAll(),
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -125,12 +125,12 @@ class _ExerciseTile extends StatelessWidget {
   const _ExerciseTile({required this.e});
 
   Color _typeColor(String t) {
-    // couleurs cohérentes avec l’UI (doré/sombre)
+
     switch (t.toLowerCase()) {
       case 'poly':
-        return const Color(0xFFD9BE77); // gold
+        return const Color(0xFFD9BE77);
       case 'iso':
-        return const Color(0xFF9EC3FF); // bleu doux (comme samedi sur le cal)
+        return const Color(0xFF9EC3FF);
       default:
         return Colors.white70;
     }
@@ -146,7 +146,7 @@ class _ExerciseTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-          // avatar icon
+
           Container(
             width: 46,
             height: 46,
@@ -154,7 +154,7 @@ class _ExerciseTile extends StatelessWidget {
             child: const Icon(Icons.fitness_center, color: Colors.black),
           ),
           const SizedBox(width: 12),
-          // infos
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

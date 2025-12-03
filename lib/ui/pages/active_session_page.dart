@@ -44,13 +44,13 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
 
   Future<void> _initSession() async {
     try {
-      // Créer la session
+
       final sessionId = await _sessionService.startSession(
         userId: widget.userId,
         programDayId: widget.programDayId,
       );
 
-      // Charger les exercices
+
       final exercises = await _sessionService.getSessionExercises(
         widget.programDayId,
       );
@@ -90,13 +90,13 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
         _exercises[_currentExerciseIndex] = result;
       });
 
-      // Sauvegarder automatiquement
+
       await _sessionService.saveExercisePerformance(
         sessionId: _sessionId!,
         exercise: result,
       );
 
-      // Passer au suivant si pas le dernier
+
       if (_currentExerciseIndex < _exercises.length - 1) {
         setState(() {
           _currentExerciseIndex++;
@@ -106,7 +106,7 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
   }
 
   Future<void> _completeSession() async {
-    // Vérifier que tous les exercices sont complétés
+
     final allCompleted = _exercises.every((e) => e.isCompleted);
 
     if (!allCompleted) {
@@ -153,20 +153,18 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
         startTime: _startTime,
       );
 
-      // Régénérer les jours futurs du programme
+
       if (mounted) {
         setState(() {
-          // Mettre à jour le message du bouton si nécessaire,
-          // mais _completing est déjà true donc le bouton affiche "Finalisation..."
         });
       }
 
-      // Récupérer l'ID du programme
+
       final programDay =
           await (widget.db.select(widget.db.programDay)
             ..where((tbl) => tbl.id.equals(widget.programDayId))).getSingle();
 
-      // Lancer la régénération
+
       await _programGenerator.regenerateFutureDays(
         userId: widget.userId,
         programId: programDay.programId,
@@ -567,7 +565,7 @@ class _ExercisePerformanceDialogState
         _analysis = analysis;
         _loadingAnalysis = false;
 
-        // Pré-remplir avec les moyennes si disponibles
+
         if (analysis['hasHistory'] == true) {
           if (_setsController.text.isEmpty) {
             _setsController.text =
