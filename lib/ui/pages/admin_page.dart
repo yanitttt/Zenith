@@ -115,21 +115,6 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Tester les notifications',
-                    onPressed: () async {
-                      await NotificationService().showNotification(
-                        id: 1,
-                        title: "Test Notification",
-                        body:
-                            "Le service de notification fonctionne correctement !",
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.notifications_active,
-                      color: AppTheme.gold,
-                    ),
-                  ),
 
                   IconButton(
                     tooltip: 'Rafraîchir',
