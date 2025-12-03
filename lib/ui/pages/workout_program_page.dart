@@ -8,6 +8,7 @@ import '../../data/db/daos/user_training_day_dao.dart';
 import '../widgets/training_days_dialog.dart';
 import '../theme/app_theme.dart';
 import 'active_session_page.dart';
+import '../utils/responsive.dart';
 
 class WorkoutProgramPage extends StatefulWidget {
   final AppDb db;
@@ -297,13 +298,14 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = Responsive(context);
     return Scaffold(
       backgroundColor: AppTheme.scaffold,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
-            if (_programDays.isNotEmpty) _buildDaySelector(),
+            _buildHeader(responsive),
+            if (_programDays.isNotEmpty) _buildDaySelector(responsive),
             Expanded(
               child:
                   _loading || _generating
@@ -311,8 +313,8 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                       : _error != null
                       ? _buildError()
                       : _programDays.isEmpty
-                      ? _buildEmpty()
-                      : _buildDayContent(),
+                      ? _buildEmpty(responsive)
+                      : _buildDayContent(responsive),
             ),
           ],
         ),
@@ -320,9 +322,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(Responsive responsive) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(responsive.rw(24)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -333,31 +335,31 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Mon Programme',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 28,
+                        fontSize: responsive.rsp(28),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     if (_currentProgram != null) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: responsive.rh(8)),
                       Text(
                         _currentProgram!.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.gold,
-                          fontSize: 16,
+                          fontSize: responsive.rsp(16),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       if (_currentProgram!.description != null) ...[
-                        const SizedBox(height: 4),
+                        SizedBox(height: responsive.rh(4)),
                         Text(
                           _currentProgram!.description!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white60,
-                            fontSize: 14,
+                            fontSize: responsive.rsp(14),
                           ),
                         ),
                       ],
@@ -369,7 +371,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                 onPressed: _generating ? null : _regenerateProgram,
                 icon: const Icon(Icons.refresh),
                 color: AppTheme.gold,
-                iconSize: 28,
+                iconSize: responsive.rsp(28),
               ),
             ],
           ),
@@ -394,10 +396,10 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     }
   }
 
-  Widget _buildDaySelector() {
+  Widget _buildDaySelector(Responsive responsive) {
     return Container(
-      height: 90,
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      height: responsive.rh(90),
+      margin: EdgeInsets.symmetric(horizontal: responsive.rw(24)),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _programDays.length,
@@ -406,13 +408,13 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           final isSelected = _selectedDayIndex == index;
           final isCompleted = _completedSessions.containsKey(day.programDayId);
           return Padding(
-            padding: const EdgeInsets.only(right: 12),
+            padding: EdgeInsets.only(right: responsive.rw(12)),
             child: GestureDetector(
               onTap: () => setState(() => _selectedDayIndex = index),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive.rw(20),
+                  vertical: responsive.rh(12),
                 ),
                 decoration: BoxDecoration(
                   color:
@@ -442,16 +444,16 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                           'Jour ${day.dayOrder}',
                           style: TextStyle(
                             color: isSelected ? Colors.black : Colors.white,
-                            fontSize: 14,
+                            fontSize: responsive.rsp(14),
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         if (isCompleted) ...[
-                          const SizedBox(width: 6),
+                          SizedBox(width: responsive.rw(6)),
                           Icon(
                             Icons.check_circle,
                             color: isSelected ? Colors.black : Colors.green,
-                            size: 16,
+                            size: responsive.rsp(16),
                           ),
                         ],
                       ],
@@ -462,7 +464,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                         _formatScheduledDate(day.scheduledDate!),
                         style: TextStyle(
                           color: isSelected ? Colors.black87 : Colors.white60,
-                          fontSize: 11,
+                          fontSize: responsive.rsp(11),
                         ),
                       ),
                     ],
@@ -476,7 +478,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
-  Widget _buildDayContent() {
+  Widget _buildDayContent(Responsive responsive) {
     if (_programDays.isEmpty) return const SizedBox();
 
     final currentDay = _programDays[_selectedDayIndex];
@@ -487,7 +489,12 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+          padding: EdgeInsets.fromLTRB(
+            responsive.rw(24),
+            responsive.rh(16),
+            responsive.rw(24),
+            responsive.rh(8),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -497,9 +504,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                   children: [
                     Text(
                       currentDay.dayName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 20,
+                        fontSize: responsive.rsp(20),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -512,12 +519,12 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                             color: AppTheme.gold,
                             size: 14,
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: responsive.rw(6)),
                           Text(
                             'Prévue le ${_formatScheduledDate(currentDay.scheduledDate!)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: AppTheme.gold,
-                              fontSize: 13,
+                              fontSize: responsive.rsp(13),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -525,12 +532,12 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                       ),
                     ],
                     if (isCompleted && completedSession != null) ...[
-                      const SizedBox(height: 4),
+                      SizedBox(height: responsive.rh(4)),
                       Text(
                         'Terminée le ${_formatDate(completedSession.dateTs)} (${completedSession.durationMin ?? 0} min)',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.green,
-                          fontSize: 12,
+                          fontSize: responsive.rsp(12),
                         ),
                       ),
                     ],
@@ -550,19 +557,27 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          padding: EdgeInsets.fromLTRB(
+            responsive.rw(24),
+            0,
+            responsive.rw(24),
+            responsive.rh(16),
+          ),
           child: Text(
             '${currentDay.exercises.length} exercices',
-            style: const TextStyle(color: Colors.white60, fontSize: 14),
+            style: TextStyle(
+              color: Colors.white60,
+              fontSize: responsive.rsp(14),
+            ),
           ),
         ),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: EdgeInsets.symmetric(horizontal: responsive.rw(24)),
             itemCount: currentDay.exercises.length,
             itemBuilder: (context, index) {
               final exercise = currentDay.exercises[index];
-              return _buildExerciseCard(exercise);
+              return _buildExerciseCard(exercise, responsive);
             },
           ),
         ),
@@ -570,10 +585,13 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
-  Widget _buildExerciseCard(ProgramExerciseDetail exercise) {
+  Widget _buildExerciseCard(
+    ProgramExerciseDetail exercise,
+    Responsive responsive,
+  ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: responsive.rh(16)),
+      padding: EdgeInsets.all(responsive.rw(16)),
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(16),
@@ -585,8 +603,8 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: responsive.rw(40),
+                height: responsive.rw(40),
                 decoration: BoxDecoration(
                   color: AppTheme.gold,
                   borderRadius: BorderRadius.circular(8),
@@ -594,28 +612,28 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                 child: Center(
                   child: Text(
                     '${exercise.position}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.black,
-                      fontSize: 18,
+                      fontSize: responsive.rsp(18),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: responsive.rw(12)),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       exercise.exerciseName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: responsive.rsp(18),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: responsive.rh(4)),
                     Row(
                       children: [
                         _buildBadge(
@@ -624,17 +642,23 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                               exercise.exerciseType == 'poly'
                                   ? Colors.blue
                                   : Colors.purple,
+                          responsive: responsive,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: responsive.rw(8)),
                         _buildBadge(
                           label: 'Difficulté ${exercise.difficulty}/5',
                           color: _getDifficultyColor(exercise.difficulty),
+                          responsive: responsive,
                         ),
                         if (exercise.previousSetsSuggestion != null ||
                             exercise.previousRepsSuggestion != null ||
                             exercise.previousRestSuggestion != null) ...[
-                          const SizedBox(width: 8),
-                          _buildBadge(label: 'ADAPTÉ', color: AppTheme.gold),
+                          SizedBox(width: responsive.rw(8)),
+                          _buildBadge(
+                            label: 'ADAPTÉ',
+                            color: AppTheme.gold,
+                            responsive: responsive,
+                          ),
                         ],
                       ],
                     ),
@@ -643,9 +667,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: responsive.rh(16)),
           const Divider(color: Colors.grey, height: 1),
-          const SizedBox(height: 12),
+          SizedBox(height: responsive.rh(12)),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -654,12 +678,14 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                 label: 'Séries',
                 value: exercise.setsSuggestion ?? '-',
                 previousValue: exercise.previousSetsSuggestion,
+                responsive: responsive,
               ),
               _buildInfoColumn(
                 icon: Icons.fitness_center,
                 label: 'Reps',
                 value: exercise.repsSuggestion ?? '-',
                 previousValue: exercise.previousRepsSuggestion,
+                responsive: responsive,
               ),
               _buildInfoColumn(
                 icon: Icons.timer,
@@ -672,6 +698,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                     exercise.previousRestSuggestion != null
                         ? '${exercise.previousRestSuggestion}s'
                         : null,
+                responsive: responsive,
               ),
             ],
           ),
@@ -685,32 +712,33 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     required String label,
     required String value,
     String? previousValue,
+    required Responsive responsive,
   }) {
     return Column(
       children: [
-        Icon(icon, color: AppTheme.gold, size: 24),
-        const SizedBox(height: 4),
+        Icon(icon, color: AppTheme.gold, size: responsive.rsp(24)),
+        SizedBox(height: responsive.rh(4)),
         Text(
           label,
-          style: const TextStyle(color: Colors.white60, fontSize: 12),
+          style: TextStyle(color: Colors.white60, fontSize: responsive.rsp(12)),
         ),
-        const SizedBox(height: 2),
+        SizedBox(height: responsive.rh(2)),
         if (previousValue != null && previousValue != value) ...[
           Text(
             previousValue,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white38,
-              fontSize: 12,
+              fontSize: responsive.rsp(12),
               decoration: TextDecoration.lineThrough,
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: responsive.rh(2)),
         ],
         Text(
           value,
           style: TextStyle(
             color: previousValue != null ? AppTheme.gold : Colors.white,
-            fontSize: 14,
+            fontSize: responsive.rsp(14),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -718,9 +746,16 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
-  Widget _buildBadge({required String label, required Color color}) {
+  Widget _buildBadge({
+    required String label,
+    required Color color,
+    required Responsive responsive,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: responsive.rw(8),
+        vertical: responsive.rh(4),
+      ),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(6),
@@ -730,7 +765,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         label,
         style: TextStyle(
           color: color,
-          fontSize: 11,
+          fontSize: responsive.rsp(11),
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -798,7 +833,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
-  Widget _buildEmpty() {
+  Widget _buildEmpty(Responsive responsive) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -806,41 +841,41 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(responsive.rw(20)),
               decoration: BoxDecoration(
                 color: AppTheme.gold.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.fitness_center,
                 color: AppTheme.gold,
-                size: 48,
+                size: responsive.rsp(48),
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: responsive.rh(24)),
+            Text(
               'Aucun programme pour l\'instant',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 22,
+                fontSize: responsive.rsp(22),
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
-            const Text(
+            SizedBox(height: responsive.rh(12)),
+            Text(
               'Cliquez ci-dessous pour générer votre premier programme personnalisé et commencer votre transformation !',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white70,
-                fontSize: 16,
+                fontSize: responsive.rsp(16),
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: responsive.rh(32)),
             SizedBox(
               width: double.infinity,
-              height: 56,
+              height: responsive.rh(56),
               child: ElevatedButton(
                 onPressed: _handleGenerateClick,
                 style: ElevatedButton.styleFrom(
@@ -851,9 +886,12 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   'Générer mon premier programme',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: responsive.rsp(18),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
