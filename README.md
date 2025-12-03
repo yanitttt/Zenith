@@ -1,8 +1,8 @@
-# Application Mobile de Recommandation d'Entraînement
+# Zénith - Application Mobile de Recommandation d'Entraînement
 
 ## Description du Projet
 
-Application mobile Flutter de recommandation et de suivi d'entraînements sportifs personnalises. Le systeme propose des exercices adaptes aux objectifs, niveau et equipement de l'utilisateur, avec un moteur de recommandation intelligent base sur les performances et les retours utilisateur.
+**Zénith** est une application mobile Flutter de recommandation et de suivi d'entraînements sportifs personnalises. Le systeme propose des exercices adaptes aux objectifs, niveau et equipement de l'utilisateur, avec un moteur de recommandation intelligent base sur les performances et les retours utilisateur.
 
 ---
 
@@ -291,7 +291,7 @@ L'application inclut un widget Android natif pour afficher la prochaine seance d
 
 1. Appuyez longuement sur l'ecran d'accueil de votre telephone Android
 2. Selectionnez "Widgets" dans le menu qui apparait
-3. Faites defiler jusqu'a trouver "recommandation_mobile"
+3. Faites defiler jusqu'a trouver "Zénith"
 4. Appuyez longuement sur le widget "Prochaine seance"
 5. Faites-le glisser vers l'emplacement desire sur l'ecran d'accueil
 6. Relachez pour placer le widget
@@ -312,7 +312,7 @@ Sur certains lanceurs Android (ex: Nova Launcher, Microsoft Launcher):
 1. Accedez aux parametres de votre lanceur d'accueil
 2. Recherchez l'option "Widgets" ou "Personnalisation"
 3. Parcourez la liste des widgets disponibles
-4. Trouvez "recommandation_mobile - Prochaine seance"
+4. Trouvez "Zénith - Prochaine seance"
 5. Ajoutez-le a l'ecran d'accueil
 
 **Note Importante:**
@@ -418,7 +418,7 @@ flutter build ios --release
 
 ## Conclusion
 
-Cette premiere version de l'application de recommandation d'entrainement presente une architecture solide et complete avec:
+Cette premiere version de **Zénith** presente une architecture solide et complete avec:
 
 - Une interface fonctionnelle couvrant tous les cas d'usage principaux
 - Un backend structure avec separation claire des responsabilites
