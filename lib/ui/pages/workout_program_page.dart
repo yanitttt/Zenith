@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
@@ -9,6 +10,7 @@ import '../widgets/training_days_dialog.dart';
 import '../theme/app_theme.dart';
 import 'active_session_page.dart';
 import '../utils/responsive.dart';
+import '../../services/performance_monitor_service.dart';
 
 class WorkoutProgramPage extends StatefulWidget {
   final AppDb db;
@@ -32,16 +34,28 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
   String? _error;
   bool _generating = false;
 
+  late final PerformanceMonitorService _perfService;
+
   @override
   void initState() {
     super.initState();
+    _perfService = PerformanceMonitorService();
     _programService = ProgramGeneratorService(widget.db);
     _sessionService = SessionTrackingService(widget.db);
     _trainingDayDao = UserTrainingDayDao(widget.db);
-    _loadProgram();
+
+    // Start measuring initial load
+    _perfService.startMetric('page_init_load');
+
+    _loadProgram().then((_) {
+      _perfService.stopMetric('page_init_load');
+      _perfService.addMetadata('screen', 'WorkoutProgramPage');
+      _perfService.saveReport('workout_page_load');
+    });
   }
 
   Future<void> _loadProgram() async {
+    _perfService.startMetric('load_program_logic');
     setState(() {
       _loading = true;
       _error = null;
@@ -53,9 +67,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         throw Exception('Utilisateur non connecté');
       }
 
-
       final program = await _programService.getActiveUserProgram(userId);
-
 
       final trainingDays = await _trainingDayDao.getDayNumbersForUser(userId);
 
@@ -63,7 +75,6 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         debugPrint(
           '[WORKOUT_PAGE] Programme détecté sans jours définis -> Suppression pour forcer l\'état vide',
         );
-
 
         await (widget.db.delete(widget.db.userProgram)
           ..where((tbl) => tbl.userId.equals(userId))).go();
@@ -79,7 +90,6 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       }
 
       if (program == null) {
-
         if (mounted) {
           setState(() {
             _currentProgram = null;
@@ -88,9 +98,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           });
         }
       } else {
-
         final days = await _programService.getProgramDays(program.id);
-
 
         final dayIds = days.map((d) => d.programDayId).toList();
         final completedSessions = await _sessionService
@@ -105,8 +113,10 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
           });
         }
       }
+      _perfService.stopMetric('load_program_logic');
     } catch (e) {
       debugPrint('[WORKOUT_PROGRAM] Erreur: $e');
+      _perfService.stopMetric('load_program_logic');
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -117,6 +127,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
   }
 
   Future<void> _generateNewProgram() async {
+    _perfService.startMetric('generate_program');
     setState(() => _generating = true);
 
     try {
@@ -125,17 +136,19 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         throw Exception('Utilisateur non connecté');
       }
 
-
       final programId = await _programService.generateUserProgram(
         userId: userId,
       );
-
 
       final program =
           await (widget.db.select(widget.db.workoutProgram)
             ..where((tbl) => tbl.id.equals(programId))).getSingle();
 
       final days = await _programService.getProgramDays(programId);
+
+      _perfService.stopMetric('generate_program');
+      _perfService.addMetadata('generated_program_id', programId);
+      _perfService.saveReport('program_generation');
 
       if (mounted) {
         setState(() {
@@ -154,6 +167,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       }
     } catch (e) {
       debugPrint('[WORKOUT_PROGRAM] Erreur génération: $e');
+      _perfService.stopMetric('generate_program');
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -205,7 +219,6 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         final userId = widget.prefs.currentUserId;
         if (userId == null) return;
 
-
         await _programService.regenerateUserProgram(userId: userId);
 
         await _loadProgram();
@@ -244,9 +257,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       ),
     );
 
-
     if (result == true && mounted) {
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Séance enregistrée et programme mis à jour !'),
@@ -258,9 +269,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         '[WORKOUT_PROGRAM] Retour de session, rechargement du programme...',
       );
 
-
       await _loadProgram();
-
 
       if (_programDays.length > 1) {
         final nextDay = _programDays.firstWhere(
@@ -290,6 +299,51 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     } else {
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     }
+  }
+
+  void _showPerformanceDialog() {
+    final report = _perfService.lastReport;
+    if (report == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucun rapport de performance disponible.'),
+        ),
+      );
+      return;
+    }
+
+    final jsonString = const JsonEncoder.withIndent('  ').convert(report);
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text(
+              'Rapport de Performance',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: SingleChildScrollView(
+              child: SelectableText(
+                jsonString,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: AppTheme.gold),
+                ),
+              ),
+            ],
+          ),
+    );
   }
 
   @override
@@ -363,11 +417,22 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: _generating ? null : _regenerateProgram,
-                icon: const Icon(Icons.refresh),
-                color: AppTheme.gold,
-                iconSize: responsive.rsp(28),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _showPerformanceDialog,
+                    icon: const Icon(Icons.analytics_outlined),
+                    color: Colors.white70,
+                    iconSize: responsive.rsp(24),
+                    tooltip: 'Voir stats',
+                  ),
+                  IconButton(
+                    onPressed: _generating ? null : _regenerateProgram,
+                    icon: const Icon(Icons.refresh),
+                    color: AppTheme.gold,
+                    iconSize: responsive.rsp(28),
+                  ),
+                ],
               ),
             ],
           ),
@@ -901,12 +966,10 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     final userId = widget.prefs.currentUserId;
     if (userId == null) return;
 
-
     final days = await _trainingDayDao.getDayNumbersForUser(userId);
 
     if (days.isEmpty) {
       if (!mounted) return;
-
 
       final result = await showDialog<List<int>>(
         context: context,
@@ -919,7 +982,6 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
         await _generateNewProgram();
       }
     } else {
-
       await _generateNewProgram();
     }
   }

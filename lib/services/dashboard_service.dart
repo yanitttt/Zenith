@@ -1,7 +1,6 @@
-
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
-
+import 'performance_monitor_service.dart';
 
 class MuscleStat {
   final String muscleName;
@@ -19,7 +18,6 @@ class DashboardData {
   final List<MuscleStat> muscleStats;
   final double moyennePlaisir;
 
-
   DashboardData({
     required this.streakWeeks,
     required this.volumeVariation,
@@ -34,12 +32,12 @@ class DashboardData {
 
 class DashboardService {
   final AppDb db;
+  final PerformanceMonitorService _perfService = PerformanceMonitorService();
 
   DashboardService(this.db);
 
-
-
   int _getStartOfWeekTs() {
+    // ... existing code ...
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     final startOfDay = DateTime(
@@ -49,174 +47,209 @@ class DashboardService {
     );
     return startOfDay.millisecondsSinceEpoch ~/ 1000;
   }
+  // ... existing private methods ...
 
+  // ... existing getter methods ...
+
+  Stream<DashboardData> watchDashboardData(int userId) {
+    return db.select(db.session).watch().asyncMap((_) async {
+      _perfService.startMetric('dashboard_total_load');
+
+      _perfService.startMetric('dashboard_streak');
+      final streak = await getCurrentStreakWeeks(userId);
+      _perfService.stopMetric('dashboard_streak');
+
+      _perfService.startMetric('dashboard_volume_var');
+      final variation = await getVolumeVariationPercentage(userId);
+      _perfService.stopMetric('dashboard_volume_var');
+
+      _perfService.startMetric('dashboard_efficiency');
+      final efficiency = await getTrainingEfficiency(userId);
+      _perfService.stopMetric('dashboard_efficiency');
+
+      _perfService.startMetric('dashboard_weekly_graph');
+      final weeklyAttendance = await getAssiduiteSemaine(userId);
+      _perfService.stopMetric('dashboard_weekly_graph');
+
+      _perfService.startMetric('dashboard_muscle_pie');
+      final muscleStats = await getRepartitionMusculaire(userId);
+      _perfService.stopMetric('dashboard_muscle_pie');
+
+      _perfService.startMetric('dashboard_totals');
+      final totalHeures = await getTotalHeuresEntrainement(userId);
+      final totalSeances = await getTotalSeances(userId);
+      final pl = await getMoyennePlaisir(userId);
+      _perfService.stopMetric('dashboard_totals');
+
+      _perfService.stopMetric('dashboard_total_load');
+      _perfService.addMetadata('screen', 'DashboardPage');
+      _perfService.saveReport('dashboard_load');
+
+      return DashboardData(
+        streakWeeks: streak,
+        volumeVariation: variation,
+        efficiency: efficiency,
+        weeklyAttendance: weeklyAttendance,
+        muscleStats: muscleStats,
+        totalHeures: totalHeures,
+        totalSeances: totalSeances,
+        moyennePlaisir: pl,
+      );
+    });
+  }
 
   int _getNowTs() {
     return DateTime.now().millisecondsSinceEpoch ~/ 1000;
   }
-
 
   String _getDayName(int weekday) {
     const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
     return days[weekday - 1];
   }
 
-
-
-
   Future<int> getSessionsRealiseesSemaine(int userId) async {
     final startTs = _getStartOfWeekTs();
     final endTs = _getNowTs();
 
     final result =
-    await db
-        .customSelect(
-      'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
-      variables: [
-        Variable.withInt(userId),
-        Variable.withInt(startTs),
-        Variable.withInt(endTs),
-      ],
-      readsFrom: {db.session},
-    )
-        .getSingle();
+        await db
+            .customSelect(
+              'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
+              variables: [
+                Variable.withInt(userId),
+                Variable.withInt(startTs),
+                Variable.withInt(endTs),
+              ],
+              readsFrom: {db.session},
+            )
+            .getSingle();
 
     return result.read<int>('cnt');
   }
-
 
   Future<int> getDureeTotaleSemaine(int userId) async {
     final startTs = _getStartOfWeekTs();
 
     final result =
-    await db
-        .customSelect(
-      'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ? AND date_ts >= ?',
-      variables: [Variable.withInt(userId), Variable.withInt(startTs)],
-      readsFrom: {db.session},
-    )
-        .getSingle();
+        await db
+            .customSelect(
+              'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ? AND date_ts >= ?',
+              variables: [Variable.withInt(userId), Variable.withInt(startTs)],
+              readsFrom: {db.session},
+            )
+            .getSingle();
 
     return result.read<int?>('total_min') ?? 0;
   }
-
 
   Future<double> getVolumeTotalSemaine(int userId) async {
     final startTs = _getStartOfWeekTs();
 
     final result =
-    await db
-        .customSelect(
-      '''
+        await db
+            .customSelect(
+              '''
       SELECT SUM(se.sets * se.reps * se.load) as total_vol 
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ? AND s.date_ts >= ?
       ''',
-      variables: [Variable.withInt(userId), Variable.withInt(startTs)],
-      readsFrom: {db.session, db.sessionExercise},
-    )
-        .getSingle();
+              variables: [Variable.withInt(userId), Variable.withInt(startTs)],
+              readsFrom: {db.session, db.sessionExercise},
+            )
+            .getSingle();
 
     return result.read<double?>('total_vol') ?? 0.0;
   }
 
-
-
-
   Future<int> getNbProgrammesSuivis(int userId) async {
     final result =
-    await db
-        .customSelect(
-      'SELECT COUNT(*) as cnt FROM user_program WHERE user_id = ?',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.userProgram},
-    )
-        .getSingle();
+        await db
+            .customSelect(
+              'SELECT COUNT(*) as cnt FROM user_program WHERE user_id = ?',
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.userProgram},
+            )
+            .getSingle();
 
     return result.read<int>('cnt');
   }
 
-
   Future<String> getProgrammeActifNom(int userId) async {
     final result =
-    await db
-        .customSelect(
-      '''
+        await db
+            .customSelect(
+              '''
       SELECT wp.name 
       FROM user_program up
       JOIN workout_program wp ON up.program_id = wp.id
       WHERE up.user_id = ? AND up.is_active = 1
       LIMIT 1
       ''',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.userProgram, db.workoutProgram},
-    )
-        .getSingleOrNull();
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.userProgram, db.workoutProgram},
+            )
+            .getSingleOrNull();
 
     if (result == null) return "Aucun";
     return result.read<String>('name');
   }
 
-
   Future<double> getTotalTonnageAllTime(int userId) async {
     final result =
-    await db
-        .customSelect(
-      '''
+        await db
+            .customSelect(
+              '''
       SELECT SUM(se.sets * se.reps * se.load) as total_kg
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ?
       ''',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.session, db.sessionExercise},
-    )
-        .getSingle();
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.session, db.sessionExercise},
+            )
+            .getSingle();
 
     return result.read<double?>('total_kg') ?? 0.0;
   }
 
-
   Future<double> getTotalHeuresEntrainement(int userId) async {
-    final result = await db.customSelect(
-      'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ?',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.session},
-    ).getSingle();
+    final result =
+        await db
+            .customSelect(
+              'SELECT SUM(duration_min) as total_min FROM session WHERE user_id = ?',
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.session},
+            )
+            .getSingle();
 
     final minutes = result.read<int?>('total_min') ?? 0;
     return minutes / 60;
   }
 
-
   Future<int> getTotalSeances(int userId) async {
     final result =
-    await db
-        .customSelect(
-      'SELECT COUNT(*) as cnt FROM session WHERE user_id = ?',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.session},
-    )
-        .getSingle();
+        await db
+            .customSelect(
+              'SELECT COUNT(*) as cnt FROM session WHERE user_id = ?',
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.session},
+            )
+            .getSingle();
     return result.read<int>('cnt');
   }
 
-
-
-
   Future<List<MuscleStat>> getRepartitionMusculaire(int userId) async {
-
     final limitTs =
         DateTime.now()
             .subtract(const Duration(days: 30))
             .millisecondsSinceEpoch ~/
-            1000;
+        1000;
 
     final rows =
-    await db
-        .customSelect(
-      '''
+        await db
+            .customSelect(
+              '''
       SELECT m.name as muscle_name, COUNT(*) as frequency
       FROM session s
       JOIN session_exercise se ON s.id = se.session_id
@@ -227,15 +260,15 @@ class DashboardService {
       ORDER BY frequency DESC
       LIMIT 6
       ''',
-      variables: [Variable.withInt(userId), Variable.withInt(limitTs)],
-      readsFrom: {
-        db.session,
-        db.sessionExercise,
-        db.exerciseMuscle,
-        db.muscle,
-      },
-    )
-        .get();
+              variables: [Variable.withInt(userId), Variable.withInt(limitTs)],
+              readsFrom: {
+                db.session,
+                db.sessionExercise,
+                db.exerciseMuscle,
+                db.muscle,
+              },
+            )
+            .get();
 
     return rows.map((row) {
       return MuscleStat(
@@ -245,11 +278,9 @@ class DashboardService {
     }).toList();
   }
 
-
   Future<Map<String, int>> getAssiduiteSemaine(int userId) async {
     final now = DateTime.now();
     Map<String, int> result = {};
-
 
     for (int i = 6; i >= 0; i--) {
       final day = now.subtract(Duration(days: i));
@@ -259,17 +290,17 @@ class DashboardService {
       final endOfDay = startOfDay + 86400;
 
       final row =
-      await db
-          .customSelect(
-        'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts < ?',
-        variables: [
-          Variable.withInt(userId),
-          Variable.withInt(startOfDay),
-          Variable.withInt(endOfDay),
-        ],
-        readsFrom: {db.session},
-      )
-          .getSingle();
+          await db
+              .customSelect(
+                'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts < ?',
+                variables: [
+                  Variable.withInt(userId),
+                  Variable.withInt(startOfDay),
+                  Variable.withInt(endOfDay),
+                ],
+                readsFrom: {db.session},
+              )
+              .getSingle();
 
       String dayName = _getDayName(day.weekday);
       result[dayName] = row.read<int>('cnt');
@@ -277,59 +308,55 @@ class DashboardService {
     return result;
   }
 
-
   Future<double> getMoyennePlaisir(int userId) async {
     final result =
-    await db
-        .customSelect(
-      'SELECT AVG(pleasant) as avg_fun FROM user_feedback WHERE user_id = ?',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.userFeedback},
-    )
-        .getSingle();
+        await db
+            .customSelect(
+              'SELECT AVG(pleasant) as avg_fun FROM user_feedback WHERE user_id = ?',
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.userFeedback},
+            )
+            .getSingle();
 
     return result.read<double?>('avg_fun') ?? 0.0;
   }
 
-
   Future<double> getMoyenneDifficulte(int userId) async {
     final result =
-    await db
-        .customSelect(
-      'SELECT AVG(difficult) as avg_diff FROM user_feedback WHERE user_id = ?',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.userFeedback},
-    )
-        .getSingle();
+        await db
+            .customSelect(
+              'SELECT AVG(difficult) as avg_diff FROM user_feedback WHERE user_id = ?',
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.userFeedback},
+            )
+            .getSingle();
 
     return result.read<double?>('avg_diff') ?? 0.0;
   }
 
-
   Future<double> getPersonalRecord(int userId, int exerciseId) async {
     final result =
-    await db
-        .customSelect(
-      '''
+        await db
+            .customSelect(
+              '''
       SELECT MAX(se.load) as max_load
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ? AND se.exercise_id = ?
       ''',
-      variables: [
-        Variable.withInt(userId),
-        Variable.withInt(exerciseId),
-      ],
-      readsFrom: {db.session, db.sessionExercise},
-    )
-        .getSingle();
+              variables: [
+                Variable.withInt(userId),
+                Variable.withInt(exerciseId),
+              ],
+              readsFrom: {db.session, db.sessionExercise},
+            )
+            .getSingle();
 
     return result.read<double?>('max_load') ?? 0.0;
   }
 
   Future<double> getVolumeVariationPercentage(int userId) async {
     final now = DateTime.now();
-
 
     final startCurrentWeek = now.subtract(Duration(days: now.weekday - 1));
     final startCurrentWeekTs =
@@ -338,8 +365,7 @@ class DashboardService {
           startCurrentWeek.month,
           startCurrentWeek.day,
         ).millisecondsSinceEpoch ~/
-            1000;
-
+        1000;
 
     final startLastWeek = startCurrentWeek.subtract(const Duration(days: 7));
     final endLastWeek = startCurrentWeek.subtract(const Duration(seconds: 1));
@@ -350,7 +376,7 @@ class DashboardService {
           startLastWeek.month,
           startLastWeek.day,
         ).millisecondsSinceEpoch ~/
-            1000;
+        1000;
     final endLastWeekTs =
         DateTime(
           endLastWeek.year,
@@ -360,29 +386,27 @@ class DashboardService {
           59,
           59,
         ).millisecondsSinceEpoch ~/
-            1000;
-
+        1000;
 
     final volCurrent = await getVolumeTotalSemaine(userId);
 
-
     final resultLast =
-    await db
-        .customSelect(
-      '''
+        await db
+            .customSelect(
+              '''
       SELECT SUM(se.sets * se.reps * se.load) as total_vol 
       FROM session_exercise se
       JOIN session s ON se.session_id = s.id
       WHERE s.user_id = ? AND s.date_ts >= ? AND s.date_ts <= ?
       ''',
-      variables: [
-        Variable.withInt(userId),
-        Variable.withInt(startLastWeekTs),
-        Variable.withInt(endLastWeekTs),
-      ],
-      readsFrom: {db.session, db.sessionExercise},
-    )
-        .getSingle();
+              variables: [
+                Variable.withInt(userId),
+                Variable.withInt(startLastWeekTs),
+                Variable.withInt(endLastWeekTs),
+              ],
+              readsFrom: {db.session, db.sessionExercise},
+            )
+            .getSingle();
 
     final volLast = resultLast.read<double?>('total_vol') ?? 0.0;
 
@@ -396,18 +420,14 @@ class DashboardService {
     return double.parse(variation.toStringAsFixed(1));
   }
 
-
   Future<int> getCurrentStreakWeeks(int userId) async {
     int streak = 0;
     final now = DateTime.now();
-
-
 
     final sessionsThisWeek = await getSessionsRealiseesSemaine(userId);
     if (sessionsThisWeek > 0) {
       streak++;
     }
-
 
     int weeksBack = 1;
     while (true) {
@@ -420,28 +440,27 @@ class DashboardService {
             startOfWeek.month,
             startOfWeek.day,
           ).millisecondsSinceEpoch ~/
-              1000;
+          1000;
       final endTs = startTs + (7 * 24 * 3600) - 1;
 
       final result =
-      await db
-          .customSelect(
-        'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
-        variables: [
-          Variable.withInt(userId),
-          Variable.withInt(startTs),
-          Variable.withInt(endTs),
-        ],
-        readsFrom: {db.session},
-      )
-          .getSingle();
+          await db
+              .customSelect(
+                'SELECT COUNT(*) as cnt FROM session WHERE user_id = ? AND date_ts >= ? AND date_ts <= ?',
+                variables: [
+                  Variable.withInt(userId),
+                  Variable.withInt(startTs),
+                  Variable.withInt(endTs),
+                ],
+                readsFrom: {db.session},
+              )
+              .getSingle();
 
       final count = result.read<int>('cnt');
       if (count > 0) {
         streak++;
         weeksBack++;
       } else {
-
         break;
       }
 
@@ -452,7 +471,6 @@ class DashboardService {
     return streak;
   }
 
-
   Future<double> getTrainingEfficiency(int userId) async {
     final vol = await getVolumeTotalSemaine(userId);
     final duration = await getDureeTotaleSemaine(userId);
@@ -461,31 +479,5 @@ class DashboardService {
 
     final eff = vol / duration;
     return double.parse(eff.toStringAsFixed(1));
-  }
-
-
-
-  Stream<DashboardData> watchDashboardData(int userId) {
-
-    return db.select(db.session).watch().asyncMap((_) async {
-      final streak = await getCurrentStreakWeeks(userId);
-      final variation = await getVolumeVariationPercentage(userId);
-      final efficiency = await getTrainingEfficiency(userId);
-      final weeklyAttendance = await getAssiduiteSemaine(userId);
-      final muscleStats = await getRepartitionMusculaire(userId);
-      final totalHeures = await getTotalHeuresEntrainement(userId);
-      final totalSeances = await getTotalSeances(userId);
-
-      return DashboardData(
-        streakWeeks: streak,
-        volumeVariation: variation,
-        efficiency: efficiency,
-        weeklyAttendance: weeklyAttendance,
-        muscleStats: muscleStats,
-        totalHeures: totalHeures,
-        totalSeances: totalSeances,
-        moyennePlaisir: await getMoyennePlaisir(userId),
-      );
-    });
   }
 }

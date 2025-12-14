@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/db/app_db.dart';
-import '../../services/dashboard_service.dart'; // Added this import
+import '../../services/dashboard_service.dart';
+import '../../services/performance_monitor_service.dart';
 import '../viewmodels/dashboard_viewmodel.dart';
 import '../theme/app_theme.dart';
 import '../widgets/charts/weekly_bar_chart.dart';
@@ -303,6 +305,54 @@ class _DashboardContent extends StatelessWidget {
 class _DashboardHeader extends StatelessWidget {
   const _DashboardHeader();
 
+  void _showPerformanceDialog(BuildContext context) {
+    final perfService = PerformanceMonitorService();
+    final report = perfService.lastReport;
+
+    if (report == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucun rapport de performance disponible.'),
+        ),
+      );
+      return;
+    }
+
+    // Encoder JSON avec indentation
+    final jsonString = const JsonEncoder.withIndent('  ').convert(report);
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text(
+              'Performance Dashboard',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: SingleChildScrollView(
+              child: SelectableText(
+                jsonString,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: AppTheme.gold),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -329,24 +379,37 @@ class _DashboardHeader extends StatelessWidget {
             ),
           ],
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color.fromRGBO(217, 190, 119, 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color.fromRGBO(217, 190, 119, 0.3)),
-          ),
-          child: Selector<DashboardViewModel, String>(
-            selector: (_, vm) => vm.todayDate,
-            builder:
-                (_, date, __) => Text(
-                  date,
-                  style: const TextStyle(
-                    color: AppTheme.gold,
-                    fontWeight: FontWeight.bold,
-                  ),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => _showPerformanceDialog(context),
+              icon: const Icon(Icons.analytics_outlined),
+              color: Colors.white70,
+              tooltip: 'Stats Performance',
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color.fromRGBO(217, 190, 119, 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: const Color.fromRGBO(217, 190, 119, 0.3),
                 ),
-          ),
+              ),
+              child: Selector<DashboardViewModel, String>(
+                selector: (_, vm) => vm.todayDate,
+                builder:
+                    (_, date, __) => Text(
+                      date,
+                      style: const TextStyle(
+                        color: AppTheme.gold,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+              ),
+            ),
+          ],
         ),
       ],
     );
