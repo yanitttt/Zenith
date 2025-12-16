@@ -1,35 +1,39 @@
-import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 import 'package:recommandation_mobile/data/db/app_db.dart';
 import 'package:recommandation_mobile/services/planning_service.dart';
 import 'package:recommandation_mobile/ui/widgets/planning/scale_button.dart';
+import '../viewmodels/planning_viewmodel.dart';
+import '../../services/performance_monitor_service.dart';
+import 'dart:convert';
+import '../theme/app_theme.dart';
 
-class PlanningPage extends StatefulWidget {
+class PlanningPage extends StatelessWidget {
   final AppDb db;
   const PlanningPage({super.key, required this.db});
 
   @override
-  State<PlanningPage> createState() => _PlanningPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => PlanningViewModel(db),
+      child: const _PlanningPageContent(),
+    );
+  }
 }
 
-class _PlanningPageState extends State<PlanningPage> {
-  late PlanningService _service;
+class _PlanningPageContent extends StatefulWidget {
+  const _PlanningPageContent();
 
+  @override
+  State<_PlanningPageContent> createState() => _PlanningPageContentState();
+}
 
+class _PlanningPageContentState extends State<_PlanningPageContent> {
   final Color kBackground = const Color(0xFF020216);
   final Color kCardColor = const Color(0xFF0F112B);
   final Color kGold = const Color(0xFFE4C87F);
-  final Color kTextGrey = const Color(0xFF9E9E9E);
-
-  DateTime _selectedDate = DateTime.now();
-  DateTime _startOfWeek = DateTime.now();
-  int? _currentUserId;
-
-  List<PlanningItem> _sessionsDuJour = [];
-  Set<int> _joursAvecActivite = {};
-  bool _isLoading = true;
 
   ScrollController? _scrollController;
 
@@ -37,30 +41,25 @@ class _PlanningPageState extends State<PlanningPage> {
   void initState() {
     super.initState();
     initializeDateFormatting('fr_FR', null);
-    _service = PlanningService(widget.db);
 
-    final now = DateTime.now();
-    _startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    _startOfWeek = DateTime(
-      _startOfWeek.year,
-      _startOfWeek.month,
-      _startOfWeek.day,
-    );
+    // Initial scroll setup logic (needs data from VM which is loading...)
+    // We'll wrap the listview in a builder that knows when to attach controller
 
-    _initData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _setupScrollController();
+    });
   }
 
-  void _ensureScrollController() {
-    if (_scrollController != null) return;
-
+  void _setupScrollController() {
     final now = DateTime.now();
-
     final dayIndex = now.weekday - 1;
     final double initialOffset = (dayIndex * 77.0);
 
     _scrollController = ScrollController(
       initialScrollOffset: initialOffset > 50 ? initialOffset - 50 : 0,
     );
+    // Force rebuild to attach controller if needed, or just let it be used in build
+    setState(() {});
   }
 
   @override
@@ -69,63 +68,33 @@ class _PlanningPageState extends State<PlanningPage> {
     super.dispose();
   }
 
-  Future<void> _initData() async {
-    final user = await widget.db.select(widget.db.appUser).getSingleOrNull();
-    if (user != null) {
-      _currentUserId = user.id;
-    } else {
-      _currentUserId = 1;
-    }
-    _chargerDonnees();
-  }
+  // --- UI Helpers ---
 
-  Future<void> _chargerDonnees() async {
-    if (_currentUserId == null) return;
-    setState(() => _isLoading = true);
-
-    try {
-      final activites = await _service.getDaysWithActivity(
-        _currentUserId!,
-        _startOfWeek,
+  void _ensureScrollController(int offsetDays) {
+    if (_scrollController != null && _scrollController!.hasClients) {
+      _scrollController!.animateTo(
+        0, // Reset to start when changing week? Original logic did this.
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
       );
-      final sessions = await _service.getSessionsForDate(
-        _currentUserId!,
-        _selectedDate,
-      );
-
-      if (mounted) {
-        setState(() {
-          _joursAvecActivite = activites;
-          _sessionsDuJour = sessions;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print("Erreur chargement: $e");
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _changeWeek(int offset) {
-    setState(() {
-      _startOfWeek = _startOfWeek.add(Duration(days: 7 * offset));
-
-      _ensureScrollController();
-      if (_scrollController!.hasClients) {
-        _scrollController!.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-    _chargerDonnees();
+  void _scrollToSelected(int dayIndex) {
+    if (_scrollController != null && _scrollController!.hasClients) {
+      _scrollController!.animateTo(
+        (dayIndex * 77.0) - 50,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
-  Future<void> _selectDateFromCalendar() async {
+  Future<void> _selectDateFromCalendar(BuildContext context) async {
+    final vm = context.read<PlanningViewModel>();
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: vm.selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       builder: (context, child) {
@@ -145,46 +114,20 @@ class _PlanningPageState extends State<PlanningPage> {
     );
 
     if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _startOfWeek = picked.subtract(Duration(days: picked.weekday - 1));
-        _startOfWeek = DateTime(
-          _startOfWeek.year,
-          _startOfWeek.month,
-          _startOfWeek.day,
-        );
-
-
-        _ensureScrollController();
-        final dayIndex = picked.weekday - 1;
-        if (_scrollController!.hasClients) {
-          _scrollController!.animateTo(
-            (dayIndex * 77.0) - 50,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-      _chargerDonnees();
+      vm.selectDate(picked);
+      _scrollToSelected(picked.weekday - 1);
     }
   }
 
-  void _onDaySelected(DateTime date) {
-    setState(() {
-      _selectedDate = date;
-    });
-    _chargerDonnees();
-  }
-
-
-  void _showAddSessionSheet() {
+  void _showAddSessionSheet(BuildContext context, PlanningViewModel vm) {
     showModalBottomSheet(
       context: context,
       backgroundColor: kCardColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (ctx) {
+        // Use local context
         return Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -203,8 +146,8 @@ class _PlanningPageState extends State<PlanningPage> {
 
               ScaleButton(
                 onTap: () {
-                  Navigator.pop(context);
-                  _showDurationPickerDialog("Cardio libre");
+                  Navigator.pop(ctx);
+                  _showDurationPickerDialog(context, vm, "Cardio libre");
                 },
                 child: ListTile(
                   leading: _buildIcon(Icons.directions_run, Colors.blueAccent),
@@ -224,8 +167,8 @@ class _PlanningPageState extends State<PlanningPage> {
 
               ScaleButton(
                 onTap: () {
-                  Navigator.pop(context);
-                  _showDurationPickerDialog("Muscu libre");
+                  Navigator.pop(ctx);
+                  _showDurationPickerDialog(context, vm, "Muscu libre");
                 },
                 child: ListTile(
                   leading: _buildIcon(Icons.fitness_center, kGold),
@@ -250,6 +193,8 @@ class _PlanningPageState extends State<PlanningPage> {
   }
 
   Future<void> _showDurationPickerDialog(
+    BuildContext context,
+    PlanningViewModel vm,
     String type, {
     int? initialDuration,
     int? sessionId,
@@ -259,7 +204,7 @@ class _PlanningPageState extends State<PlanningPage> {
 
     await showDialog(
       context: context,
-      builder: (context) {
+      builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
@@ -274,7 +219,6 @@ class _PlanningPageState extends State<PlanningPage> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -330,23 +274,39 @@ class _PlanningPageState extends State<PlanningPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(ctx),
                   child: const Text(
                     "Annuler",
                     style: TextStyle(color: Colors.grey),
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
+                  onPressed: () async {
+                    Navigator.pop(ctx);
                     if (sessionId == null) {
-                      _ajouterSeanceLibre(selectedDuration, selectedType);
+                      await vm.addFreeSession(selectedDuration, selectedType);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Séance ajoutée : $selectedType !"),
+                            backgroundColor: kGold,
+                          ),
+                        );
+                      }
                     } else {
-                      _modifierSeanceLibre(
+                      await vm.updateFreeSession(
                         sessionId,
                         selectedDuration,
                         selectedType,
                       );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text("Séance modifiée !"),
+                            backgroundColor: kGold,
+                          ),
+                        );
+                      }
                     }
                   },
                   child: Text(
@@ -399,94 +359,6 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
-
-  Future<void> _ajouterSeanceLibre(int duree, String name) async {
-    if (_currentUserId == null) return;
-
-    final ts =
-        DateTime(
-          _selectedDate.year,
-          _selectedDate.month,
-          _selectedDate.day,
-        ).millisecondsSinceEpoch ~/
-        1000;
-
-    await widget.db
-        .into(widget.db.session)
-        .insert(
-          SessionCompanion.insert(
-            userId: _currentUserId!,
-            programDayId: const drift.Value(null),
-            dateTs: ts,
-            durationMin: drift.Value(duree),
-            name: drift.Value(name),
-          ),
-        );
-
-    _chargerDonnees();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "Séance ajoutée : $name ($duree min) !",
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: kGold,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-
-  Future<void> _modifierSeanceLibre(
-    int sessionId,
-    int duree,
-    String name,
-  ) async {
-    await (widget.db.update(widget.db.session)
-      ..where((t) => t.id.equals(sessionId))).write(
-      SessionCompanion(
-        durationMin: drift.Value(duree),
-        name: drift.Value(name),
-      ),
-    );
-
-    _chargerDonnees();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          "Séance modifiée !",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: kGold,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-
-  Future<void> _supprimerSession(int sessionId) async {
-    await (widget.db.delete(widget.db.session)
-      ..where((t) => t.id.equals(sessionId))).go();
-
-    _chargerDonnees();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          "Séance supprimée",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
   Widget _buildIcon(IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(8),
@@ -498,18 +370,76 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
+  void _showPerformanceDialog(BuildContext context) async {
+    final perfService = PerformanceMonitorService();
+    final report = perfService.lastReport; // Get LAST report
+
+    if (report == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Aucun rapport récent.')));
+      return;
+    }
+
+    final jsonString = const JsonEncoder.withIndent('  ').convert(report);
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text(
+              'Performance',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: SingleChildScrollView(
+              child: SelectableText(
+                jsonString,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: AppTheme.gold),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    _ensureScrollController();
+    // We access VM for date display in header
+    final selectedDate = context.select<PlanningViewModel, DateTime>(
+      (vm) => vm.selectedDate,
+    );
+
     return Scaffold(
       backgroundColor: kBackground,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        toolbarHeight:
+            0, // Hidden app bar, we use custom header below or we can add actions here?
+        // Original design didn't have AppBar. We'll stick to body structure but add the perf button in the custom header.
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
+
+              // HEADER ROW
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -520,7 +450,7 @@ class _PlanningPageState extends State<PlanningPage> {
                         DateFormat(
                           'MMMM yyyy',
                           'fr_FR',
-                        ).format(_selectedDate).toUpperCase(),
+                        ).format(selectedDate).toUpperCase(),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -538,64 +468,103 @@ class _PlanningPageState extends State<PlanningPage> {
                       ),
                     ],
                   ),
-                  ScaleButton(
-                    onTap: _selectDateFromCalendar,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24),
+                  Row(
+                    children: [
+                      // Perf Button
+                      IconButton(
+                        onPressed: () => _showPerformanceDialog(context),
+                        icon: const Icon(Icons.analytics_outlined),
+                        color: Colors.white70,
+                        tooltip: 'Performance',
                       ),
-                      child: const Icon(
-                        Icons.calendar_today,
-                        size: 20,
-                        color: Colors.white,
+                      const SizedBox(width: 8),
+                      // Calendar Button
+                      ScaleButton(
+                        onTap: () => _selectDateFromCalendar(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: const Icon(
+                            Icons.calendar_today,
+                            size: 20,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
+
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  ScaleButton(
-                    onTap: () => _changeWeek(-1),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.chevron_left, color: Colors.white),
-                    ),
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: 70,
-                      child: ListView.separated(
-                        controller: _scrollController,
-                        scrollDirection: Axis.horizontal,
-                        itemCount: 7,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final date = _startOfWeek.add(Duration(days: index));
-                          final isSelected =
-                              date.day == _selectedDate.day &&
-                              date.month == _selectedDate.month;
-                          final hasActivity = _joursAvecActivite.contains(
-                            date.weekday,
-                          );
-                          return _buildDayButton(date, isSelected, hasActivity);
+
+              // WEEK SELECTOR
+              Consumer<PlanningViewModel>(
+                builder: (context, vm, child) {
+                  return Row(
+                    children: [
+                      ScaleButton(
+                        onTap: () {
+                          vm.changeWeek(-1);
+                          _ensureScrollController(-1);
                         },
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(Icons.chevron_left, color: Colors.white),
+                        ),
                       ),
-                    ),
-                  ),
-                  ScaleButton(
-                    onTap: () => _changeWeek(1),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.chevron_right, color: Colors.white),
-                    ),
-                  ),
-                ],
+                      Expanded(
+                        child: SizedBox(
+                          height: 70,
+                          child:
+                              _scrollController == null
+                                  ? const SizedBox()
+                                  : ListView.separated(
+                                    controller: _scrollController,
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: 7,
+                                    separatorBuilder:
+                                        (_, __) => const SizedBox(width: 12),
+                                    itemBuilder: (context, index) {
+                                      final date = vm.startOfWeek.add(
+                                        Duration(days: index),
+                                      );
+                                      final isSelected =
+                                          date.day == vm.selectedDate.day &&
+                                          date.month == vm.selectedDate.month;
+                                      final hasActivity = vm.joursAvecActivite
+                                          .contains(date.weekday);
+                                      return _buildDayButton(
+                                        context,
+                                        date,
+                                        isSelected,
+                                        hasActivity,
+                                      );
+                                    },
+                                  ),
+                        ),
+                      ),
+                      ScaleButton(
+                        onTap: () {
+                          vm.changeWeek(1);
+                          _ensureScrollController(1);
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Icon(Icons.chevron_right, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
+
               const SizedBox(height: 30),
+
+              // SESSIONS HEADER
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -607,72 +576,106 @@ class _PlanningPageState extends State<PlanningPage> {
                       color: Colors.white,
                     ),
                   ),
-                  if (_sessionsDuJour.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        "${_sessionsDuJour.length} prévues",
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
+                  Selector<PlanningViewModel, int>(
+                    selector: (_, vm) => vm.sessionsDuJour.length,
+                    builder: (context, count, _) {
+                      if (count == 0) return const SizedBox();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
                         ),
-                      ),
-                    ),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "$count prévues",
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
+
+              // SESSIONS LIST
               Expanded(
-                child:
-                    _isLoading
-                        ? Center(child: CircularProgressIndicator(color: kGold))
-                        : _sessionsDuJour.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                          itemCount: _sessionsDuJour.length,
-                          itemBuilder: (context, index) {
-                            return _buildSessionCard(
-                              _sessionsDuJour[index],
-                              index + 1,
-                            );
-                          },
-                        ),
+                child: Consumer<PlanningViewModel>(
+                  builder: (context, vm, child) {
+                    if (vm.isLoading) {
+                      return Center(
+                        child: CircularProgressIndicator(color: kGold),
+                      );
+                    }
+                    if (vm.sessionsDuJour.isEmpty) {
+                      return _buildEmptyState();
+                    }
+                    return ListView.builder(
+                      itemCount: vm.sessionsDuJour.length,
+                      itemBuilder: (context, index) {
+                        return _buildSessionCard(
+                          context,
+                          vm.sessionsDuJour[index],
+                          index + 1,
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
         ),
       ),
-      floatingActionButton: ScaleButton(
-        onTap: () => _showAddSessionSheet(),
-        child: Container(
-          height: 56,
-          width: 56,
-          decoration: BoxDecoration(
-            color: kGold,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 6,
-                offset: const Offset(0, 3),
+      floatingActionButton: Consumer<PlanningViewModel>(
+        builder: (context, vm, child) {
+          if (vm.error != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Info: ${vm.error}"),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            });
+          }
+          return ScaleButton(
+            onTap: () => _showAddSessionSheet(context, vm),
+            child: Container(
+              height: 56,
+              width: 56,
+              decoration: BoxDecoration(
+                color: kGold,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: const Icon(Icons.add, color: Colors.black),
-        ),
+              child: const Icon(Icons.add, color: Colors.black),
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildDayButton(DateTime date, bool isSelected, bool hasActivity) {
+  Widget _buildDayButton(
+    BuildContext context,
+    DateTime date,
+    bool isSelected,
+    bool hasActivity,
+  ) {
     return ScaleButton(
-      onTap: () => _onDaySelected(date),
+      onTap: () => context.read<PlanningViewModel>().selectDate(date),
       child: Container(
         width: 65,
         decoration: BoxDecoration(
@@ -728,8 +731,23 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
-  Widget _buildSessionCard(PlanningItem item, int index) {
-    final bool isActuallyDone = item.duration > 0 || item.isDone;
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.calendar_today, size: 48, color: Colors.white12),
+          SizedBox(height: 16),
+          Text("Aucune séance prévue", style: TextStyle(color: Colors.white38)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSessionCard(BuildContext context, PlanningItem item, int index) {
+    // isActuallyDone logic: if duration > 0 OR manually marked done (if we tracked that property fully) -> we use item properties.
+    // PlanningItem has duration and isDone.
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -786,7 +804,7 @@ class _PlanningPageState extends State<PlanningPage> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
-                            "MUSCU",
+                            "MUSCU", // Could be dynamic based on Type
                             style: TextStyle(
                               color: Colors.blueAccent,
                               fontSize: 10,
@@ -799,17 +817,21 @@ class _PlanningPageState extends State<PlanningPage> {
                           Icon(
                             Icons.timer_outlined,
                             size: 14,
-                            color: kTextGrey,
+                            color: Colors.grey,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             "${item.duration} min",
-                            style: TextStyle(color: kTextGrey, fontSize: 12),
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                         ] else ...[
                           Text(
-                            "-- min",
-                            style: TextStyle(color: kTextGrey, fontSize: 12),
+                            "Prévue",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         ],
                       ],
@@ -817,111 +839,57 @@ class _PlanningPageState extends State<PlanningPage> {
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white12, height: 1),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              isActuallyDone
-                  ? _buildMiniStat(
-                    Icons.check_circle,
-                    "Terminée",
-                    Colors.greenAccent,
-                  )
-                  : item.isScheduled
-                  ? _buildMiniStat(
-                    Icons.calendar_today,
-                    "Planifiée",
-                    Colors.blueAccent,
-                  )
-                  : _buildMiniStat(Icons.schedule, "À faire", kGold),
-              _buildMiniStat(Icons.fitness_center, "Programme", Colors.white70),
-            ],
-          ),
-
-          if (item.sessionId != null && item.programDayId == null) ...[
-            const SizedBox(height: 8),
-            const Divider(color: Colors.white12, height: 1),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    _showDurationPickerDialog(
-                      item.title,
-                      initialDuration: item.duration,
-                      sessionId: item.sessionId,
-                    );
+              // Option menu for delete/edit
+              // Only if sessionId is present (Free Session)
+              if (item.sessionId != null)
+                PopupMenuButton(
+                  icon: Icon(Icons.more_vert, color: Colors.white38),
+                  color: kCardColor,
+                  onSelected: (value) async {
+                    if (value == 'delete') {
+                      await context.read<PlanningViewModel>().deleteSession(
+                        item.sessionId!,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Séance supprimée'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    } else if (value == 'edit') {
+                      _showDurationPickerDialog(
+                        context,
+                        context
+                            .read<
+                              PlanningViewModel
+                            >(), // Safe here in widget tree
+                        item.title,
+                        initialDuration: item.duration,
+                        sessionId: item.sessionId,
+                      );
+                    }
                   },
-                  icon: const Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: Colors.blueAccent,
-                  ),
-                  label: const Text(
-                    "Modifier",
-                    style: TextStyle(color: Colors.blueAccent, fontSize: 12),
-                  ),
+                  itemBuilder:
+                      (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text(
+                            'Modifier',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Text(
+                            'Supprimer',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
                 ),
-                TextButton.icon(
-                  onPressed: () => _supprimerSession(item.sessionId!),
-                  icon: const Icon(
-                    Icons.delete,
-                    size: 16,
-                    color: Colors.redAccent,
-                  ),
-                  label: const Text(
-                    "Supprimer",
-                    style: TextStyle(color: Colors.redAccent, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniStat(IconData icon, String label, Color color) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 6),
-        Text(label, style: TextStyle(color: Colors.white70, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.bed, size: 40, color: Colors.white24),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            "Repos",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "Aucune séance prévue pour ce jour.",
-            style: TextStyle(color: kTextGrey),
+            ],
           ),
         ],
       ),

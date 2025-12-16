@@ -1,229 +1,517 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../data/db/app_db.dart';
 import '../theme/app_theme.dart';
-import '../../data/repositories/exercise_repository.dart';
+import '../viewmodels/exercises_viewmodel.dart';
+import '../../services/performance_monitor_service.dart';
+import 'dart:convert';
 
-class ExercisesPage extends StatefulWidget {
+class ExercisesPage extends StatelessWidget {
   final AppDb db;
   const ExercisesPage({super.key, required this.db});
 
   @override
-  State<ExercisesPage> createState() => _ExercisesPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ExercisesViewModel(db),
+      child: const _ExercisesPageContent(),
+    );
+  }
 }
 
-class _ExercisesPageState extends State<ExercisesPage> {
-  late final ExerciseRepository repo;
-  String _query = '';
+class _ExercisesPageContent extends StatefulWidget {
+  const _ExercisesPageContent();
 
   @override
-  void initState() {
-    super.initState();
-    repo = ExerciseRepository(widget.db);
-  }
+  State<_ExercisesPageContent> createState() => _ExercisesPageContentState();
+}
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppTheme.scaffold,
-      child: Column(
-        children: [
+class _ExercisesPageContentState extends State<_ExercisesPageContent> {
+  void _showPerformanceDialog(BuildContext context) {
+    final perfService = PerformanceMonitorService();
+    final report = perfService.lastReport;
 
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            alignment: Alignment.centerLeft,
-            child: const Text(
-              'Mes Exercices',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
+    if (report == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Aucun rapport récent.')));
+      return;
+    }
+
+    final jsonString = const JsonEncoder.withIndent('  ').convert(report);
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text(
+              'Performance',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: SingleChildScrollView(
+              child: SelectableText(
+                jsonString,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
               ),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: AppTheme.gold),
+                ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: _SearchField(
-              hint: 'Rechercher un exercice…',
-              onChanged: (v) => setState(() => _query = v.trim()),
-            ),
-          ),
-
-
-          Expanded(
-            child: StreamBuilder<List<ExerciseData>>(
-              stream: repo.watchAll(),
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snap.hasError) {
-                  return Center(
-                    child: Text(
-                      'Erreur : ${snap.error}',
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  );
-                }
-                final list = (snap.data ?? [])
-                    .where((e) => _query.isEmpty || e.name.toLowerCase().contains(_query.toLowerCase()))
-                    .toList();
-
-                if (list.isEmpty) {
-                  return const Center(
-                    child: Text('Aucun exercice', style: TextStyle(color: Colors.white70)),
-                  );
-                }
-
-                return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                  itemCount: list.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => _ExerciseTile(e: list[i]),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
     );
   }
-}
 
-class _SearchField extends StatelessWidget {
-  final String hint;
-  final ValueChanged<String> onChanged;
-  const _SearchField({required this.hint, required this.onChanged});
+  void _showFilterSheet(BuildContext context, ExercisesViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF10141F),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        // Use ChangeNotifierProvider.value to pass the existing VM to the modal
+        return ChangeNotifierProvider.value(
+          value: vm,
+          child: Consumer<ExercisesViewModel>(
+            builder: (context, vm, _) {
+              return Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Filtrer par muscle",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (vm.selectedCategories.isNotEmpty)
+                          TextButton(
+                            onPressed: () {
+                              vm.clearCategories();
+                              // Navigator.pop(ctx); // Optional: close on clear? better to keep open
+                            },
+                            child: const Text(
+                              "Effacer",
+                              style: TextStyle(color: Colors.redAccent),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children:
+                          vm.categories.map((category) {
+                            final isSelected = vm.selectedCategories.contains(
+                              category,
+                            );
+                            return FilterChip(
+                              label: Text(
+                                category,
+                                style: TextStyle(
+                                  color:
+                                      isSelected ? Colors.black : Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              selected: isSelected,
+                              onSelected: (_) => vm.toggleCategory(category),
+                              selectedColor: AppTheme.gold,
+                              backgroundColor: Colors.white.withOpacity(0.05),
+                              checkmarkColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                                side: BorderSide(
+                                  color:
+                                      isSelected
+                                          ? AppTheme.gold
+                                          : Colors.white.withOpacity(0.1),
+                                ),
+                              ),
+                              showCheckmark: false,
+                            );
+                          }).toList(),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      onChanged: onChanged,
-      style: const TextStyle(color: Colors.white),
-      cursorColor: AppTheme.gold,
-      decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.search, color: Colors.white70),
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white38),
-        filled: true,
-        fillColor: const Color(0xFF2B2B2B),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.black),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppTheme.gold),
+    return Scaffold(
+      backgroundColor: AppTheme.scaffold, // Official Dark BG
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Stylish Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'BIBLIOTHÈQUE',
+                        style: TextStyle(
+                          color: AppTheme.gold,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Mes Exercices',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // Performance Icon Button
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.bar_chart_rounded,
+                        color: Colors.white70,
+                      ),
+                      onPressed: () => _showPerformanceDialog(context),
+                      tooltip: 'Performance',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Stylish Search
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Consumer<ExercisesViewModel>(
+                builder: (context, vm, _) {
+                  return _StylishSearchField(
+                    onChanged: (v) => vm.updateQuery(v.trim()),
+                    onFilterTap: () => _showFilterSheet(context, vm),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Card List
+            Expanded(
+              child: Consumer<ExercisesViewModel>(
+                builder: (context, vm, child) {
+                  if (vm.isLoading && vm.exercises.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: AppTheme.gold),
+                    );
+                  }
+
+                  if (vm.error != null) {
+                    return Center(
+                      child: Text(
+                        'Erreur : ${vm.error}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    );
+                  }
+
+                  if (vm.exercises.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.fitness_center_outlined,
+                            size: 60,
+                            color: Colors.white.withOpacity(0.1),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Aucun exercice trouvé',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.4),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    itemCount: vm.exercises.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) {
+                      final e = vm.exercises[i];
+                      final muscles = vm.getMusclesFor(e.id);
+                      return _StylishExerciseCard(
+                        e: e,
+                        muscles: muscles,
+                        isFavorite: vm.isFavorite(e.id),
+                        onToggleFavorite: () => vm.toggleFavorite(e.id),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _ExerciseTile extends StatelessWidget {
-  final ExerciseData e;
-  const _ExerciseTile({required this.e});
+class _StylishSearchField extends StatelessWidget {
+  final ValueChanged<String> onChanged;
+  final VoidCallback onFilterTap;
 
-  Color _typeColor(String t) {
-
-    switch (t.toLowerCase()) {
-      case 'poly':
-        return const Color(0xFFD9BE77);
-      case 'iso':
-        return const Color(0xFF9EC3FF);
-      default:
-        return Colors.white70;
-    }
-  }
+  const _StylishSearchField({
+    required this.onChanged,
+    required this.onFilterTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.black,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Row(
-        children: [
-
-          Container(
-            width: 46,
-            height: 46,
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: const Icon(Icons.fitness_center, color: Colors.black),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  e.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 10,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _ChipInfo(
-                      icon: Icons.category_outlined,
-                      label: e.type.toUpperCase(),
-                      color: _typeColor(e.type),
-                    ),
-                    _ChipInfo(
-                      icon: Icons.speed,
-                      label: "Diff ${e.difficulty}",
-                      color: Colors.white70,
-                    ),
-                    _ChipInfo(
-                      icon: Icons.favorite_border,
-                      label: "Cardio ${e.cardio.toStringAsFixed(1)}",
-                      color: Colors.white70,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          const Icon(Icons.chevron_right, color: Colors.white38),
         ],
+      ),
+      child: TextField(
+        onChanged: onChanged,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+        cursorColor: AppTheme.gold,
+        decoration: InputDecoration(
+          hintText: "Rechercher...",
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: AppTheme.gold.withOpacity(0.8),
+          ),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.tune_rounded, color: Colors.white70),
+            onPressed: onFilterTap,
+            tooltip: 'Filtrer',
+          ),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+        ),
       ),
     );
   }
 }
 
-class _ChipInfo extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  const _ChipInfo({required this.icon, required this.label, required this.color});
+class _StylishExerciseCard extends StatelessWidget {
+  final ExerciseData e;
+  final List<String> muscles;
+  final bool isFavorite;
+  final VoidCallback onToggleFavorite;
+
+  const _StylishExerciseCard({
+    required this.e,
+    required this.muscles,
+    required this.isFavorite,
+    required this.onToggleFavorite,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
+    final isPoly = e.type.toLowerCase() == 'poly';
+    // Use AppTheme surface for cards, but slightly elevated
+    // A deep dark shade, very close to background but distinct enough
+    final cardColor = const Color(0xFF10141F);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withOpacity(0.03)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          splashColor: AppTheme.gold.withOpacity(0.1),
+          overlayColor: WidgetStateProperty.all(Colors.white.withOpacity(0.02)),
+          onTap: () {},
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Stylish Icon Container
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppTheme.gold.withOpacity(0.2)),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.fitness_center,
+                      color: AppTheme.gold,
+                      size: 24,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        e.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold, // Stronger font
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Muscle Tags
+                      if (muscles.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Text(
+                            muscles.join(", ").toUpperCase(),
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      Row(
+                        children: [
+                          // Type pill
+                          _TagPill(
+                            text: e.type.toUpperCase(),
+                            color:
+                                isPoly
+                                    ? const Color(0xFF64B5F6)
+                                    : const Color(0xFF81C784),
+                          ),
+                          const SizedBox(width: 8),
+                          // Difficulty pill
+                          _TagPill(
+                            text: "NIV ${e.difficulty}",
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Favorite Button
+                IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color:
+                        isFavorite
+                            ? Colors.redAccent
+                            : Colors.white.withOpacity(0.3),
+                    size: 24,
+                  ),
+                  onPressed: onToggleFavorite,
+                ),
+              ],
+            ),
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+class _TagPill extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _TagPill({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }
