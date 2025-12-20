@@ -68,7 +68,7 @@ class _RootShellState extends State<RootShell> {
     final visibleItems = List<BottomNavItem>.from(items);
 
     if (PerfService.isPerfMode) {
-      visiblePages.add(const PerformanceLabPage());
+      visiblePages.add(PerformanceLabPage(db: widget.db, prefs: _prefs!));
       visibleItems.add(const BottomNavItem(icon: Icons.speed, label: 'Perf'));
     }
 

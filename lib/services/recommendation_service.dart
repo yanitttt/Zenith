@@ -11,7 +11,6 @@ class RecommendedExercise {
   final double cardio;
   final double objectiveAffinity;
 
-
   double performanceAdjustment;
   double feedbackAdjustment;
 
@@ -27,19 +26,18 @@ class RecommendedExercise {
   });
 
   double get score {
-
     double baseScore = objectiveAffinity;
-
 
     double difficultyBonus = 1.0 - ((difficulty - 3).abs() / 5.0) * 0.2;
 
-
     double performanceMultiplier = 1.0 + performanceAdjustment;
-
 
     double feedbackMultiplier = 1.0 + feedbackAdjustment;
 
-    return baseScore * difficultyBonus * performanceMultiplier * feedbackMultiplier;
+    return baseScore *
+        difficultyBonus *
+        performanceMultiplier *
+        feedbackMultiplier;
   }
 }
 
@@ -49,7 +47,6 @@ class RecommendationService {
   final AppDb db;
 
   RecommendationService(this.db);
-
 
   static const Map<String, MuscleGroup> _muscleGroupMapping = {
     // Haut du corps
@@ -94,12 +91,10 @@ class RecommendationService {
     'legs': MuscleGroup.lower,
   };
 
-
   MuscleGroup _getMuscleGroup(String muscleName) {
     final normalized = muscleName.toLowerCase().trim();
     return _muscleGroupMapping[normalized] ?? MuscleGroup.upper;
   }
-
 
   Future<List<RecommendedExercise>> getRecommendedExercises({
     required int userId,
@@ -107,24 +102,22 @@ class RecommendationService {
     int limit = 10,
   }) async {
     try {
-
       int objectiveId;
       if (specificObjectiveId != null) {
         objectiveId = specificObjectiveId;
       } else {
-
-        final userGoals = await (db.select(db.userGoal)
-              ..where((tbl) => tbl.userId.equals(userId))
-              ..orderBy([(t) => OrderingTerm.desc(t.weight)])
-              ..limit(1))
-            .get();
+        final userGoals =
+            await (db.select(db.userGoal)
+                  ..where((tbl) => tbl.userId.equals(userId))
+                  ..orderBy([(t) => OrderingTerm.desc(t.weight)])
+                  ..limit(1))
+                .get();
 
         if (userGoals.isEmpty) {
           throw Exception('Aucun objectif défini pour cet utilisateur');
         }
         objectiveId = userGoals.first.objectiveId;
       }
-
 
       final query = '''
         WITH user_eq AS (
@@ -152,32 +145,35 @@ class RecommendationService {
         LIMIT ?;
       ''';
 
-      final results = await db.customSelect(
-        query,
-        variables: [
-          Variable.withInt(userId),
-          Variable.withInt(objectiveId),
-          Variable.withInt(limit),
-        ],
-        readsFrom: {
-          db.exercise,
-          db.userEquipment,
-          db.exerciseEquipment,
-          db.exerciseObjective,
-        },
-      ).get();
+      final results =
+          await db
+              .customSelect(
+                query,
+                variables: [
+                  Variable.withInt(userId),
+                  Variable.withInt(objectiveId),
+                  Variable.withInt(limit),
+                ],
+                readsFrom: {
+                  db.exercise,
+                  db.userEquipment,
+                  db.exerciseEquipment,
+                  db.exerciseObjective,
+                },
+              )
+              .get();
 
-      final exercises = results.map((row) {
-        return RecommendedExercise(
-          id: row.read<int>('id'),
-          name: row.read<String>('name'),
-          type: row.read<String>('type'),
-          difficulty: row.read<int>('difficulty'),
-          cardio: row.read<double>('cardio'),
-          objectiveAffinity: row.read<double>('objective_affinity'),
-        );
-      }).toList();
-
+      final exercises =
+          results.map((row) {
+            return RecommendedExercise(
+              id: row.read<int>('id'),
+              name: row.read<String>('name'),
+              type: row.read<String>('type'),
+              difficulty: row.read<int>('difficulty'),
+              cardio: row.read<double>('cardio'),
+              objectiveAffinity: row.read<double>('objective_affinity'),
+            );
+          }).toList();
 
       return await _applyAdaptiveAdjustments(
         userId: userId,
@@ -189,7 +185,6 @@ class RecommendationService {
     }
   }
 
-
   Future<List<RecommendedExercise>> getRecommendedExercisesByMuscleGroup({
     required int userId,
     required MuscleGroup muscleGroup,
@@ -197,23 +192,22 @@ class RecommendationService {
     int limit = 10,
   }) async {
     try {
-
       int objectiveId;
       if (specificObjectiveId != null) {
         objectiveId = specificObjectiveId;
       } else {
-        final userGoals = await (db.select(db.userGoal)
-              ..where((tbl) => tbl.userId.equals(userId))
-              ..orderBy([(t) => OrderingTerm.desc(t.weight)])
-              ..limit(1))
-            .get();
+        final userGoals =
+            await (db.select(db.userGoal)
+                  ..where((tbl) => tbl.userId.equals(userId))
+                  ..orderBy([(t) => OrderingTerm.desc(t.weight)])
+                  ..limit(1))
+                .get();
 
         if (userGoals.isEmpty) {
           throw Exception('Aucun objectif défini pour cet utilisateur');
         }
         objectiveId = userGoals.first.objectiveId;
       }
-
 
       final query = '''
         WITH user_eq AS (
@@ -252,46 +246,50 @@ class RecommendationService {
         ORDER BY objective_affinity DESC, e.difficulty ASC;
       ''';
 
-      final results = await db.customSelect(
-        query,
-        variables: [
-          Variable.withInt(userId),
-          Variable.withInt(objectiveId),
-        ],
-        readsFrom: {
-          db.exercise,
-          db.userEquipment,
-          db.exerciseEquipment,
-          db.exerciseObjective,
-          db.exerciseMuscle,
-          db.muscle,
-        },
-      ).get();
+      final results =
+          await db
+              .customSelect(
+                query,
+                variables: [
+                  Variable.withInt(userId),
+                  Variable.withInt(objectiveId),
+                ],
+                readsFrom: {
+                  db.exercise,
+                  db.userEquipment,
+                  db.exerciseEquipment,
+                  db.exerciseObjective,
+                  db.exerciseMuscle,
+                  db.muscle,
+                },
+              )
+              .get();
 
+      final filteredResults = results
+          .where((row) {
+            final muscleName = row.readNullable<String>('muscle_name');
+            if (muscleName == null) return muscleGroup == MuscleGroup.full;
 
-      final filteredResults = results.where((row) {
-        final muscleName = row.readNullable<String>('muscle_name');
-        if (muscleName == null) return muscleGroup == MuscleGroup.full;
+            final exerciseMuscleGroup = _getMuscleGroup(muscleName);
 
-        final exerciseMuscleGroup = _getMuscleGroup(muscleName);
+            if (muscleGroup == MuscleGroup.full) {
+              return true;
+            }
+            return exerciseMuscleGroup == muscleGroup;
+          })
+          .take(limit);
 
-        if (muscleGroup == MuscleGroup.full) {
-          return true;
-        }
-        return exerciseMuscleGroup == muscleGroup;
-      }).take(limit);
-
-      final exercises = filteredResults.map((row) {
-        return RecommendedExercise(
-          id: row.read<int>('id'),
-          name: row.read<String>('name'),
-          type: row.read<String>('type'),
-          difficulty: row.read<int>('difficulty'),
-          cardio: row.read<double>('cardio'),
-          objectiveAffinity: row.read<double>('objective_affinity'),
-        );
-      }).toList();
-
+      final exercises =
+          filteredResults.map((row) {
+            return RecommendedExercise(
+              id: row.read<int>('id'),
+              name: row.read<String>('name'),
+              type: row.read<String>('type'),
+              difficulty: row.read<int>('difficulty'),
+              cardio: row.read<double>('cardio'),
+              objectiveAffinity: row.read<double>('objective_affinity'),
+            );
+          }).toList();
 
       return await _applyAdaptiveAdjustments(
         userId: userId,
@@ -302,7 +300,6 @@ class RecommendationService {
       rethrow;
     }
   }
-
 
   Future<List<RecommendedExercise>> generateWorkoutSession({
     required int userId,
@@ -319,32 +316,27 @@ class RecommendationService {
       return [];
     }
 
-
     final polyExercises = exercises.where((e) => e.type == 'poly').toList();
     final isoExercises = exercises.where((e) => e.type == 'iso').toList();
-
 
     final random = Random();
     polyExercises.shuffle(random);
     isoExercises.shuffle(random);
 
-
     final List<RecommendedExercise> workout = [];
     final int polyCount = (totalExercises * 0.6).round();
     final int isoCount = totalExercises - polyCount;
-
 
     for (int i = 0; i < polyCount && i < polyExercises.length; i++) {
       workout.add(polyExercises[i]);
     }
 
-
     for (int i = 0; i < isoCount && i < isoExercises.length; i++) {
       workout.add(isoExercises[i]);
     }
 
-
-    while (workout.length < totalExercises && workout.length < exercises.length) {
+    while (workout.length < totalExercises &&
+        workout.length < exercises.length) {
       final remaining = exercises.where((e) => !workout.contains(e)).toList();
       if (remaining.isEmpty) break;
       remaining.shuffle(random);
@@ -354,30 +346,27 @@ class RecommendationService {
     return workout;
   }
 
-
   Future<List<ObjectiveData>> getUserObjectives(int userId) async {
-    final userGoals = await (db.select(db.userGoal)
-          ..where((tbl) => tbl.userId.equals(userId)))
-        .get();
+    final userGoals =
+        await (db.select(db.userGoal)
+          ..where((tbl) => tbl.userId.equals(userId))).get();
 
     if (userGoals.isEmpty) {
       return [];
     }
 
     final objectiveIds = userGoals.map((g) => g.objectiveId).toList();
-    final objectives = await (db.select(db.objective)
-          ..where((tbl) => tbl.id.isIn(objectiveIds)))
-        .get();
+    final objectives =
+        await (db.select(db.objective)
+          ..where((tbl) => tbl.id.isIn(objectiveIds))).get();
 
     return objectives;
   }
-
 
   Future<double> _calculatePerformanceAdjustment({
     required int userId,
     required int exerciseId,
   }) async {
-
     final query = '''
       SELECT se.sets, se.reps, se.load, se.rpe, s.date_ts,
              pde.sets_suggestion, pde.reps_suggestion,
@@ -392,19 +381,26 @@ class RecommendationService {
       LIMIT 5
     ''';
 
-    final results = await db.customSelect(
-      query,
-      variables: [
-        Variable.withInt(userId),
-        Variable.withInt(exerciseId),
-      ],
-      readsFrom: {db.session, db.sessionExercise, db.programDayExercise, db.programDay},
-    ).get();
+    final results =
+        await db
+            .customSelect(
+              query,
+              variables: [
+                Variable.withInt(userId),
+                Variable.withInt(exerciseId),
+              ],
+              readsFrom: {
+                db.session,
+                db.sessionExercise,
+                db.programDayExercise,
+                db.programDay,
+              },
+            )
+            .get();
 
     if (results.isEmpty) {
       return 0.0;
     }
-
 
     double totalRpe = 0;
     int rpeCount = 0;
@@ -418,15 +414,15 @@ class RecommendationService {
         rpeCount++;
       }
 
-
       final actualSets = row.read<int?>('sets');
       final actualReps = row.read<int?>('reps');
       final setsSuggestion = row.read<String?>('sets_suggestion');
       final repsSuggestion = row.read<String?>('reps_suggestion');
 
       if (actualSets != null && setsSuggestion != null) {
-
-        final suggestedSets = int.tryParse(setsSuggestion.replaceAll(RegExp(r'[^0-9]'), ''));
+        final suggestedSets = int.tryParse(
+          setsSuggestion.replaceAll(RegExp(r'[^0-9]'), ''),
+        );
         if (suggestedSets != null && suggestedSets > 0) {
           final setsRatio = actualSets / suggestedSets;
           performanceRatio += setsRatio;
@@ -435,11 +431,15 @@ class RecommendationService {
       }
 
       if (actualReps != null && repsSuggestion != null) {
-
-        final repsMatch = RegExp(r'(\d+)(?:-(\d+))?').firstMatch(repsSuggestion);
+        final repsMatch = RegExp(
+          r'(\d+)(?:-(\d+))?',
+        ).firstMatch(repsSuggestion);
         if (repsMatch != null) {
           final minReps = int.parse(repsMatch.group(1)!);
-          final maxReps = repsMatch.group(2) != null ? int.parse(repsMatch.group(2)!) : minReps;
+          final maxReps =
+              repsMatch.group(2) != null
+                  ? int.parse(repsMatch.group(2)!)
+                  : minReps;
           final suggestedReps = (minReps + maxReps) / 2;
 
           if (suggestedReps > 0) {
@@ -454,8 +454,8 @@ class RecommendationService {
     if (rpeCount == 0) return 0.0;
 
     final avgRpe = totalRpe / rpeCount;
-    final avgPerformanceRatio = performanceCount > 0 ? performanceRatio / performanceCount : 1.0;
-
+    final avgPerformanceRatio =
+        performanceCount > 0 ? performanceRatio / performanceCount : 1.0;
 
     double loadTrend = 0.0;
     if (results.length >= 3) {
@@ -467,81 +467,88 @@ class RecommendationService {
       }
     }
 
-
     double adjustment = 0.0;
 
-
     if (avgPerformanceRatio < 0.5) {
-
       adjustment = -0.8;
-      debugPrint('[PERF_ADJ] Exercice $exerciseId: Performance très faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.8');
+      debugPrint(
+        '[PERF_ADJ] Exercice $exerciseId: Performance très faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.8',
+      );
     } else if (avgPerformanceRatio < 0.7) {
-
       adjustment = -0.5;
-      debugPrint('[PERF_ADJ] Exercice $exerciseId: Performance faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.5');
+      debugPrint(
+        '[PERF_ADJ] Exercice $exerciseId: Performance faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.5',
+      );
     } else if (avgPerformanceRatio < 0.9) {
-
       adjustment = -0.2;
-      debugPrint('[PERF_ADJ] Exercice $exerciseId: Performance acceptable (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.2');
+      debugPrint(
+        '[PERF_ADJ] Exercice $exerciseId: Performance acceptable (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.2',
+      );
     } else if (avgPerformanceRatio >= 1.0) {
-
       if (avgRpe > 8.5) {
-
         adjustment = -0.3;
-        debugPrint('[PERF_ADJ] Exercice $exerciseId: Complète mais RPE élevé (${avgRpe.toStringAsFixed(1)}) → -0.3');
+        debugPrint(
+          '[PERF_ADJ] Exercice $exerciseId: Complète mais RPE élevé (${avgRpe.toStringAsFixed(1)}) → -0.3',
+        );
       } else if (avgRpe < 5.5) {
-
         adjustment = 0.5;
-        debugPrint('[PERF_ADJ] Exercice $exerciseId: Trop facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.5');
+        debugPrint(
+          '[PERF_ADJ] Exercice $exerciseId: Trop facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.5',
+        );
       } else if (avgRpe < 6.5) {
-
         adjustment = 0.2;
-        debugPrint('[PERF_ADJ] Exercice $exerciseId: Facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.2');
+        debugPrint(
+          '[PERF_ADJ] Exercice $exerciseId: Facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.2',
+        );
       } else {
-
         if (loadTrend > 0.1) {
           adjustment = 0.1;
-          debugPrint('[PERF_ADJ] Exercice $exerciseId: Zone optimale avec progression → +0.1');
+          debugPrint(
+            '[PERF_ADJ] Exercice $exerciseId: Zone optimale avec progression → +0.1',
+          );
         } else {
           debugPrint('[PERF_ADJ] Exercice $exerciseId: Zone optimale → neutre');
         }
       }
     }
 
-
     if (loadTrend > 0.2 && avgRpe < 8.0 && avgPerformanceRatio >= 0.9) {
       adjustment += 0.2;
-      debugPrint('[PERF_ADJ] Exercice $exerciseId: Bonus progression (+${(loadTrend * 100).toStringAsFixed(0)}%) → +0.2');
+      debugPrint(
+        '[PERF_ADJ] Exercice $exerciseId: Bonus progression (+${(loadTrend * 100).toStringAsFixed(0)}%) → +0.2',
+      );
     }
-
 
     if (loadTrend < -0.1) {
       adjustment -= 0.2;
-      debugPrint('[PERF_ADJ] Exercice $exerciseId: Régression de charge (${(loadTrend * 100).toStringAsFixed(0)}%) → -0.2');
+      debugPrint(
+        '[PERF_ADJ] Exercice $exerciseId: Régression de charge (${(loadTrend * 100).toStringAsFixed(0)}%) → -0.2',
+      );
     }
 
     final finalAdjustment = adjustment.clamp(-1.0, 1.0);
-    debugPrint('[PERF_ADJ] Exercice $exerciseId: Ajustement final = $finalAdjustment');
+    debugPrint(
+      '[PERF_ADJ] Exercice $exerciseId: Ajustement final = $finalAdjustment',
+    );
 
     return finalAdjustment;
   }
-
 
   Future<double> _calculateFeedbackAdjustment({
     required int userId,
     required int exerciseId,
   }) async {
-
     final now = DateTime.now();
     final thirtyDaysAgo = now.subtract(const Duration(days: 30));
     final thirtyDaysTs = thirtyDaysAgo.millisecondsSinceEpoch ~/ 1000;
 
-    final feedbacks = await (db.select(db.userFeedback)
-          ..where((tbl) =>
+    final feedbacks =
+        await (db.select(db.userFeedback)..where(
+          (tbl) =>
               tbl.userId.equals(userId) &
               tbl.exerciseId.equals(exerciseId) &
-              tbl.ts.isBiggerOrEqualValue(thirtyDaysTs)))
-        .get();
+              tbl.ts.isBiggerOrEqualValue(thirtyDaysTs),
+        )).get();
 
     if (feedbacks.isEmpty) {
       return 0.0;
@@ -551,13 +558,11 @@ class RecommendationService {
     int totalFeedbacks = feedbacks.length;
 
     for (final feedback in feedbacks) {
-
       if (feedback.liked == 1) {
         adjustment += 0.3;
       } else if (feedback.liked == 0) {
         adjustment -= 0.2;
       }
-
 
       if (feedback.difficult == 1) {
         adjustment -= 0.2;
@@ -566,25 +571,21 @@ class RecommendationService {
         adjustment -= 0.4;
       }
 
-
       if (feedback.pleasant == 1) {
         adjustment += 0.1;
       }
     }
-
 
     adjustment /= totalFeedbacks;
 
     return adjustment.clamp(-1.0, 0.5);
   }
 
-
   Future<List<RecommendedExercise>> _applyAdaptiveAdjustments({
     required int userId,
     required List<RecommendedExercise> exercises,
   }) async {
     for (var exercise in exercises) {
-
       final performanceAdj = await _calculatePerformanceAdjustment(
         userId: userId,
         exerciseId: exercise.id,
@@ -595,11 +596,9 @@ class RecommendationService {
         exerciseId: exercise.id,
       );
 
-
       exercise.performanceAdjustment = performanceAdj;
       exercise.feedbackAdjustment = feedbackAdj;
     }
-
 
     exercises.sort((a, b) => b.score.compareTo(a.score));
 

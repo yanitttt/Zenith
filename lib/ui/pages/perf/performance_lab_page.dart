@@ -3,9 +3,15 @@ import 'package:recommandation_mobile/core/perf/perf_service.dart';
 import 'package:recommandation_mobile/core/perf/perf_report.dart';
 import 'package:recommandation_mobile/core/perf/complexity_analyzer.dart';
 import 'package:recommandation_mobile/core/perf/perf_monitor_widget.dart';
+import 'package:recommandation_mobile/data/db/app_db.dart';
+import 'package:recommandation_mobile/core/prefs/app_prefs.dart';
+import 'package:recommandation_mobile/services/recommendation_service.dart';
 
 class PerformanceLabPage extends StatefulWidget {
-  const PerformanceLabPage({super.key});
+  final AppDb db;
+  final AppPrefs prefs;
+
+  const PerformanceLabPage({super.key, required this.db, required this.prefs});
 
   @override
   State<PerformanceLabPage> createState() => _PerformanceLabPageState();
@@ -14,6 +20,54 @@ class PerformanceLabPage extends StatefulWidget {
 class _PerformanceLabPageState extends State<PerformanceLabPage> {
   bool _isRecording = false;
   String _status = 'Prêt';
+
+  Future<void> _runRecommendationTest() async {
+    final userId = widget.prefs.currentUserId;
+    if (userId == null) {
+      setState(() => _status = 'Erreur: Aucun utilisateur connecté');
+      return;
+    }
+
+    setState(() {
+      _status = 'Analyse Recommandation (DB) en cours...';
+      _isRecording = true;
+    });
+
+    final service = RecommendationService(widget.db);
+
+    try {
+      // 1. Analyse de complexité (faire varier la LIMIT)
+      // Attention: faire varier la limite influe sur le post-processing mais moins sur la query si le WHERE est restrictif.
+      // N = limit
+      final cResult = await ComplexityAnalyzer.analyze(
+        name: 'RecService_GetExercises',
+        workload: (n) async {
+          await service.getRecommendedExercises(userId: userId, limit: n);
+        },
+        inputSizes: [5, 10, 20, 50], // Petites valeurs car SQL
+      );
+
+      // 2. Mesure standard (Limit 10)
+      await PerfService().measure('RecService_Standard_10', () async {
+        await service.getRecommendedExercises(userId: userId, limit: 10);
+      });
+
+      setState(() {
+        _status =
+            'Complexité: ${cResult.estimatedComplexity.name}\n'
+            'Timings: ${cResult.timingsMicroseconds}\n'
+            'Voir rapport standard pour mesure detaillee.';
+        _isRecording = false;
+      });
+
+      await PerfReport.generateAndShare('RecService_Analysis');
+    } catch (e) {
+      setState(() {
+        _status = 'Erreur: $e';
+        _isRecording = false;
+      });
+    }
+  }
 
   Future<void> _runComplexityDemo() async {
     setState(() {
@@ -120,6 +174,12 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
               onPressed: _isRecording ? null : _runComplexityDemo,
               icon: const Icon(Icons.analytics),
               label: const Text('Démo Analyse O(n) (Liste)'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: _isRecording ? null : _runRecommendationTest,
+              icon: const Icon(Icons.fitness_center),
+              label: const Text('Analyse RecService (SQL)'),
             ),
             const SizedBox(height: 10),
             // TODO: Autres scénarios
