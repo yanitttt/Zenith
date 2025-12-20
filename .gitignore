@@ -1,0 +1,27 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# FVM
+.fvm/
+
+# Android / IntelliJ / VSCode
+.idea/
+*.iml
+.vscode/
+
+# iOS / macOS (au cas où)
+.DS_Store
+DerivedData/
+
+# Logs
+*.log
+
+# Outils IA / Claude (optionnel)
+.claude/
+claude/
+img_claude/
