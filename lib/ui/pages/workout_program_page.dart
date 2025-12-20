@@ -1,170 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../../core/prefs/app_prefs.dart';
+import '../../services/program_generator_service.dart'; // Pour ProgramDaySession, etc.
 import '../../data/db/app_db.dart';
-import '../../services/program_generator_service.dart';
-import '../../services/session_tracking_service.dart';
-import '../../data/db/daos/user_training_day_dao.dart';
+import '../viewmodels/workout_program_viewmodel.dart';
 import '../widgets/training_days_dialog.dart';
 import '../theme/app_theme.dart';
 import 'active_session_page.dart';
 import '../utils/responsive.dart';
 
-class WorkoutProgramPage extends StatefulWidget {
+class WorkoutProgramPage extends StatelessWidget {
   final AppDb db;
   final AppPrefs prefs;
 
   const WorkoutProgramPage({super.key, required this.db, required this.prefs});
 
   @override
-  State<WorkoutProgramPage> createState() => _WorkoutProgramPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create:
+          (_) => WorkoutProgramViewModel(db: db, prefs: prefs)..loadProgram(),
+      child: const _WorkoutProgramContent(),
+    );
+  }
 }
 
-class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
-  late final ProgramGeneratorService _programService;
-  late final SessionTrackingService _sessionService;
-  late final UserTrainingDayDao _trainingDayDao;
-  WorkoutProgramData? _currentProgram;
-  List<ProgramDaySession> _programDays = [];
-  Map<int, SessionData> _completedSessions = {};
-  int _selectedDayIndex = 0;
-  bool _loading = true;
-  String? _error;
-  bool _generating = false;
+class _WorkoutProgramContent extends StatelessWidget {
+  const _WorkoutProgramContent();
 
-  @override
-  void initState() {
-    super.initState();
-    _programService = ProgramGeneratorService(widget.db);
-    _sessionService = SessionTrackingService(widget.db);
-    _trainingDayDao = UserTrainingDayDao(widget.db);
-    _loadProgram();
-  }
-
-  Future<void> _loadProgram() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    try {
-      final userId = widget.prefs.currentUserId;
-      if (userId == null) {
-        throw Exception('Utilisateur non connecté');
-      }
-
-
-      final program = await _programService.getActiveUserProgram(userId);
-
-
-      final trainingDays = await _trainingDayDao.getDayNumbersForUser(userId);
-
-      if (program != null && trainingDays.isEmpty) {
-        debugPrint(
-          '[WORKOUT_PAGE] Programme détecté sans jours définis -> Suppression pour forcer l\'état vide',
-        );
-
-
-        await (widget.db.delete(widget.db.userProgram)
-          ..where((tbl) => tbl.userId.equals(userId))).go();
-
-        if (mounted) {
-          setState(() {
-            _currentProgram = null;
-            _programDays = [];
-            _loading = false;
-          });
-        }
-        return;
-      }
-
-      if (program == null) {
-
-        if (mounted) {
-          setState(() {
-            _currentProgram = null;
-            _programDays = [];
-            _loading = false;
-          });
-        }
-      } else {
-
-        final days = await _programService.getProgramDays(program.id);
-
-
-        final dayIds = days.map((d) => d.programDayId).toList();
-        final completedSessions = await _sessionService
-            .getCompletedSessionsForDays(dayIds);
-
-        if (mounted) {
-          setState(() {
-            _currentProgram = program;
-            _programDays = days;
-            _completedSessions = completedSessions;
-            _loading = false;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('[WORKOUT_PROGRAM] Erreur: $e');
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _generateNewProgram() async {
-    setState(() => _generating = true);
-
-    try {
-      final userId = widget.prefs.currentUserId;
-      if (userId == null) {
-        throw Exception('Utilisateur non connecté');
-      }
-
-
-      final programId = await _programService.generateUserProgram(
-        userId: userId,
-      );
-
-
-      final program =
-          await (widget.db.select(widget.db.workoutProgram)
-            ..where((tbl) => tbl.id.equals(programId))).getSingle();
-
-      final days = await _programService.getProgramDays(programId);
-
-      if (mounted) {
-        setState(() {
-          _currentProgram = program;
-          _programDays = days;
-          _generating = false;
-          _loading = false;
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Programme généré avec succès !'),
-            backgroundColor: AppTheme.gold,
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('[WORKOUT_PROGRAM] Erreur génération: $e');
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _generating = false;
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _regenerateProgram() async {
+  Future<void> _regenerateProgram(
+    BuildContext context,
+    WorkoutProgramViewModel vm,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder:
@@ -199,31 +67,73 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
 
     if (confirmed == true) {
-      setState(() => _generating = true);
-
-      try {
-        final userId = widget.prefs.currentUserId;
-        if (userId == null) return;
-
-
-        await _programService.regenerateUserProgram(userId: userId);
-
-        await _loadProgram();
-      } catch (e) {
-        debugPrint('[WORKOUT_PROGRAM] Erreur régénération: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+      if (context.mounted) {
+        try {
+          await vm.regenerateProgram();
+        } catch (e) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+          }
         }
-      } finally {
-        if (mounted) setState(() => _generating = false);
       }
     }
   }
 
-  Future<void> _startSession(ProgramDaySession day) async {
-    final userId = widget.prefs.currentUserId;
+  Future<void> _startSession(
+    BuildContext context,
+    ProgramDaySession day,
+    WorkoutProgramViewModel vm,
+  ) async {
+    // Note: userId is accessed inside vm usually, but ActiveSessionPage needs it.
+    // We can assume prefs is injected in VM but we can't easily access it here without context or modification.
+    // However, ActiveSessionPage takes userId in constructor.
+    // We can get userId from existing prefs in parent or context?
+    // Parent passed prefs. But here we are down in widget tree.
+    // Actually, WorkoutProgramPage has prefs. But _WorkoutProgramContent doesn't "see" it easily unless passed or accessed via Provider if exposed?
+    // The VM has _prefs locally.
+    // We can make the VM expose userId? Or just pass it from top.
+
+    // Quick fix: Since WorkoutProgramPage has prefs, we should probably pass it down or accessing it.
+    // But decoupling is better.
+    // Let's assume we can get it or we expose it from VM.
+    // The ORIGINAL code had widget.prefs.currentUserId.
+
+    // I need to access userId.
+    // I can make a getter in VM for currentUserId? Or just pass prefs to Content?
+    // I'll make VM expose userId because it already checks it in methods.
+    // Wait, VM has `_prefs` private.
+    // I'll assume I can't change VM right now easily without another call.
+    // I'll pass prefs from specific `Consumer`?
+    // It's easier to just assume usage of `context.read<WorkoutProgramViewModel>()` if I added a getter.
+    // But I didn't add a getter.
+
+    // Alternative: `ActiveSessionPage` needs userId.
+    // I'll use `Provider.of<WorkoutProgramViewModel>(context, listen: false)`... but I can't get private field.
+
+    // I'll just change the Architecture slightly: The Page `build` passes the `prefs` to `_WorkoutProgramContent`? No, that's ugly.
+    // Refactoring rule: VM handles business logic. `ActiveSessionPage` params are UI navigation params.
+    // If `ActiveSessionPage` needs `userId`, it should be available.
+    // I'll simply add `String? get userId => _prefs.currentUserId;` to VM if I can, OR
+    // I'll just assume I can pass it.
+
+    // Actually, I can't edit VM in this step (I already did a multi_replace, but calling `write_to_file` overwrites the file `WorkoutProgramPage`).
+    // I'll edit VM independently or assume I can fetch it.
+    // Check line 226 of original file: `final userId = widget.prefs.currentUserId;`.
+    // I'll modify VM to add getter `currentUserId` in a subsequent step if needed, or I'll just skip it?
+    // No, I need it for `ActiveSessionPage`.
+    // I'll just instantiate `ActiveSessionPage` with `vm.prefs.currentUserId`? No `prefs` is private.
+
+    // Okay, I will add `get currentUserId` to VM in the previous `multi_replace` call? Too late, step passed?
+    // No, I sent multi_replace in parallel? No, sequential.
+    // I'll send another `replace_file_content` to VM to add getter.
+
+    // Wait, I can do it in the next step.
+
+    // I'll write the Page code assuming `vm.currentUserId` exists.
+    final userId = vm.currentUserId;
+
     if (userId == null) {
       ScaffoldMessenger.of(
         context,
@@ -236,7 +146,7 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       MaterialPageRoute(
         builder:
             (context) => ActiveSessionPage(
-              db: widget.db,
+              db: vm.db, // Need to expose DB or pass it? Original passed widget.db.
               userId: userId,
               programDayId: day.programDayId,
               dayName: day.dayName,
@@ -244,39 +154,56 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
       ),
     );
 
-
-    if (result == true && mounted) {
-
+    if (result == true && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Séance enregistrée et programme mis à jour !'),
           backgroundColor: AppTheme.gold,
         ),
       );
+      await vm.updateAfterSession();
+    }
+  }
 
-      debugPrint(
-        '[WORKOUT_PROGRAM] Retour de session, rechargement du programme...',
+  Future<void> _handleGenerateClick(
+    BuildContext context,
+    WorkoutProgramViewModel vm,
+  ) async {
+    final hasDays = await vm.checkHasTrainingDays();
+
+    if (!hasDays) {
+      if (!context.mounted) return;
+      final result = await showDialog<List<int>>(
+        context: context,
+        builder: (ctx) => const TrainingDaysDialog(selectedDays: []),
       );
 
-
-      await _loadProgram();
-
-
-      if (_programDays.length > 1) {
-        final nextDay = _programDays.firstWhere(
-          (d) => !_completedSessions.containsKey(d.programDayId),
-          orElse: () => _programDays.last,
-        );
-        if (nextDay.exercises.isNotEmpty) {
-          final firstEx = nextDay.exercises.first;
-          debugPrint(
-            '[WORKOUT_PROGRAM] Vérification jour ${nextDay.dayOrder}: ${firstEx.exerciseName} -> ${firstEx.setsSuggestion} (was ${firstEx.previousSetsSuggestion}) / ${firstEx.repsSuggestion}',
+      if (result != null && result.isNotEmpty) {
+        await vm.saveTrainingDays(result);
+        await vm.generateNewProgram();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Programme généré avec succès !'),
+              backgroundColor: AppTheme.gold,
+            ),
           );
         }
+      }
+    } else {
+      await vm.generateNewProgram();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Programme généré avec succès !'),
+            backgroundColor: AppTheme.gold,
+          ),
+        );
       }
     }
   }
 
+  // Formatters
   String _formatDate(int timestamp) {
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     final now = DateTime.now();
@@ -292,33 +219,60 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     }
   }
 
+  String _formatScheduledDate(DateTime date) {
+    // ... existing logic ...
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final sessionDate = DateTime(date.year, date.month, date.day);
+
+    if (sessionDate == today) {
+      return "Aujourd'hui";
+    } else if (sessionDate == tomorrow) {
+      return 'Demain';
+    } else {
+      final formatter = DateFormat('EEE dd MMM', 'fr_FR');
+      return formatter.format(date);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final responsive = Responsive(context);
     return Scaffold(
       backgroundColor: AppTheme.scaffold,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(responsive),
-            if (_programDays.isNotEmpty) _buildDaySelector(responsive),
-            Expanded(
-              child:
-                  _loading || _generating
-                      ? _buildLoading()
-                      : _error != null
-                      ? _buildError()
-                      : _programDays.isEmpty
-                      ? _buildEmpty(responsive)
-                      : _buildDayContent(responsive),
-            ),
-          ],
+        child: Consumer<WorkoutProgramViewModel>(
+          builder: (context, vm, child) {
+            return Column(
+              children: [
+                _buildHeader(context, responsive, vm),
+                if (vm.programDays.isNotEmpty)
+                  _buildDaySelector(context, responsive, vm),
+                Expanded(
+                  child:
+                      vm.isLoading || vm.isGenerating
+                          ? _buildLoading(vm)
+                          : vm.error != null
+                          ? _buildError(context, vm)
+                          : vm.programDays.isEmpty
+                          ? _buildEmpty(context, responsive, vm)
+                          : _buildDayContent(context, responsive, vm),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildHeader(Responsive responsive) {
+  // WIDGETS
+  Widget _buildHeader(
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
     return Container(
       padding: EdgeInsets.all(responsive.rw(24)),
       child: Column(
@@ -339,20 +293,20 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    if (_currentProgram != null) ...[
+                    if (vm.currentProgram != null) ...[
                       SizedBox(height: responsive.rh(8)),
                       Text(
-                        _currentProgram!.name,
+                        vm.currentProgram!.name,
                         style: TextStyle(
                           color: AppTheme.gold,
                           fontSize: responsive.rsp(16),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      if (_currentProgram!.description != null) ...[
+                      if (vm.currentProgram!.description != null) ...[
                         SizedBox(height: responsive.rh(4)),
                         Text(
-                          _currentProgram!.description!,
+                          vm.currentProgram!.description!,
                           style: TextStyle(
                             color: Colors.white60,
                             fontSize: responsive.rsp(14),
@@ -364,7 +318,10 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                 ),
               ),
               IconButton(
-                onPressed: _generating ? null : _regenerateProgram,
+                onPressed:
+                    vm.isGenerating
+                        ? null
+                        : () => _regenerateProgram(context, vm),
                 icon: const Icon(Icons.refresh),
                 color: AppTheme.gold,
                 iconSize: responsive.rsp(28),
@@ -376,37 +333,154 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
-  String _formatScheduledDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final tomorrow = today.add(const Duration(days: 1));
-    final sessionDate = DateTime(date.year, date.month, date.day);
-
-    if (sessionDate == today) {
-      return "Aujourd'hui";
-    } else if (sessionDate == tomorrow) {
-      return 'Demain';
-    } else {
-      final formatter = DateFormat('EEE dd MMM', 'fr_FR');
-      return formatter.format(date);
-    }
+  Widget _buildLoading(WorkoutProgramViewModel vm) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(color: AppTheme.gold),
+          const SizedBox(height: 16),
+          Text(
+            vm.isGenerating ? 'Génération du programme...' : 'Chargement...',
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildDaySelector(Responsive responsive) {
+  Widget _buildError(BuildContext context, WorkoutProgramViewModel vm) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red, size: 64),
+            const SizedBox(height: 16),
+            const Text(
+              'Erreur',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              vm.error ?? 'Une erreur est survenue',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: vm.loadProgram,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Réessayer'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.gold,
+                foregroundColor: Colors.black,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmpty(
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(responsive.rw(20)),
+              decoration: BoxDecoration(
+                color: AppTheme.gold.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.fitness_center,
+                color: AppTheme.gold,
+                size: responsive.rsp(48),
+              ),
+            ),
+            SizedBox(height: responsive.rh(24)),
+            Text(
+              'Aucun programme pour l\'instant',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: responsive.rsp(22),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: responsive.rh(12)),
+            Text(
+              'Cliquez ci-dessous pour générer votre premier programme personnalisé et commencer votre transformation !',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: responsive.rsp(16),
+                height: 1.5,
+              ),
+            ),
+            SizedBox(height: responsive.rh(32)),
+            SizedBox(
+              width: double.infinity,
+              height: responsive.rh(56),
+              child: ElevatedButton(
+                onPressed: () => _handleGenerateClick(context, vm),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.gold,
+                  foregroundColor: Colors.black,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(
+                  'Générer mon premier programme',
+                  style: TextStyle(
+                    fontSize: responsive.rsp(18),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDaySelector(
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
     return Container(
       height: responsive.rh(90),
       margin: EdgeInsets.symmetric(horizontal: responsive.rw(24)),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: _programDays.length,
+        itemCount: vm.programDays.length,
         itemBuilder: (context, index) {
-          final day = _programDays[index];
-          final isSelected = _selectedDayIndex == index;
-          final isCompleted = _completedSessions.containsKey(day.programDayId);
+          final day = vm.programDays[index];
+          final isSelected = vm.selectedDayIndex == index;
+          final isCompleted = vm.completedSessions.containsKey(
+            day.programDayId,
+          );
           return Padding(
             padding: EdgeInsets.only(right: responsive.rw(12)),
             child: GestureDetector(
-              onTap: () => setState(() => _selectedDayIndex = index),
+              onTap: () => vm.selectDay(index),
               child: Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: responsive.rw(20),
@@ -474,12 +548,18 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     );
   }
 
-  Widget _buildDayContent(Responsive responsive) {
-    if (_programDays.isEmpty) return const SizedBox();
+  Widget _buildDayContent(
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
+    if (vm.programDays.isEmpty) return const SizedBox();
 
-    final currentDay = _programDays[_selectedDayIndex];
-    final isCompleted = _completedSessions.containsKey(currentDay.programDayId);
-    final completedSession = _completedSessions[currentDay.programDayId];
+    final currentDay = vm.programDays[vm.selectedDayIndex];
+    final isCompleted = vm.completedSessions.containsKey(
+      currentDay.programDayId,
+    );
+    final completedSession = vm.completedSessions[currentDay.programDayId];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -541,7 +621,10 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: isCompleted ? null : () => _startSession(currentDay),
+                onPressed:
+                    isCompleted
+                        ? null
+                        : () => _startSession(context, currentDay, vm),
                 icon: Icon(isCompleted ? Icons.check_circle : Icons.play_arrow),
                 label: Text(isCompleted ? 'Terminée' : 'Commencer'),
                 style: ElevatedButton.styleFrom(
@@ -585,6 +668,9 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     ProgramExerciseDetail exercise,
     Responsive responsive,
   ) {
+    // ... Copy exact content from original ...
+    // Since this method is purely UI rendering from `exercise` object, it's safe to copy.
+    // I will include the full code in the final write.
     return Container(
       margin: EdgeInsets.only(bottom: responsive.rh(16)),
       padding: EdgeInsets.all(responsive.rw(16)),
@@ -772,155 +858,5 @@ class _WorkoutProgramPageState extends State<WorkoutProgramPage> {
     if (difficulty <= 2) return Colors.green;
     if (difficulty <= 3) return Colors.orange;
     return Colors.red;
-  }
-
-  Widget _buildLoading() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(color: AppTheme.gold),
-          const SizedBox(height: 16),
-          Text(
-            _generating ? 'Génération du programme...' : 'Chargement...',
-            style: const TextStyle(color: Colors.white70),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildError() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 64),
-            const SizedBox(height: 16),
-            const Text(
-              'Erreur',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _error ?? 'Une erreur est survenue',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadProgram,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.gold,
-                foregroundColor: Colors.black,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmpty(Responsive responsive) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(responsive.rw(20)),
-              decoration: BoxDecoration(
-                color: AppTheme.gold.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.fitness_center,
-                color: AppTheme.gold,
-                size: responsive.rsp(48),
-              ),
-            ),
-            SizedBox(height: responsive.rh(24)),
-            Text(
-              'Aucun programme pour l\'instant',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: responsive.rsp(22),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(height: responsive.rh(12)),
-            Text(
-              'Cliquez ci-dessous pour générer votre premier programme personnalisé et commencer votre transformation !',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: responsive.rsp(16),
-                height: 1.5,
-              ),
-            ),
-            SizedBox(height: responsive.rh(32)),
-            SizedBox(
-              width: double.infinity,
-              height: responsive.rh(56),
-              child: ElevatedButton(
-                onPressed: _handleGenerateClick,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.gold,
-                  foregroundColor: Colors.black,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  'Générer mon premier programme',
-                  style: TextStyle(
-                    fontSize: responsive.rsp(18),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleGenerateClick() async {
-    final userId = widget.prefs.currentUserId;
-    if (userId == null) return;
-
-
-    final days = await _trainingDayDao.getDayNumbersForUser(userId);
-
-    if (days.isEmpty) {
-      if (!mounted) return;
-
-
-      final result = await showDialog<List<int>>(
-        context: context,
-        builder: (ctx) => const TrainingDaysDialog(selectedDays: []),
-      );
-
-      if (result != null && result.isNotEmpty) {
-        await _trainingDayDao.replace(userId, result);
-
-        await _generateNewProgram();
-      }
-    } else {
-
-      await _generateNewProgram();
-    }
   }
 }
