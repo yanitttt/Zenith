@@ -1,0 +1,102 @@
+import 'package:flutter/foundation.dart';
+
+import 'dart:async';
+
+import 'perf_frame_tracker.dart';
+import 'perf_platform.dart';
+
+/// Service central de gestion des métriques de performance.
+/// Implémente le pattern Singleton.
+class PerfService {
+  static final PerfService _instance = PerfService._internal();
+
+  factory PerfService() {
+    return _instance;
+  }
+
+  PerfService._internal();
+
+  /// Indique si le mode performance est activé.
+  /// Cette valeur est définie à la compilation via --dart-define=PERF_MODE=true
+  static const bool isPerfMode = bool.fromEnvironment(
+    'PERF_MODE',
+    defaultValue: false,
+  );
+
+  final PerfFrameTracker _frameTracker = PerfFrameTracker();
+  Timer? _pollingTimer;
+  final List<Map<String, dynamic>> _batterySamples = [];
+  final List<Map<String, dynamic>> _resourceSamples = [];
+
+  /// Initialise le service de performance.
+  /// Ne fait rien si [isPerfMode] est faux.
+  void init() {
+    if (!isPerfMode) return;
+
+    debugPrint('🚀 Mode Performance ACTIVE');
+    _frameTracker.start();
+    _startPolling();
+  }
+
+  void _startPolling() {
+    // Poll toutes les 2 secondes
+    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      final now = DateTime.now().toIso8601String();
+
+      final battery = await PerfPlatform.getBatteryInfo();
+      if (battery != null) {
+        _batterySamples.add({'t': now, ...battery});
+      }
+
+      final resources = await PerfPlatform.getResourceInfo();
+      if (resources != null) {
+        _resourceSamples.add({'t': now, ...resources});
+      }
+    });
+  }
+
+  /// Démarre le tracking pour un nouvel écran.
+  void onScreenChanged(String screenName) {
+    if (!isPerfMode) return;
+    _frameTracker.setCurrentScreen(screenName);
+  }
+
+  /// Mesure le temps d'exécution d'une action asynchrone.
+  Future<T> measure<T>(String actionName, Future<T> Function() action) async {
+    if (!isPerfMode) return action();
+
+    final stopwatch = Stopwatch()..start();
+    try {
+      return await action();
+    } finally {
+      stopwatch.stop();
+      debugPrint('⏱️ Action "$actionName": ${stopwatch.elapsedMilliseconds}ms');
+      // TODO: Enregistrer la métrique dans le rapport
+    }
+  }
+
+  /// Mesure le temps d'exécution d'une action synchrone.
+  T measureSync<T>(String actionName, T Function() action) {
+    if (!isPerfMode) return action();
+
+    final stopwatch = Stopwatch()..start();
+    try {
+      return action();
+    } finally {
+      stopwatch.stop();
+      debugPrint('⏱️ Action "$actionName": ${stopwatch.elapsedMilliseconds}ms');
+      // TODO: Enregistrer la métrique dans le rapport
+    }
+  }
+
+  /// Récupère les stats actuelles (pour le rapport).
+  Map<String, dynamic> getStats() {
+    return {
+      'frames': _frameTracker.getStats(),
+      'battery_samples': _batterySamples, // Copie ou sub-sample si trop grand
+      'resource_samples': _resourceSamples,
+      'duration_seconds':
+          _pollingTimer?.tick != null ? _pollingTimer!.tick * 2 : 0,
+    };
+  }
+}
