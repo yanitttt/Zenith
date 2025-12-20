@@ -8,6 +8,8 @@ import '../widgets/charts/muscle_pie_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../utils/responsive.dart';
+import '../../core/perf/perf_monitor_widget.dart';
+import '../../core/perf/perf_service.dart';
 
 class DashboardPage extends StatefulWidget {
   final AppDb db;
@@ -109,248 +111,269 @@ class _DashboardPageState extends State<DashboardPage> {
                       final totalSeances = data?.totalSeances ?? 0;
                       final moyennePlaisir = data?.moyennePlaisir ?? 0.0;
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          /// HEADER COMPACT
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Bonjour $_userName",
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                      return PerfMonitorWidget(
+                        label: 'Dashboard_Body',
+                        logOnBuild: PerfService.isPerfMode,
+                        logOnRender: PerfService.isPerfMode,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            /// HEADER COMPACT
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "Bonjour $_userName",
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                  const Text(
-                                    "Prêt à tout casser ?",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
+                                    const Text(
+                                      "Prêt à tout casser ?",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                                  ],
                                 ),
-                                decoration: BoxDecoration(
-                                  color: const Color.fromRGBO(
-                                    217,
-                                    190,
-                                    119,
-                                    0.1,
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
+                                  decoration: BoxDecoration(
                                     color: const Color.fromRGBO(
                                       217,
                                       190,
                                       119,
-                                      0.3,
+                                      0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: const Color.fromRGBO(
+                                        217,
+                                        190,
+                                        119,
+                                        0.3,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                child: Text(
-                                  _todayDate,
-                                  style: const TextStyle(
-                                    color: AppTheme.gold,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          /// TOP ROW - KEY METRICS (3 Cards)
-                          SizedBox(
-                            height: 100,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _buildCompactStatCard(
-                                    "Temps total",
-                                    formatHeures(totalHeures),
-                                    Icons.timer,
-                                    Colors.purpleAccent,
-                                    responsive,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildCompactStatCard(
-                                    "Streak",
-                                    "$streakWeeks sem.", // nombre de semaines
-                                    Icons
-                                        .local_fire_department, // ou un autre icône qui te plaît
-                                    Colors.redAccent, // couleur que tu veux
-                                    responsive,
-                                  ),
-                                ),
-
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildCompactStatCard(
-                                    "Séances total",
-                                    "$totalSeances",
-                                    Icons.fitness_center,
-                                    Colors.orangeAccent,
-                                    responsive,
+                                  child: Text(
+                                    _todayDate,
+                                    style: const TextStyle(
+                                      color: AppTheme.gold,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
 
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                          /// MIDDLE - WEEKLY CHART (Expanded)
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF1E1E1E),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color.fromRGBO(
-                                    255,
-                                    255,
-                                    255,
-                                    0.05,
-                                  ),
-                                ),
-                              ),
-                              padding: EdgeInsets.fromLTRB(
-                                responsive.rw(16),
-                                responsive.rh(16),
-                                responsive.rw(16),
-                                0,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            /// TOP ROW - KEY METRICS (3 Cards)
+                            SizedBox(
+                              height: 100,
+                              child: Row(
                                 children: [
-                                  const Text(
-                                    "Activité Semaine",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                  Expanded(
+                                    child: _buildCompactStatCard(
+                                      "Temps total",
+                                      formatHeures(totalHeures),
+                                      Icons.timer,
+                                      Colors.purpleAccent,
+                                      responsive,
                                     ),
                                   ),
-                                  SizedBox(height: responsive.rh(12)),
+                                  const SizedBox(width: 12),
                                   Expanded(
-                                    child:
-                                        weeklyAttendance.isNotEmpty
-                                            ? WeeklyBarChart(
-                                              weeklyData: weeklyAttendance,
-                                            )
-                                            : const Center(
-                                              child: Text(
-                                                "Aucune donnée",
-                                                style: TextStyle(
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                            ),
+                                    child: _buildCompactStatCard(
+                                      "Streak",
+                                      "$streakWeeks sem.", // nombre de semaines
+                                      Icons
+                                          .local_fire_department, // ou un autre icône qui te plaît
+                                      Colors.redAccent, // couleur que tu veux
+                                      responsive,
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildCompactStatCard(
+                                      "Séances total",
+                                      "$totalSeances",
+                                      Icons.fitness_center,
+                                      Colors.orangeAccent,
+                                      responsive,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                          ),
 
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                          /// BOTTOM - PIE CHART & SUMMARY (Expanded)
-                          Expanded(
-                            flex: 2,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1E1E1E),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: const Color.fromRGBO(
-                                          255,
-                                          255,
-                                          255,
-                                          0.05,
-                                        ),
+                            /// MIDDLE - WEEKLY CHART (Expanded)
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E1E1E),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: const Color.fromRGBO(
+                                      255,
+                                      255,
+                                      255,
+                                      0.05,
+                                    ),
+                                  ),
+                                ),
+                                padding: EdgeInsets.fromLTRB(
+                                  responsive.rw(16),
+                                  responsive.rh(16),
+                                  responsive.rw(16),
+                                  0,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "Activité Semaine",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    child:
-                                        muscleStats.isNotEmpty
-                                            ? MusclePieChart(
-                                              muscleStats: muscleStats,
-                                            )
-                                            : const Center(
-                                              child: Text(
-                                                "Pas de données",
-                                                style: TextStyle(
-                                                  color: Colors.grey,
+                                    SizedBox(height: responsive.rh(12)),
+                                    Expanded(
+                                      child:
+                                          weeklyAttendance.isNotEmpty
+                                              ? PerfMonitorWidget(
+                                                label: 'WeeklyChart',
+                                                logOnBuild:
+                                                    PerfService.isPerfMode,
+                                                logOnRender:
+                                                    PerfService.isPerfMode,
+                                                child: WeeklyBarChart(
+                                                  weeklyData: weeklyAttendance,
+                                                ),
+                                              )
+                                              : const Center(
+                                                child: Text(
+                                                  "Aucune donnée",
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  flex: 2,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.gold,
-                                      borderRadius: BorderRadius.circular(16),
                                     ),
-                                    padding: EdgeInsets.all(responsive.rw(16)),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.emoji_events,
-                                          color: Colors.black,
-                                          size: responsive.rsp(32),
-                                        ),
-                                        SizedBox(height: responsive.rh(8)),
-                                        Text(
-                                          "Focus",
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: responsive.rsp(14),
-                                          ),
-                                        ),
-                                        SizedBox(height: responsive.rh(4)),
-                                        Text(
-                                          muscleStats.isNotEmpty
-                                              ? muscleStats.first.muscleName
-                                              : "--",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            color: Colors.black,
-                                            fontWeight: FontWeight.w900,
-                                            fontSize: responsive.rsp(16),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ],
+
+                            const SizedBox(height: 16),
+
+                            /// BOTTOM - PIE CHART & SUMMARY (Expanded)
+                            Expanded(
+                              flex: 2,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1E1E1E),
+                                        borderRadius: BorderRadius.circular(16),
+                                        border: Border.all(
+                                          color: const Color.fromRGBO(
+                                            255,
+                                            255,
+                                            255,
+                                            0.05,
+                                          ),
+                                        ),
+                                      ),
+                                      child:
+                                          muscleStats.isNotEmpty
+                                              ? PerfMonitorWidget(
+                                                label: 'MusclePieChart',
+                                                logOnBuild:
+                                                    PerfService.isPerfMode,
+                                                logOnRender:
+                                                    PerfService.isPerfMode,
+                                                child: MusclePieChart(
+                                                  muscleStats: muscleStats,
+                                                ),
+                                              )
+                                              : const Center(
+                                                child: Text(
+                                                  "Pas de données",
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.gold,
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      padding: EdgeInsets.all(
+                                        responsive.rw(16),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.emoji_events,
+                                            color: Colors.black,
+                                            size: responsive.rsp(32),
+                                          ),
+                                          SizedBox(height: responsive.rh(8)),
+                                          Text(
+                                            "Focus",
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: responsive.rsp(14),
+                                            ),
+                                          ),
+                                          SizedBox(height: responsive.rh(4)),
+                                          Text(
+                                            muscleStats.isNotEmpty
+                                                ? muscleStats.first.muscleName
+                                                : "--",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.w900,
+                                              fontSize: responsive.rsp(16),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     },
                   ),

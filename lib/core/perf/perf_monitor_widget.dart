@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'ui_metric.dart';
+import 'perf_service.dart';
 
 /// Widget wrapper capable de mesurer le temps de rendu (Layout + Paint) et de Build de son enfant.
 /// Utile pour profiler des composants UI spécifiques.
@@ -29,9 +31,16 @@ class _PerfMonitorWidgetState extends State<PerfMonitorWidget> {
       // On diffère le log pour ne pas inclure le log lui-même (négligeable mais propre)
       WidgetsBinding.instance.addPostFrameCallback((_) {
         stopwatch.stop();
-        debugPrint(
-          '🏗️ [${widget.label}] Build time: ${stopwatch.elapsedMicroseconds} µs (approx)',
+        final buildTime = stopwatch.elapsedMicroseconds;
+        final metric = UIMetric(
+          label: widget.label,
+          buildTimeMicros: buildTime,
+          timestamp: DateTime.now().toIso8601String(),
         );
+
+        debugPrint('🏗️ [${widget.label}] Build time: $buildTime µs');
+        // Log vers le service
+        PerfService().logUIMetric(metric.toJson());
       });
     }
 

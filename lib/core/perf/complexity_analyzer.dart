@@ -1,13 +1,16 @@
 import 'package:flutter/foundation.dart';
+import 'perf_service.dart';
 
+/// Types de complexité supportés pour l'estimation.
 enum ComplexityType {
   constant, // O(1)
   linear, // O(n)
   quadratic, // O(n^2)
-  exponential, // O(e^n) - alarme
+  exponential, // O(e^n) - non implémenté
   unknown,
 }
 
+/// Résultat d'une analyse de complexité.
 class ComplexityResult {
   final String metricName;
   final Map<int, int> timingsMicroseconds; // n -> duration
@@ -18,6 +21,16 @@ class ComplexityResult {
     required this.timingsMicroseconds,
     required this.estimatedComplexity,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'metric': metricName,
+      'complexity': estimatedComplexity.toString().split('.').last,
+      'timings_us': timingsMicroseconds.map(
+        (k, v) => MapEntry(k.toString(), v),
+      ),
+    };
+  }
 
   @override
   String toString() {
@@ -63,6 +76,9 @@ class ComplexityAnalyzer {
     );
 
     _printReport(result);
+    // Enregistrement dans le service de perf
+    PerfService().logAlgoMetric(result.toJson());
+
     return result;
   }
 

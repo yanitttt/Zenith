@@ -89,12 +89,31 @@ class PerfService {
     }
   }
 
+  final List<Map<String, dynamic>> _uiMetrics = [];
+  final List<Map<String, dynamic>> _algoMetrics = [];
+
+  // ... (existing code)
+
+  /// Log une métrique UI (PerfMonitorWidget)
+  void logUIMetric(Map<String, dynamic> metric) {
+    if (!isPerfMode) return;
+    _uiMetrics.add(metric);
+  }
+
+  /// Log une métrique Algo (ComplexityAnalyzer)
+  void logAlgoMetric(Map<String, dynamic> metric) {
+    if (!isPerfMode) return;
+    _algoMetrics.add(metric);
+  }
+
   /// Récupère les stats actuelles (pour le rapport).
   Map<String, dynamic> getStats() {
     return {
       'frames': _frameTracker.getStats(),
-      'battery_samples': _batterySamples, // Copie ou sub-sample si trop grand
+      'battery_samples': _batterySamples,
       'resource_samples': _resourceSamples,
+      'ui_metrics': _uiMetrics,
+      'algo_metrics': _algoMetrics,
       'duration_seconds':
           _pollingTimer?.tick != null ? _pollingTimer!.tick * 2 : 0,
     };

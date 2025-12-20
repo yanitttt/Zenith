@@ -119,6 +119,7 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
             ElevatedButton.icon(
               onPressed: _isRecording ? null : _runComplexityDemo,
               icon: const Icon(Icons.analytics),
+              label: const Text('Démo Analyse O(n) (Liste)'),
             ),
             const SizedBox(height: 10),
             // TODO: Autres scénarios
