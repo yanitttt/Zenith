@@ -11,10 +11,15 @@ import 'ui/pages/onboarding/onboarding_flow.dart';
 import 'data/db/daos/user_dao.dart';
 import 'services/home_widget_service.dart';
 import 'services/notification_service.dart';
-import 'package:intl/date_symbol_data_local.dart';
+
+import 'core/performance/perf_config.dart';
+import 'core/performance/perf_entry_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Init Perf Mode
+  PerfConfig().init();
 
   await initializeDateFormatting('fr_FR', null);
 
@@ -24,17 +29,13 @@ void main() async {
 
   await initializeDateFormatting('fr_FR', null);
 
-
   final widgetService = HomeWidgetService(db);
   await widgetService.initializeWidget();
-  
 
   await NotificationService().init();
 
-
   final userDao = UserDao(db);
   await userDao.ensureSingleton();
-
 
   final count = await userDao.countUsers();
   if (count > 0) {
@@ -51,26 +52,25 @@ void main() async {
     await prefs.setOnboarded(false);
   }
 
-  final home = prefs.onboarded
-      ? RootShell(db: db)
-      : OnboardingFlow(db: db, prefs: prefs);
+  final home =
+      prefs.onboarded
+          ? RootShell(db: db)
+          : OnboardingFlow(db: db, prefs: prefs);
 
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: AppTheme.dark,
+  runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.dark,
 
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('fr'), Locale('en')],
+      locale: const Locale('fr'),
 
-    localizationsDelegates: const [
-      GlobalMaterialLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-      GlobalCupertinoLocalizations.delegate,
-    ],
-    supportedLocales: const [
-      Locale('fr'),
-      Locale('en'),
-    ],
-    locale: const Locale('fr'),
-
-    home: home,
-  ));
+      home: PerfEntryWrapper(child: home),
+    ),
+  );
 }
