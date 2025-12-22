@@ -351,8 +351,10 @@ Pour les détails techniques de l'implémentation du widget, veuillez consulter 
 - `flutter_localizations` (SDK) - Support multilingue
 - `intl: ^0.20.2` - Formatage de dates et nombres
 
+
 **Stockage et Preferences:**
 - `shared_preferences: ^2.5.3` - Stockage cle-valeur persistant
+- `provider: ^6.1.2` - Injection de dependances et gestion d'etat (MVVM)
 
 **Widgets et Notifications:**
 - `home_widget: ^0.4.0` - Integration widget Android/iOS
@@ -440,4 +442,4 @@ Cette premiere version de **Zénith** presente une architecture solide et comple
 - Un moteur de recommandation intelligent base sur performances et feedbacks
 - Un widget Android natif pour affichage sur ecran d'accueil
 
-L'application respecte les principes de Clean Architecture, garantissant maintenabilite et evolutivite pour les iterations futures.
+L'application respecte les principes de Clean Architecture et evolue vers le pattern MVVM pour les ecrans complexes, garantissant maintenabilite et evolutivite pour les iterations futures.

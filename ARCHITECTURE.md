@@ -8,6 +8,7 @@
 ┌─────────────────────────────────────┐
 │   Couche Presentation (UI)          │
 │   - Pages (Screens)                 │
+│   - ViewModels (State & Logic)      │
 │   - Widgets (Components)            │
 │   - Theme                           │
 └──────────────┬──────────────────────┘
@@ -108,7 +109,22 @@ ActiveSessionPage (UI)
    - Indicateur d'onboarding complete
    - ID utilisateur courant
 
-**Aucun Framework de Gestion d'Etat** (GetX, Riverpod, Provider, BLoC) n'est utilise.
+**Approche Hybride:**
+
+1. **MVVM avec Provider (Nouveau Standard):**
+   - **ViewModel** (`ChangeNotifier`) pour la logique de presentation et l'etat
+   - **View** (Widget) se lie au ViewModel via `Consumer` ou `Selector`
+   - Injection de dependances via `Provider`
+   - Exemple: `DashboardPage` (View) -> `DashboardViewModel` (ViewModel)
+
+2. **Stream-based Reactivity:**
+   - `DashboardService.watchDashboardData()` retourne un `Stream<DashboardData>`
+   - Consomme par le ViewModel ou directement via `StreamBuilder`
+
+3. **SharedPreferences (AppPrefs):**
+   - Etat global persistant (onboarding, user ID)
+
+**Framework de Gestion d'Etat:** Utilisation de `provider` pour lier View et ViewModel.
 
 ### Dependances et Injection
 
@@ -146,82 +162,24 @@ runApp(MaterialApp(home: RootShell(db: db)));
 ```
 lib/
 ├── core/                     # Composants partages
+│   ├── perf/                # Monitoring de performance
 │   ├── prefs/               # Gestion des preferences
-│   │   └── app_prefs.dart   # Wrapper SharedPreferences
 │   ├── theme/               # Theme de l'application
-│   │   └── app_theme.dart   # Theme sombre + couleurs
 │   └── widgets/             # Widgets globaux
-│       └── primary_button.dart
 │
 ├── data/                     # Couche de donnees
-│   ├── db/                  # Base de donnees
-│   │   ├── app_db.dart      # Schema Drift principal
-│   │   ├── app_db.g.dart    # Code genere
-│   │   └── daos/            # Data Access Objects
-│   │       ├── user_dao.dart
-│   │       ├── exercise_dao.dart
-│   │       ├── session_dao.dart
-│   │       ├── user_goal_dao.dart
-│   │       ├── user_equipment_dao.dart
-│   │       └── user_training_day_dao.dart
+│   ├── db/                  # Base de donnees (Drift)
 │   ├── models/              # Modeles de transfert
-│   │   └── session_model.dart
 │   └── repositories/        # Couche repository
-│       ├── user_repository.dart
-│       └── exercise_repository.dart
 │
-├── services/                 # Logique metier
-│   ├── recommendation_service.dart
-│   ├── session_tracking_service.dart
-│   ├── dashboard_service.dart
-│   ├── planning_service.dart
-│   ├── program_generator_service.dart
-│   ├── session_service.dart
-│   ├── home_widget_service.dart
-│   ├── notification_service.dart
-│   └── ImcService.dart
+├── services/                 # Logique metier (Business Logic)
 │
 ├── ui/                       # Interface utilisateur
 │   ├── pages/               # Ecrans complets
-│   │   ├── root_shell.dart
-│   │   ├── dashboard_page.dart
-│   │   ├── planning_page.dart
-│   │   ├── workout_program_page.dart
-│   │   ├── exercises_page.dart
-│   │   ├── admin_page.dart
-│   │   ├── active_session_page.dart
-│   │   ├── workout_session_page.dart
-│   │   ├── match_page.dart
-│   │   ├── session_preview_page.dart
-│   │   ├── edit_user_page.dart
-│   │   └── onboarding/      # Flux d'integration
-│   │       ├── onboarding_flow.dart
-│   │       ├── welcome_page.dart
-│   │       ├── profile_basics_page.dart
-│   │       ├── dob_page.dart
-│   │       ├── gender_page.dart
-│   │       ├── weight_page.dart
-│   │       ├── height_page.dart
-│   │       ├── metabolism_page.dart
-│   │       ├── level_page.dart
-│   │       ├── objectives_page.dart
-│   │       └── equipment_page.dart
-│   │
+│   ├── viewmodels/          # ViewModels (MVVM)
+│   │   └── dashboard_view_model.dart
 │   ├── widgets/             # Composants reutilisables
-│   │   ├── banner/
-│   │   ├── bottom_nav/
-│   │   ├── session/
-│   │   ├── calendar/
-│   │   ├── charts/
-│   │   ├── progress/
-│   │   ├── stats/
-│   │   ├── favorites/
-│   │   ├── match/
-│   │   ├── planning/
-│   │   └── bulle/
-│   │
 │   └── theme/
-│       └── app_theme.dart
 │
 └── main.dart                 # Point d'entree
 ```
