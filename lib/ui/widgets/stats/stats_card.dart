@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/db/app_db.dart';
 import '../../../data/db/daos/session_dao.dart';
 import '../../../data/repositories/user_repository.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 class StatsCard extends StatefulWidget {
   final AppDb db;
@@ -45,7 +45,8 @@ class _StatsCardState extends State<StatsCard> {
       final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
       final startOfWeekTimestamp = startOfWeek.millisecondsSinceEpoch ~/ 1000;
 
-      final thisWeekSessions = allSessions.where((s) => s.dateTs >= startOfWeekTimestamp).length;
+      final thisWeekSessions =
+          allSessions.where((s) => s.dateTs >= startOfWeekTimestamp).length;
 
       // Total de minutes
       final totalMinutes = allSessions
@@ -84,11 +85,7 @@ class _StatsCardState extends State<StatsCard> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.insights,
-                color: AppTheme.gold,
-                size: 24,
-              ),
+              Icon(Icons.insights, color: AppTheme.gold, size: 24),
               const SizedBox(width: 8),
               const Text(
                 "Tes statistiques",
@@ -103,37 +100,37 @@ class _StatsCardState extends State<StatsCard> {
           const SizedBox(height: 16),
           _isLoading
               ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(
-                      color: AppTheme.gold,
-                      strokeWidth: 2,
-                    ),
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(
+                    color: AppTheme.gold,
+                    strokeWidth: 2,
                   ),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _StatItem(
-                      icon: Icons.calendar_today,
-                      value: '$_totalSessions',
-                      label: 'Séances',
-                      color: AppTheme.gold,
-                    ),
-                    _StatItem(
-                      icon: Icons.local_fire_department,
-                      value: '$_thisWeekSessions',
-                      label: 'Cette semaine',
-                      color: const Color(0xFFFF6B6B),
-                    ),
-                    _StatItem(
-                      icon: Icons.timer,
-                      value: '${(_totalMinutes / 60).toStringAsFixed(0)}h',
-                      label: "Temps total",
-                      color: const Color(0xFF4ECDC4),
-                    ),
-                  ],
                 ),
+              )
+              : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _StatItem(
+                    icon: Icons.calendar_today,
+                    value: '$_totalSessions',
+                    label: 'Séances',
+                    color: AppTheme.gold,
+                  ),
+                  _StatItem(
+                    icon: Icons.local_fire_department,
+                    value: '$_thisWeekSessions',
+                    label: 'Cette semaine',
+                    color: AppTheme.error,
+                  ),
+                  _StatItem(
+                    icon: Icons.timer,
+                    value: '${(_totalMinutes / 60).toStringAsFixed(0)}h',
+                    label: "Temps total",
+                    color: AppTheme.success,
+                  ),
+                ],
+              ),
         ],
       ),
     );
@@ -164,11 +161,7 @@ class _StatItem extends StatelessWidget {
             color: color.withOpacity(0.15),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
+          child: Icon(icon, color: color, size: 24),
         ),
         const SizedBox(height: 8),
         Text(

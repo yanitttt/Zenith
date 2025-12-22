@@ -1,6 +1,6 @@
 // lib/ui/widgets/bottom_nav/bottom_nav_bar.dart
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 class BottomNavItem {
   final IconData icon;
@@ -26,7 +26,10 @@ class BottomNavBar extends StatelessWidget {
       borderRadius: BorderRadius.circular(26),
       child: Container(
         color: Colors.black,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // -4px
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 10,
+        ), // -4px
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: List.generate(items.length, (i) {

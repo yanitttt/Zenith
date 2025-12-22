@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 import '../../data/db/app_db.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/repositories/exercise_repository.dart';
 import '../widgets/match/exercise_swipe_card.dart';
 
@@ -122,7 +122,6 @@ class _MatchPageState extends State<MatchPage> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: Column(
             children: [
-
               Container(
                 decoration: BoxDecoration(
                   color: AppTheme.surface,
@@ -151,7 +150,6 @@ class _MatchPageState extends State<MatchPage> {
                 ),
               ),
               const SizedBox(height: 10),
-
 
               Expanded(
                 child:
@@ -214,7 +212,6 @@ class _MatchPageState extends State<MatchPage> {
                             return Stack(
                               fit: StackFit.expand,
                               children: [
-
                                 if (_cardStack.length > 1)
                                   Positioned(
                                     top: 8,

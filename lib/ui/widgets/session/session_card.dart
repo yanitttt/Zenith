@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
-
+import '../../../core/theme/app_theme.dart';
 
 class SessionInfo {
   final String dayName;
@@ -20,7 +19,6 @@ class SessionInfo {
   });
 }
 
-
 class ExerciseItem {
   final String name;
   final String sets;
@@ -39,16 +37,11 @@ class ExerciseItem {
   });
 }
 
-
 class SessionCard extends StatelessWidget {
   final SessionInfo sessionInfo;
   final VoidCallback? onNextPressed;
 
-  const SessionCard({
-    super.key,
-    required this.sessionInfo,
-    this.onNextPressed,
-  });
+  const SessionCard({super.key, required this.sessionInfo, this.onNextPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +54,6 @@ class SessionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
@@ -94,7 +86,9 @@ class SessionCard extends StatelessWidget {
                       children: [
                         Text(
                           '${sessionInfo.dayName} ${sessionInfo.dayNumber} ${sessionInfo.monthName}',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
@@ -103,11 +97,17 @@ class SessionCard extends StatelessWidget {
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.access_time, size: 14, color: Colors.white70),
+                            const Icon(
+                              Icons.access_time,
+                              size: 14,
+                              color: Colors.white70,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               '${sessionInfo.durationMinutes} min',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodySmall?.copyWith(
                                 color: Colors.white70,
                                 fontSize: 12,
                               ),
@@ -117,7 +117,10 @@ class SessionCard extends StatelessWidget {
                       ],
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.gold,
                         borderRadius: BorderRadius.circular(8),
@@ -138,7 +141,6 @@ class SessionCard extends StatelessWidget {
             ),
           ),
 
-
           Container(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -152,7 +154,6 @@ class SessionCard extends StatelessWidget {
               ),
             ),
           ),
-
 
           Padding(
             padding: const EdgeInsets.all(16),
@@ -186,10 +187,7 @@ class SessionCard extends StatelessWidget {
                         color: Colors.black.withValues(alpha: 0.2),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.arrow_forward,
-                        size: 18,
-                      ),
+                      child: const Icon(Icons.arrow_forward, size: 18),
                     ),
                   ],
                 ),
@@ -203,14 +201,13 @@ class SessionCard extends StatelessWidget {
 
   Widget _buildExerciseRow(
     BuildContext context,
-    ExerciseItem exercise,
-    {required bool isLast}
-  ) {
+    ExerciseItem exercise, {
+    required bool isLast,
+  }) {
     return Column(
       children: [
         Row(
           children: [
-
             Container(
               width: 40,
               height: 40,
@@ -218,11 +215,7 @@ class SessionCard extends StatelessWidget {
                 color: AppTheme.gold.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(
-                exercise.icon,
-                color: AppTheme.gold,
-                size: 22,
-              ),
+              child: Icon(exercise.icon, color: AppTheme.gold, size: 22),
             ),
             const SizedBox(width: 12),
 

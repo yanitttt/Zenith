@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import 'donut_gauge.dart';
 
 class ProgressCard extends StatelessWidget {
@@ -16,7 +16,7 @@ class ProgressCard extends StatelessWidget {
     return Container(
       height: 170,
       decoration: BoxDecoration(
-        color: AppTheme.black,
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(22),
       ),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),

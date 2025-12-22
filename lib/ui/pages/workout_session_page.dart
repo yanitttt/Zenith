@@ -2,17 +2,13 @@ import 'package:flutter/material.dart';
 import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
 import '../../services/recommendation_service.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 
 class WorkoutSessionPage extends StatefulWidget {
   final AppDb db;
   final AppPrefs prefs;
 
-  const WorkoutSessionPage({
-    super.key,
-    required this.db,
-    required this.prefs,
-  });
+  const WorkoutSessionPage({super.key, required this.db, required this.prefs});
 
   @override
   State<WorkoutSessionPage> createState() => _WorkoutSessionPageState();
@@ -45,13 +41,10 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
         throw Exception('Utilisateur non connecté');
       }
 
-
-      final objectives =
-          await _recommendationService.getUserObjectives(userId);
+      final objectives = await _recommendationService.getUserObjectives(userId);
       if (objectives.isEmpty) {
         throw Exception('Aucun objectif défini');
       }
-
 
       final workout = await _recommendationService.generateWorkoutSession(
         userId: userId,
@@ -93,15 +86,16 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
             _buildHeader(),
             if (_userObjectives.length > 1) _buildObjectiveSelector(),
             Expanded(
-              child: _loading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppTheme.gold),
-                    )
-                  : _error != null
+              child:
+                  _loading
+                      ? const Center(
+                        child: CircularProgressIndicator(color: AppTheme.gold),
+                      )
+                      : _error != null
                       ? _buildError()
                       : _workout.isEmpty
-                          ? _buildEmptyState()
-                          : _buildWorkoutList(),
+                      ? _buildEmptyState()
+                      : _buildWorkoutList(),
             ),
           ],
         ),
@@ -131,10 +125,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                 const SizedBox(width: 8),
                 Text(
                   'Objectif: ${_selectedObjective!.name}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 16,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 16),
                 ),
               ],
             ),
@@ -235,9 +226,10 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                       children: [
                         _buildBadge(
                           label: exercise.type.toUpperCase(),
-                          color: exercise.type == 'poly'
-                              ? Colors.blue
-                              : Colors.purple,
+                          color:
+                              exercise.type == 'poly'
+                                  ? Colors.blue
+                                  : Colors.purple,
                         ),
                         const SizedBox(width: 8),
                         _buildBadge(
@@ -276,10 +268,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
                 const SizedBox(width: 4),
                 Text(
                   'Cardio: ${(exercise.cardio * 100).toStringAsFixed(0)}%',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
               ],
             ),
@@ -360,8 +349,7 @@ class _WorkoutSessionPageState extends State<WorkoutSessionPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.fitness_center,
-                color: Colors.grey, size: 64),
+            const Icon(Icons.fitness_center, color: Colors.grey, size: 64),
             const SizedBox(height: 16),
             const Text(
               'Aucun exercice disponible',

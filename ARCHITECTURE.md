@@ -231,6 +231,14 @@ lib/
    - Integrite referentielle appliquee par SQLite
    - Actions configurables (CASCADE, SET NULL)
 
+10. **Centralisation du Thème (Single Source of Truth):**
+    - Localisation : `core/theme/app_theme.dart`.
+    - Principe : Stockage de toutes les couleurs et styles partagés dans une seule classe statique `AppTheme`.
+    - Avantages :
+      - Maintenance simplifiée : Changement de couleur en un seul endroit.
+      - Cohérence visuelle garantie sur toute l'application.
+      - Élimination des "magic colors" hexadécimales dans le code UI.
+
 ---
 
 ---

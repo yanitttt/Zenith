@@ -7,7 +7,7 @@ import '../../services/program_generator_service.dart'; // Pour ProgramDaySessio
 import '../../data/db/app_db.dart';
 import '../viewmodels/workout_program_viewmodel.dart';
 import '../widgets/training_days_dialog.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import 'active_session_page.dart';
 import '../utils/responsive.dart';
 

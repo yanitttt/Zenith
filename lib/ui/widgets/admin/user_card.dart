@@ -5,7 +5,7 @@ import '../../viewmodels/admin_view_model.dart';
 import '../../pages/edit_user_page.dart';
 import '../../pages/onboarding/onboarding_flow.dart';
 import '../../widgets/training_days_dialog.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 import 'stat_card.dart';
 import 'modern_button.dart';
 

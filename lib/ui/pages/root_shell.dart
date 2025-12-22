@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../widgets/bottom_nav/bottom_nav_bar.dart';
 import 'dashboard_page.dart';
 import 'exercises_page.dart';

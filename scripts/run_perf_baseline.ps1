@@ -21,8 +21,16 @@ if (!(Get-Command fvm -ErrorAction SilentlyContinue)) {
 # Exécution: fvm flutter drive --driver=test_driver/integration_test.dart --target=integration_test/perf_baseline_test.dart --profile --dart-define=PERF_MODE=true
 Write-Host "Exécution: fvm flutter drive --driver=test_driver/integration_test.dart --target=integration_test/perf_baseline_test.dart --profile --dart-define=PERF_MODE=true" -ForegroundColor Gray
 
+# Nettoyage préalable pour éviter les erreurs de cache (Invalid SDK hash, Daemon failed...)
+Write-Host "🧹 Nettoyage du projet..." -ForegroundColor Cyan
+fvm flutter clean
+fvm flutter pub get
+
+# Exécution: fvm flutter drive --driver=test_driver/integration_test.dart --target=integration_test/perf_baseline_test.dart --profile --dart-define=PERF_MODE=true
+Write-Host "Exécution: fvm flutter drive --driver=test_driver/integration_test.dart --target=integration_test/perf_baseline_test.dart --profile --dart-define=PERF_MODE=true" -ForegroundColor Gray
+
 # Note: En PowerShell, passer des arguments avec = peut être délicat. On utilise la syntaxe directe sans quotes si possible, ou échappement.
-fvm flutter drive --driver=test_driver/integration_test.dart --target=integration_test/perf_baseline_test.dart --profile "--dart-define=PERF_MODE=true"
+fvm flutter drive --driver=test_driver/integration_test.dart --target=integration_test/perf_baseline_test.dart --profile --dart-define=PERF_MODE=true
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Tests terminés avec succès." -ForegroundColor Green

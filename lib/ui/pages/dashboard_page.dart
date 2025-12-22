@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/db/app_db.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../widgets/charts/weekly_bar_chart.dart';
 import '../widgets/charts/muscle_pie_chart.dart';
 import '../utils/responsive.dart';
@@ -191,7 +191,7 @@ class DashboardPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color.fromRGBO(217, 190, 119, 0.1),
+            color: AppTheme.gold.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color.fromRGBO(217, 190, 119, 0.3)),
           ),
@@ -214,7 +214,7 @@ class DashboardPage extends StatelessWidget {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
       ),
@@ -266,7 +266,7 @@ class DashboardPage extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
       ),
@@ -338,7 +338,7 @@ class DashboardPage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(responsive.rw(12)),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: AppTheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color.fromRGBO(255, 255, 255, 0.05)),
       ),
@@ -453,11 +453,9 @@ class _DashboardHeader extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: const Color.fromRGBO(217, 190, 119, 0.1),
+                color: AppTheme.gold.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: const Color.fromRGBO(217, 190, 119, 0.3),
-                ),
+                border: Border.all(color: AppTheme.gold.withOpacity(0.3)),
               ),
               child: Selector<DashboardViewModel, String>(
                 selector: (_, vm) => vm.todayDate,

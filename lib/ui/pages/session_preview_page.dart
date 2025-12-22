@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../services/session_service.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../widgets/session/session_card.dart';
-
 
 class SessionPreviewPage extends StatefulWidget {
   final AppDb db;
@@ -28,7 +27,9 @@ class _SessionPreviewPageState extends State<SessionPreviewPage> {
   Future<void> _loadSession() async {
     setState(() => _isLoading = true);
     try {
-      final session = await _sessionService.getRandomSessionInfo(exerciseCount: 4);
+      final session = await _sessionService.getRandomSessionInfo(
+        exerciseCount: 4,
+      );
       if (mounted) {
         setState(() {
           _currentSession = session;
@@ -44,7 +45,6 @@ class _SessionPreviewPageState extends State<SessionPreviewPage> {
   }
 
   void _handleNextPressed() {
-
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Redirection vers la séance...')),
     );
@@ -62,60 +62,59 @@ class _SessionPreviewPageState extends State<SessionPreviewPage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: AppTheme.gold),
-                )
-              : _currentSession == null
+          child:
+              _isLoading
                   ? const Center(
-                      child: Text(
-                        'Impossible de charger la séance',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    )
-                  : Column(
-                      children: [
-                        Expanded(
-                          child: SingleChildScrollView(
-                            child: SessionCard(
-                              sessionInfo: _currentSession!,
-                              onNextPressed: _handleNextPressed,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 44,
-                          child: OutlinedButton(
-                            onPressed: _loadSession,
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(
-                                color: AppTheme.gold,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.refresh, color: AppTheme.gold),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Nouvelle séance',
-                                  style: TextStyle(
-                                    color: AppTheme.gold,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                    child: CircularProgressIndicator(color: AppTheme.gold),
+                  )
+                  : _currentSession == null
+                  ? const Center(
+                    child: Text(
+                      'Impossible de charger la séance',
+                      style: TextStyle(color: Colors.white70),
                     ),
+                  )
+                  : Column(
+                    children: [
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: SessionCard(
+                            sessionInfo: _currentSession!,
+                            onNextPressed: _handleNextPressed,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 44,
+                        child: OutlinedButton(
+                          onPressed: _loadSession,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppTheme.gold),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.refresh, color: AppTheme.gold),
+                              SizedBox(width: 8),
+                              Text(
+                                'Nouvelle séance',
+                                style: TextStyle(
+                                  color: AppTheme.gold,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
         ),
       ),
     );

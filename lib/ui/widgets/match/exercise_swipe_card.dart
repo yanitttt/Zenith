@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/db/app_db.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ExerciseSwipeCard extends StatefulWidget {
   final ExerciseData exercise;
@@ -35,7 +35,6 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
   bool _isDragging = false;
   bool _isAnimating = false;
 
-
   static const double _swipeThreshold = 100.0;
 
   @override
@@ -50,26 +49,17 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
     _offsetAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _rotationAnimation = Tween<double>(
       begin: 0.0,
       end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.8,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -104,11 +94,9 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
       _isDragging = false;
     });
 
-
     if (_dragOffset.dx.abs() > _swipeThreshold) {
       _animateSwipe(_dragOffset.dx > 0);
     } else {
-
       _resetPosition();
     }
   }
@@ -132,19 +120,12 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
     _offsetAnimation = Tween<Offset>(
       begin: _dragOffset,
       end: Offset(targetX, targetY),
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _rotationAnimation = Tween<double>(
       begin: _dragOffset.dx * 0.0003,
       end: isLike ? 0.3 : -0.3,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
-
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     if (isLike) {
       widget.onLike();
@@ -172,20 +153,26 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('[SWIPE_CARD] Building card for: ${widget.exercise.name}, isDragging=$_isDragging, isAnimating=$_isAnimating');
+    debugPrint(
+      '[SWIPE_CARD] Building card for: ${widget.exercise.name}, isDragging=$_isDragging, isAnimating=$_isAnimating',
+    );
     final offset = _isDragging ? _dragOffset : _offsetAnimation.value;
-    final rotation = _isDragging
-        ? _dragOffset.dx * 0.0003
-        : _rotationAnimation.value;
+    final rotation =
+        _isDragging ? _dragOffset.dx * 0.0003 : _rotationAnimation.value;
     final scale = _isAnimating ? _scaleAnimation.value : 1.0;
 
-
-    final likeOpacity = (_isDragging || _isAnimating)
-        ? (offset.dx > 0 ? (offset.dx / _swipeThreshold).clamp(0.0, 1.0) : 0.0)
-        : 0.0;
-    final dislikeOpacity = (_isDragging || _isAnimating)
-        ? (offset.dx < 0 ? (offset.dx.abs() / _swipeThreshold).clamp(0.0, 1.0) : 0.0)
-        : 0.0;
+    final likeOpacity =
+        (_isDragging || _isAnimating)
+            ? (offset.dx > 0
+                ? (offset.dx / _swipeThreshold).clamp(0.0, 1.0)
+                : 0.0)
+            : 0.0;
+    final dislikeOpacity =
+        (_isDragging || _isAnimating)
+            ? (offset.dx < 0
+                ? (offset.dx.abs() / _swipeThreshold).clamp(0.0, 1.0)
+                : 0.0)
+            : 0.0;
 
     return AnimatedBuilder(
       animation: _controller,
@@ -203,7 +190,10 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppTheme.surface,
-                    border: Border.all(color: const Color(0xFF111111), width: 2),
+                    border: Border.all(
+                      color: const Color(0xFF111111),
+                      width: 2,
+                    ),
                   ),
                   padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
                   child: Column(
@@ -213,14 +203,12 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                           borderRadius: BorderRadius.circular(28),
                           child: Stack(
                             children: [
-
                               Positioned.fill(
                                 child: Image(
                                   image: widget.imageProvider,
                                   fit: BoxFit.cover,
                                 ),
                               ),
-
 
                               if (likeOpacity > 0)
                                 Positioned.fill(
@@ -230,7 +218,6 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                   ),
                                 ),
 
-
                               if (dislikeOpacity > 0)
                                 Positioned.fill(
                                   child: _SwipeOverlay(
@@ -238,7 +225,6 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                     isLike: false,
                                   ),
                                 ),
-
 
                               Positioned(
                                 top: 14,
@@ -248,7 +234,6 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                   onTap: widget.onUndo,
                                 ),
                               ),
-
 
                               Positioned(
                                 left: 0,
@@ -262,13 +247,15 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                       gradient: LinearGradient(
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
-                                        colors: [Colors.transparent, Colors.black87],
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black87,
+                                        ],
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-
 
                               Positioned(
                                 left: 18,
@@ -304,13 +291,13 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
                                 ),
                               ),
 
-
                               Positioned(
                                 left: 36,
                                 right: 36,
                                 bottom: 18,
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     _ActionButton(
                                       icon: Icons.close,
@@ -342,22 +329,18 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
   }
 }
 
-
-
 class _SwipeOverlay extends StatelessWidget {
   final double opacity;
   final bool isLike;
 
-  const _SwipeOverlay({
-    required this.opacity,
-    required this.isLike,
-  });
+  const _SwipeOverlay({required this.opacity, required this.isLike});
 
   @override
   Widget build(BuildContext context) {
-    final color = isLike
-        ? const Color(0xFF4E7A57).withOpacity(opacity * 0.6)
-        : const Color(0xFFB54135).withOpacity(opacity * 0.6);
+    final color =
+        isLike
+            ? const Color(0xFF4E7A57).withOpacity(opacity * 0.6)
+            : const Color(0xFFB54135).withOpacity(opacity * 0.6);
     final icon = isLike ? Icons.favorite : Icons.close;
     final alignment = isLike ? Alignment.topRight : Alignment.topLeft;
 
@@ -365,7 +348,6 @@ class _SwipeOverlay extends StatelessWidget {
       color: color,
       child: Stack(
         children: [
-
           Positioned.fill(
             child: CustomPaint(
               painter: _IconPatternPainter(
@@ -396,8 +378,6 @@ class _SwipeOverlay extends StatelessWidget {
   }
 }
 
-
-
 class _IconPatternPainter extends CustomPainter {
   final IconData icon;
   final Color color;
@@ -411,16 +391,16 @@ class _IconPatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-    );
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
     final iconSize = 60.0;
     final spacing = 100.0;
 
-    for (double x = isLike ? size.width - 300 : 0;
-         isLike ? x < size.width : x < 300;
-         x += spacing) {
+    for (
+      double x = isLike ? size.width - 300 : 0;
+      isLike ? x < size.width : x < 300;
+      x += spacing
+    ) {
       for (double y = 50; y < size.height - 150; y += spacing) {
         textPainter.text = TextSpan(
           text: String.fromCharCode(icon.codePoint),
@@ -444,8 +424,6 @@ class _IconPatternPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-
 
 class _RoundIcon extends StatelessWidget {
   final IconData icon;
@@ -478,7 +456,11 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final VoidCallback onTap;
-  const _ActionButton({required this.icon, required this.iconColor, required this.onTap});
+  const _ActionButton({
+    required this.icon,
+    required this.iconColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -495,7 +477,11 @@ class _ActionButton extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(color: AppTheme.gold, width: 6),
             boxShadow: const [
-              BoxShadow(color: Colors.black45, blurRadius: 10, offset: Offset(0, 4)),
+              BoxShadow(
+                color: Colors.black45,
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
             ],
           ),
           child: Icon(icon, size: 46, color: iconColor),

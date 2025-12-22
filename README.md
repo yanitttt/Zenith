@@ -124,13 +124,17 @@ Collection de composants reutilisables:
 
 #### Theme et Stylisation
 
-**Fichier:** `lib/ui/theme/app_theme.dart`
+**Fichier:** `lib/core/theme/app_theme.dart`
 
-Theme sombre applique globalement:
-- Couleur d'arriere-plan principale: `#0b0f1a` (scaffold)
-- Couleur d'accentuation: `#D9BE77` (gold)
-- Cartes et conteneurs: `#1E1E1E`
-- Design Material 3
+Theme centralisé (Single Source of Truth) :
+- **AppTheme class:** Contient toutes les constantes de couleurs et la configuration du thème.
+- **Thème sombre:** Appliqué globalement via `AppTheme.dark`.
+- **Palette Unifiée:**
+  - `AppTheme.scaffold` (#0b0f1a) : Fond principal.
+  - `AppTheme.gold` (#D9BE77) : Couleur d'accentuation.
+  - `AppTheme.surface` (#0F0F1E) : Fond des cartes et conteneurs.
+  - `AppTheme.success` / `AppTheme.error` : Couleurs sémantiques.
+- **Standardisation:** Remplacement des couleurs hardcodées par ces constantes pour une maintenance aisée.
 
 ### 2. Backend Mis en Place (Controllers et Services)
 

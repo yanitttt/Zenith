@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../data/db/app_db.dart';
 import '../../services/session_tracking_service.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/program_generator_service.dart';
 
 class ActiveSessionPage extends StatefulWidget {
@@ -44,12 +44,10 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
 
   Future<void> _initSession() async {
     try {
-
       final sessionId = await _sessionService.startSession(
         userId: widget.userId,
         programDayId: widget.programDayId,
       );
-
 
       final exercises = await _sessionService.getSessionExercises(
         widget.programDayId,
@@ -90,12 +88,10 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
         _exercises[_currentExerciseIndex] = result;
       });
 
-
       await _sessionService.saveExercisePerformance(
         sessionId: _sessionId!,
         exercise: result,
       );
-
 
       if (_currentExerciseIndex < _exercises.length - 1) {
         setState(() {
@@ -106,7 +102,6 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
   }
 
   Future<void> _completeSession() async {
-
     final allCompleted = _exercises.every((e) => e.isCompleted);
 
     if (!allCompleted) {
@@ -153,17 +148,13 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
         startTime: _startTime,
       );
 
-
       if (mounted) {
-        setState(() {
-        });
+        setState(() {});
       }
-
 
       final programDay =
           await (widget.db.select(widget.db.programDay)
             ..where((tbl) => tbl.id.equals(widget.programDayId))).getSingle();
-
 
       await _programGenerator.regenerateFutureDays(
         userId: widget.userId,
@@ -564,7 +555,6 @@ class _ExercisePerformanceDialogState
       setState(() {
         _analysis = analysis;
         _loadingAnalysis = false;
-
 
         if (analysis['hasHistory'] == true) {
           if (_setsController.text.isEmpty) {

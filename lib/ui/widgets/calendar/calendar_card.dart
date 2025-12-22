@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CalendarCard extends StatelessWidget {
   const CalendarCard({super.key});
@@ -78,7 +78,6 @@ class _WeekDays extends StatelessWidget {
   }
 }
 
-
 class _CalHead extends StatelessWidget {
   final String label;
   final bool weekend;
@@ -102,7 +101,6 @@ class _MonthGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     const startOffset = 5;
     final cells = <Widget>[];
     for (int i = 0; i < startOffset; i++) {
@@ -113,21 +111,24 @@ class _MonthGrid extends StatelessWidget {
       final weekday = index % 7;
       final isSat = weekday == 5;
       final isSun = weekday == 6;
-      final color = isSun
-          ? const Color(0xFFB83A3A)
-          : isSat
-          ? const Color(0xFF3B62C7)
-          : const Color(0xFF2B2B2B);
-      cells.add(Center(
-        child: Text(
-          "$day",
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
+      final color =
+          isSun
+              ? const Color(0xFFB83A3A)
+              : isSat
+              ? const Color(0xFF3B62C7)
+              : const Color(0xFF2B2B2B);
+      cells.add(
+        Center(
+          child: Text(
+            "$day",
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            ),
           ),
         ),
-      ));
+      );
     }
 
     return GridView.count(

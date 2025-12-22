@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../../data/repositories/exercise_repository.dart';
 
 class ExercisesPage extends StatefulWidget {
@@ -27,7 +27,6 @@ class _ExercisesPageState extends State<ExercisesPage> {
       color: AppTheme.scaffold,
       child: Column(
         children: [
-
           Container(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             alignment: Alignment.centerLeft,
@@ -48,7 +47,6 @@ class _ExercisesPageState extends State<ExercisesPage> {
             ),
           ),
 
-
           Expanded(
             child: StreamBuilder<List<ExerciseData>>(
               stream: repo.watchAll(),
@@ -64,13 +62,23 @@ class _ExercisesPageState extends State<ExercisesPage> {
                     ),
                   );
                 }
-                final list = (snap.data ?? [])
-                    .where((e) => _query.isEmpty || e.name.toLowerCase().contains(_query.toLowerCase()))
-                    .toList();
+                final list =
+                    (snap.data ?? [])
+                        .where(
+                          (e) =>
+                              _query.isEmpty ||
+                              e.name.toLowerCase().contains(
+                                _query.toLowerCase(),
+                              ),
+                        )
+                        .toList();
 
                 if (list.isEmpty) {
                   return const Center(
-                    child: Text('Aucun exercice', style: TextStyle(color: Colors.white70)),
+                    child: Text(
+                      'Aucun exercice',
+                      style: TextStyle(color: Colors.white70),
+                    ),
                   );
                 }
 
@@ -106,7 +114,10 @@ class _SearchField extends StatelessWidget {
         hintStyle: const TextStyle(color: Colors.white38),
         filled: true,
         fillColor: const Color(0xFF2B2B2B),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 12,
+          horizontal: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Colors.black),
@@ -125,7 +136,6 @@ class _ExerciseTile extends StatelessWidget {
   const _ExerciseTile({required this.e});
 
   Color _typeColor(String t) {
-
     switch (t.toLowerCase()) {
       case 'poly':
         return const Color(0xFFD9BE77);
@@ -146,11 +156,13 @@ class _ExerciseTile extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       child: Row(
         children: [
-
           Container(
             width: 46,
             height: 46,
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
             child: const Icon(Icons.fitness_center, color: Colors.black),
           ),
           const SizedBox(width: 12),
@@ -206,7 +218,11 @@ class _ChipInfo extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  const _ChipInfo({required this.icon, required this.label, required this.color});
+  const _ChipInfo({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {

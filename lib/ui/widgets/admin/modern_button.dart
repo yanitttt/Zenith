@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ModernButton extends StatelessWidget {
   final IconData icon;
@@ -22,9 +23,8 @@ class ModernButton extends StatelessWidget {
         isDanger
             ? Colors.red.shade900.withOpacity(0.3)
             : const Color(0xFF0F0F1E);
-    final borderColor =
-        isDanger ? Colors.red.shade700 : const Color(0xFFD9BE77);
-    final textColor = isDanger ? Colors.red.shade300 : const Color(0xFFD9BE77);
+    final borderColor = isDanger ? Colors.red.shade700 : AppTheme.gold;
+    final textColor = isDanger ? Colors.red.shade300 : AppTheme.gold;
 
     return Container(
       width: double.infinity,

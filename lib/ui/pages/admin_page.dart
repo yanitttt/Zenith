@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../data/db/app_db.dart';
 import '../../core/prefs/app_prefs.dart';
-import '../theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
 import '../viewmodels/admin_view_model.dart';
 import '../widgets/admin/user_card.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/db/app_db.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 class FavoritesCard extends StatelessWidget {
   final List<ExerciseData> exercises;
@@ -10,11 +10,17 @@ class FavoritesCard extends StatelessWidget {
     final name = exerciseName.toLowerCase();
     if (name.contains('squat') || name.contains('jambe')) {
       return Icons.accessibility_new;
-    } else if (name.contains('développé') || name.contains('presse') || name.contains('bench')) {
+    } else if (name.contains('développé') ||
+        name.contains('presse') ||
+        name.contains('bench')) {
       return Icons.fitness_center;
-    } else if (name.contains('curl') || name.contains('biceps') || name.contains('triceps')) {
+    } else if (name.contains('curl') ||
+        name.contains('biceps') ||
+        name.contains('triceps')) {
       return Icons.sports_martial_arts;
-    } else if (name.contains('rowing') || name.contains('tirage') || name.contains('dos')) {
+    } else if (name.contains('rowing') ||
+        name.contains('tirage') ||
+        name.contains('dos')) {
       return Icons.rowing;
     } else if (name.contains('épaule') || name.contains('shoulder')) {
       return Icons.sports_handball;
@@ -47,28 +53,29 @@ class FavoritesCard extends StatelessWidget {
           const SizedBox(height: 14),
           exercises.isEmpty
               ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text(
-                      'Aucun exercice disponible',
-                      style: TextStyle(color: Colors.white54),
-                    ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: exercises.map((exercise) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 16),
-                        child: _CircleExercise(
-                          icon: _getExerciseIcon(exercise.name),
-                          label: exercise.name,
-                        ),
-                      );
-                    }).toList(),
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    'Aucun exercice disponible',
+                    style: TextStyle(color: Colors.white54),
                   ),
                 ),
+              )
+              : SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children:
+                      exercises.map((exercise) {
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 16),
+                          child: _CircleExercise(
+                            icon: _getExerciseIcon(exercise.name),
+                            label: exercise.name,
+                          ),
+                        );
+                      }).toList(),
+                ),
+              ),
         ],
       ),
     );
