@@ -1,66 +1,47 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart';
-import 'package:recommandation_mobile/data/db/app_db.dart';
-import 'package:recommandation_mobile/services/planning_service.dart';
-import 'package:recommandation_mobile/ui/widgets/planning/scale_button.dart';
+import 'package:provider/provider.dart';
+import '../../data/db/app_db.dart';
+import '../../services/planning_service.dart';
+import '../../ui/viewmodels/planning_view_model.dart';
+import '../widgets/planning/scale_button.dart';
 
-class PlanningPage extends StatefulWidget {
+class PlanningPage extends StatelessWidget {
   final AppDb db;
+
   const PlanningPage({super.key, required this.db});
 
   @override
-  State<PlanningPage> createState() => _PlanningPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => PlanningViewModel(db)..init(),
+      child: const _PlanningView(),
+    );
+  }
 }
 
-class _PlanningPageState extends State<PlanningPage> {
-  late PlanningService _service;
+class _PlanningView extends StatefulWidget {
+  const _PlanningView();
 
+  @override
+  State<_PlanningView> createState() => _PlanningViewState();
+}
 
+class _PlanningViewState extends State<_PlanningView> {
   final Color kBackground = const Color(0xFF020216);
   final Color kCardColor = const Color(0xFF0F112B);
   final Color kGold = const Color(0xFFE4C87F);
-  final Color kTextGrey = const Color(0xFF9E9E9E);
-
-  DateTime _selectedDate = DateTime.now();
-  DateTime _startOfWeek = DateTime.now();
-  int? _currentUserId;
-
-  List<PlanningItem> _sessionsDuJour = [];
-  Set<int> _joursAvecActivite = {};
-  bool _isLoading = true;
 
   ScrollController? _scrollController;
 
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting('fr_FR', null);
-    _service = PlanningService(widget.db);
-
-    final now = DateTime.now();
-    _startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    _startOfWeek = DateTime(
-      _startOfWeek.year,
-      _startOfWeek.month,
-      _startOfWeek.day,
-    );
-
-    _initData();
-  }
-
-  void _ensureScrollController() {
-    if (_scrollController != null) return;
-
-    final now = DateTime.now();
-
-    final dayIndex = now.weekday - 1;
-    final double initialOffset = (dayIndex * 77.0);
-
-    _scrollController = ScrollController(
-      initialScrollOffset: initialOffset > 50 ? initialOffset - 50 : 0,
-    );
+    // Le VM est initialisé dans le create du Provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureScrollController(context.read<PlanningViewModel>().startOfWeek);
+    });
   }
 
   @override
@@ -69,438 +50,47 @@ class _PlanningPageState extends State<PlanningPage> {
     super.dispose();
   }
 
-  Future<void> _initData() async {
-    final user = await widget.db.select(widget.db.appUser).getSingleOrNull();
-    if (user != null) {
-      _currentUserId = user.id;
-    } else {
-      _currentUserId = 1;
-    }
-    _chargerDonnees();
+  void _ensureScrollController(DateTime startOfWeek) {
+    if (_scrollController != null && _scrollController!.hasClients) return;
+
+    final now = DateTime.now();
+    // On veut centrer ou positionner sur le jour actuel si on est dans la semaine courante
+    // Sinon on reste au début.
+    // Logique simplifiée : si la semaine affichée contient aujourd'hui, on scroll vers aujourd'hui.
+
+    final isCurrentWeek =
+        now.difference(startOfWeek).inDays >= 0 &&
+        now.difference(startOfWeek).inDays < 7;
+
+    final dayIndex = isCurrentWeek ? (now.weekday - 1) : 0;
+    final double initialOffset = (dayIndex * 77.0);
+
+    _scrollController = ScrollController(
+      initialScrollOffset: initialOffset > 50 ? initialOffset - 50 : 0,
+    );
   }
 
-  Future<void> _chargerDonnees() async {
-    if (_currentUserId == null) return;
-    setState(() => _isLoading = true);
-
-    try {
-      final activites = await _service.getDaysWithActivity(
-        _currentUserId!,
-        _startOfWeek,
+  void _scrollToIndex(int index) {
+    if (_scrollController != null && _scrollController!.hasClients) {
+      _scrollController!.animateTo(
+        (index * 77.0) -
+            50, // 77 = largeur approx item + espace, 50 = marge gauche
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
       );
-      final sessions = await _service.getSessionsForDate(
-        _currentUserId!,
-        _selectedDate,
-      );
-
-      if (mounted) {
-        setState(() {
-          _joursAvecActivite = activites;
-          _sessionsDuJour = sessions;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print("Erreur chargement: $e");
-      if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  void _changeWeek(int offset) {
-    setState(() {
-      _startOfWeek = _startOfWeek.add(Duration(days: 7 * offset));
-
-      _ensureScrollController();
-      if (_scrollController!.hasClients) {
-        _scrollController!.animateTo(
-          0,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-    _chargerDonnees();
-  }
-
-  Future<void> _selectDateFromCalendar() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.dark(
-              primary: kGold,
-              onPrimary: Colors.black,
-              surface: kCardColor,
-              onSurface: Colors.white,
-            ),
-            dialogBackgroundColor: kBackground,
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _startOfWeek = picked.subtract(Duration(days: picked.weekday - 1));
-        _startOfWeek = DateTime(
-          _startOfWeek.year,
-          _startOfWeek.month,
-          _startOfWeek.day,
-        );
-
-
-        _ensureScrollController();
-        final dayIndex = picked.weekday - 1;
-        if (_scrollController!.hasClients) {
-          _scrollController!.animateTo(
-            (dayIndex * 77.0) - 50,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-      _chargerDonnees();
-    }
-  }
-
-  void _onDaySelected(DateTime date) {
-    setState(() {
-      _selectedDate = date;
-    });
-    _chargerDonnees();
-  }
-
-
-  void _showAddSessionSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: kCardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Ajouter une activité",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              ScaleButton(
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDurationPickerDialog("Cardio libre");
-                },
-                child: ListTile(
-                  leading: _buildIcon(Icons.directions_run, Colors.blueAccent),
-                  title: const Text(
-                    "Séance Cardio",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    "Durée personnalisable",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-
-              ScaleButton(
-                onTap: () {
-                  Navigator.pop(context);
-                  _showDurationPickerDialog("Muscu libre");
-                },
-                child: ListTile(
-                  leading: _buildIcon(Icons.fitness_center, kGold),
-                  title: const Text(
-                    "Séance Muscu",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: const Text(
-                    "Durée personnalisable",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showDurationPickerDialog(
-    String type, {
-    int? initialDuration,
-    int? sessionId,
-  }) async {
-    int selectedDuration = initialDuration ?? 45;
-    String selectedType = type;
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return AlertDialog(
-              backgroundColor: kCardColor,
-              title: Text(
-                sessionId == null ? "Nouvelle séance" : "Modifier la séance",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildTypeSelector(
-                        "Cardio",
-                        Icons.directions_run,
-                        Colors.blueAccent,
-                        selectedType == "Cardio libre",
-                        () =>
-                            setStateDialog(() => selectedType = "Cardio libre"),
-                      ),
-                      _buildTypeSelector(
-                        "Muscu",
-                        Icons.fitness_center,
-                        kGold,
-                        selectedType == "Muscu libre",
-                        () =>
-                            setStateDialog(() => selectedType = "Muscu libre"),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "$selectedDuration min",
-                    style: TextStyle(
-                      color: kGold,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: kGold,
-                      inactiveTrackColor: Colors.white24,
-                      thumbColor: Colors.white,
-                      overlayColor: kGold.withOpacity(0.2),
-                    ),
-                    child: Slider(
-                      value: selectedDuration.toDouble(),
-                      min: 10,
-                      max: 180,
-                      divisions: 34,
-                      label: "$selectedDuration min",
-                      onChanged: (value) {
-                        setStateDialog(() {
-                          selectedDuration = value.round();
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    "Annuler",
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    if (sessionId == null) {
-                      _ajouterSeanceLibre(selectedDuration, selectedType);
-                    } else {
-                      _modifierSeanceLibre(
-                        sessionId,
-                        selectedDuration,
-                        selectedType,
-                      );
-                    }
-                  },
-                  child: Text(
-                    sessionId == null ? "Ajouter" : "Enregistrer",
-                    style: TextStyle(color: kGold, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildTypeSelector(
-    String label,
-    IconData icon,
-    Color color,
-    bool isSelected,
-    VoidCallback onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: isSelected ? color : Colors.white12,
-                width: 2,
-              ),
-            ),
-            child: Icon(icon, color: isSelected ? color : Colors.grey),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? color : Colors.grey,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  Future<void> _ajouterSeanceLibre(int duree, String name) async {
-    if (_currentUserId == null) return;
-
-    final ts =
-        DateTime(
-          _selectedDate.year,
-          _selectedDate.month,
-          _selectedDate.day,
-        ).millisecondsSinceEpoch ~/
-        1000;
-
-    await widget.db
-        .into(widget.db.session)
-        .insert(
-          SessionCompanion.insert(
-            userId: _currentUserId!,
-            programDayId: const drift.Value(null),
-            dateTs: ts,
-            durationMin: drift.Value(duree),
-            name: drift.Value(name),
-          ),
-        );
-
-    _chargerDonnees();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "Séance ajoutée : $name ($duree min) !",
-          style: const TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: kGold,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-
-  Future<void> _modifierSeanceLibre(
-    int sessionId,
-    int duree,
-    String name,
-  ) async {
-    await (widget.db.update(widget.db.session)
-      ..where((t) => t.id.equals(sessionId))).write(
-      SessionCompanion(
-        durationMin: drift.Value(duree),
-        name: drift.Value(name),
-      ),
-    );
-
-    _chargerDonnees();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text(
-          "Séance modifiée !",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: kGold,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-
-  Future<void> _supprimerSession(int sessionId) async {
-    await (widget.db.delete(widget.db.session)
-      ..where((t) => t.id.equals(sessionId))).go();
-
-    _chargerDonnees();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          "Séance supprimée",
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  Widget _buildIcon(IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: color),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    _ensureScrollController();
+    // On observe tout le VM ici car la page change beaucoup selon l'état
+    final vm = context.watch<PlanningViewModel>();
+
+    // Sync du scroll controller si la semaine change radicalement (facultatif mais mieux)
+    if (_scrollController == null) {
+      _ensureScrollController(vm.startOfWeek);
+    }
+
     return Scaffold(
       backgroundColor: kBackground,
       body: SafeArea(
@@ -510,136 +100,31 @@ class _PlanningPageState extends State<PlanningPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        DateFormat(
-                          'MMMM yyyy',
-                          'fr_FR',
-                        ).format(_selectedDate).toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: kGold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        "Mon Planning",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  ScaleButton(
-                    onTap: _selectDateFromCalendar,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24),
-                      ),
-                      child: const Icon(
-                        Icons.calendar_today,
-                        size: 20,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // En-tête (Mois + Titre + Calendrier)
+              _buildHeader(context, vm),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  ScaleButton(
-                    onTap: () => _changeWeek(-1),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.chevron_left, color: Colors.white),
-                    ),
-                  ),
-                  Expanded(
-                    child: SizedBox(
-                      height: 70,
-                      child: ListView.separated(
-                        controller: _scrollController,
-                        scrollDirection: Axis.horizontal,
-                        itemCount: 7,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final date = _startOfWeek.add(Duration(days: index));
-                          final isSelected =
-                              date.day == _selectedDate.day &&
-                              date.month == _selectedDate.month;
-                          final hasActivity = _joursAvecActivite.contains(
-                            date.weekday,
-                          );
-                          return _buildDayButton(date, isSelected, hasActivity);
-                        },
-                      ),
-                    ),
-                  ),
-                  ScaleButton(
-                    onTap: () => _changeWeek(1),
-                    child: const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Icon(Icons.chevron_right, color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
+              // Barre des jours (Semaine)
+              _buildWeekSelector(context, vm),
               const SizedBox(height: 30),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Séances du jour",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (_sessionsDuJour.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white10,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        "${_sessionsDuJour.length} prévues",
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              // Titre liste
+              _buildListTitle(vm),
               const SizedBox(height: 16),
+              // Liste des séances
               Expanded(
                 child:
-                    _isLoading
+                    vm.isLoading
                         ? Center(child: CircularProgressIndicator(color: kGold))
-                        : _sessionsDuJour.isEmpty
+                        : vm.sessionsDuJour.isEmpty
                         ? _buildEmptyState()
                         : ListView.builder(
-                          itemCount: _sessionsDuJour.length,
+                          itemCount: vm.sessionsDuJour.length,
                           itemBuilder: (context, index) {
                             return _buildSessionCard(
-                              _sessionsDuJour[index],
+                              context,
+                              vm.sessionsDuJour[index],
                               index + 1,
+                              kCardColor,
+                              kGold,
                             );
                           },
                         ),
@@ -649,7 +134,7 @@ class _PlanningPageState extends State<PlanningPage> {
         ),
       ),
       floatingActionButton: ScaleButton(
-        onTap: () => _showAddSessionSheet(),
+        onTap: () => _showAddSessionSheet(context),
         child: Container(
           height: 56,
           width: 56,
@@ -670,9 +155,116 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
-  Widget _buildDayButton(DateTime date, bool isSelected, bool hasActivity) {
+  Widget _buildHeader(BuildContext context, PlanningViewModel vm) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DateFormat(
+                'MMMM yyyy',
+                'fr_FR',
+              ).format(vm.selectedDate).toUpperCase(),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: kGold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              "Mon Planning",
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        ScaleButton(
+          onTap: () => _selectDateFromCalendar(context, vm),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white24),
+            ),
+            child: const Icon(
+              Icons.calendar_today,
+              size: 20,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeekSelector(BuildContext context, PlanningViewModel vm) {
+    return Row(
+      children: [
+        ScaleButton(
+          onTap: () {
+            vm.changeWeek(-1);
+            _scrollToIndex(0); // Reset scroll pour UX
+          },
+          child: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Icon(Icons.chevron_left, color: Colors.white),
+          ),
+        ),
+        Expanded(
+          child: SizedBox(
+            height: 70,
+            child: ListView.separated(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              itemCount: 7,
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final date = vm.startOfWeek.add(Duration(days: index));
+                final isSelected =
+                    date.day == vm.selectedDate.day &&
+                    date.month == vm.selectedDate.month;
+                final hasActivity = vm.joursAvecActivite.contains(date.weekday);
+
+                return _buildDayButton(
+                  context,
+                  vm,
+                  date,
+                  isSelected,
+                  hasActivity,
+                );
+              },
+            ),
+          ),
+        ),
+        ScaleButton(
+          onTap: () {
+            vm.changeWeek(1);
+            _scrollToIndex(0);
+          },
+          child: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Icon(Icons.chevron_right, color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDayButton(
+    BuildContext context,
+    PlanningViewModel vm,
+    DateTime date,
+    bool isSelected,
+    bool hasActivity,
+  ) {
     return ScaleButton(
-      onTap: () => _onDaySelected(date),
+      onTap: () => vm.selectDate(date),
       child: Container(
         width: 65,
         decoration: BoxDecoration(
@@ -728,13 +320,66 @@ class _PlanningPageState extends State<PlanningPage> {
     );
   }
 
-  Widget _buildSessionCard(PlanningItem item, int index) {
-    final bool isActuallyDone = item.duration > 0 || item.isDone;
+  Widget _buildListTitle(PlanningViewModel vm) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        const Text(
+          "Séances du jour",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        if (vm.sessionsDuJour.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              "${vm.sessionsDuJour.length} prévues",
+              style: const TextStyle(color: Colors.white70, fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.event_busy, size: 60, color: Colors.white10),
+          const SizedBox(height: 16),
+          const Text(
+            "Aucune séance prévue",
+            style: TextStyle(
+              color: Colors.white30,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSessionCard(
+    BuildContext context,
+    PlanningItem item,
+    int index,
+    Color bg,
+    Color accent,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCardColor,
+        color: bg,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white10),
       ),
@@ -747,7 +392,7 @@ class _PlanningPageState extends State<PlanningPage> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: kGold,
+                  color: accent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 alignment: Alignment.center,
@@ -786,7 +431,7 @@ class _PlanningPageState extends State<PlanningPage> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
-                            "MUSCU",
+                            "MUSCU", // À dynamiser si l'info est dispo plus précisément
                             style: TextStyle(
                               color: Colors.blueAccent,
                               fontSize: 10,
@@ -796,20 +441,18 @@ class _PlanningPageState extends State<PlanningPage> {
                         ),
                         const SizedBox(width: 10),
                         if (item.duration > 0) ...[
-                          Icon(
+                          const Icon(
                             Icons.timer_outlined,
                             size: 14,
-                            color: kTextGrey,
+                            color: Colors.grey,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             "${item.duration} min",
-                            style: TextStyle(color: kTextGrey, fontSize: 12),
-                          ),
-                        ] else ...[
-                          Text(
-                            "-- min",
-                            style: TextStyle(color: kTextGrey, fontSize: 12),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ],
@@ -817,114 +460,379 @@ class _PlanningPageState extends State<PlanningPage> {
                   ],
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(color: Colors.white12, height: 1),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              isActuallyDone
-                  ? _buildMiniStat(
-                    Icons.check_circle,
-                    "Terminée",
-                    Colors.greenAccent,
-                  )
-                  : item.isScheduled
-                  ? _buildMiniStat(
-                    Icons.calendar_today,
-                    "Planifiée",
-                    Colors.blueAccent,
-                  )
-                  : _buildMiniStat(Icons.schedule, "À faire", kGold),
-              _buildMiniStat(Icons.fitness_center, "Programme", Colors.white70),
-            ],
-          ),
-
-          if (item.sessionId != null && item.programDayId == null) ...[
-            const SizedBox(height: 8),
-            const Divider(color: Colors.white12, height: 1),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: () {
-                    _showDurationPickerDialog(
-                      item.title,
-                      initialDuration: item.duration,
-                      sessionId: item.sessionId,
-                    );
-                  },
+              // Option de modification/suppression uniquement pour les séances libres (sessionId != null)
+              if (item.sessionId != null)
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.white54, size: 20),
+                  onPressed:
+                      () => _showDurationPickerDialog(
+                        context,
+                        item.title,
+                        initialDuration: item.duration,
+                        sessionId: item.sessionId,
+                      ),
+                ),
+              if (item.sessionId != null)
+                IconButton(
                   icon: const Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: Colors.blueAccent,
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                    size: 20,
                   ),
-                  label: const Text(
-                    "Modifier",
-                    style: TextStyle(color: Colors.blueAccent, fontSize: 12),
+                  onPressed: () => _confirmDelete(context, item.sessionId!),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, int sessionId) {
+    showDialog(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            backgroundColor: kCardColor,
+            title: const Text(
+              "Supprimer ?",
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              "Voulez-vous vraiment supprimer cette séance ?",
+              style: TextStyle(color: Colors.white70),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Annuler"),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context
+                      .read<PlanningViewModel>()
+                      .deleteSession(sessionId)
+                      .then((_) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Séance supprimée",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            backgroundColor: Colors.redAccent,
+                          ),
+                        );
+                      });
+                },
+                child: const Text(
+                  "Supprimer",
+                  style: TextStyle(color: Colors.redAccent),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  Future<void> _selectDateFromCalendar(
+    BuildContext context,
+    PlanningViewModel vm,
+  ) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: vm.selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: kGold,
+              onPrimary: Colors.black,
+              surface: kCardColor,
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: kBackground,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      // On met à jour la date ET la semaine car on peut sauter loin
+      vm.selectDate(picked, updateWeek: true);
+
+      // Petit scroll UX
+      _scrollToIndex(picked.weekday - 1);
+    }
+  }
+
+  void _showAddSessionSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: kCardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Ajouter une activité",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              ScaleButton(
+                onTap: () {
+                  Navigator.pop(
+                    context,
+                  ); // Fermer le sheet avant d'ouvrir le dialog
+                  // Attention : context ici peut être instable si async, mais pop est ok.
+                  // Utiliser le context parent (celui de build) pour le dialog suivante
+                  _showDurationPickerDialog(context, "Cardio libre");
+                },
+                child: ListTile(
+                  leading: _buildIcon(Icons.directions_run, Colors.blueAccent),
+                  title: const Text(
+                    "Séance Cardio",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    "Durée personnalisable",
+                    style: TextStyle(color: Colors.grey),
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () => _supprimerSession(item.sessionId!),
-                  icon: const Icon(
-                    Icons.delete,
-                    size: 16,
-                    color: Colors.redAccent,
+              ),
+
+              ScaleButton(
+                onTap: () {
+                  Navigator.pop(context);
+                  _showDurationPickerDialog(context, "Muscu libre");
+                },
+                child: ListTile(
+                  leading: _buildIcon(Icons.fitness_center, kGold),
+                  title: const Text(
+                    "Séance Muscu",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  label: const Text(
-                    "Supprimer",
-                    style: TextStyle(color: Colors.redAccent, fontSize: 12),
+                  subtitle: const Text(
+                    "Durée personnalisable",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showDurationPickerDialog(
+    BuildContext parentContext, // Context de la page pour le VM
+    String type, {
+    int? initialDuration,
+    int? sessionId,
+  }) async {
+    int selectedDuration = initialDuration ?? 45;
+    String selectedType = type;
+
+    await showDialog(
+      context: parentContext,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: kCardColor,
+              title: Text(
+                sessionId == null ? "Nouvelle séance" : "Modifier la séance",
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildTypeSelector(
+                        "Cardio",
+                        Icons.directions_run,
+                        Colors.blueAccent,
+                        selectedType == "Cardio libre",
+                        () =>
+                            setStateDialog(() => selectedType = "Cardio libre"),
+                      ),
+                      _buildTypeSelector(
+                        "Muscu",
+                        Icons.fitness_center,
+                        kGold,
+                        selectedType == "Muscu libre",
+                        () =>
+                            setStateDialog(() => selectedType = "Muscu libre"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "$selectedDuration min",
+                    style: TextStyle(
+                      color: kGold,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SliderTheme(
+                    data: SliderTheme.of(parentContext).copyWith(
+                      activeTrackColor: kGold,
+                      inactiveTrackColor: Colors.white24,
+                      thumbColor: Colors.white,
+                      overlayColor: kGold.withOpacity(0.2),
+                    ),
+                    child: Slider(
+                      value: selectedDuration.toDouble(),
+                      min: 10,
+                      max: 180,
+                      divisions: 34,
+                      label: "$selectedDuration min",
+                      onChanged: (value) {
+                        setStateDialog(() {
+                          selectedDuration = value.round();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "Annuler",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    final vm =
+                        parentContext
+                            .read<
+                              PlanningViewModel
+                            >(); // accès via parentContext !
+
+                    if (sessionId == null) {
+                      vm.addSession(selectedDuration, selectedType).then((_) {
+                        ScaffoldMessenger.of(parentContext).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              "Séance ajoutée : $selectedType !",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            backgroundColor: kGold,
+                          ),
+                        );
+                      });
+                    } else {
+                      vm
+                          .updateSession(
+                            sessionId,
+                            selectedDuration,
+                            selectedType,
+                          )
+                          .then((_) {
+                            ScaffoldMessenger.of(parentContext).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  "Séance modifiée !",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                backgroundColor: kGold,
+                              ),
+                            );
+                          });
+                    }
+                  },
+                  child: Text(
+                    sessionId == null ? "Ajouter" : "Enregistrer",
+                    style: TextStyle(color: kGold, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
-            ),
-          ],
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildMiniStat(IconData icon, String label, Color color) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 6),
-        Text(label, style: TextStyle(color: Colors.white70, fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
+  Widget _buildTypeSelector(
+    String label,
+    IconData icon,
+    Color color,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return GestureDetector(
+      onTap: onTap,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
               shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? color : Colors.white12,
+                width: 2,
+              ),
             ),
-            child: Icon(Icons.bed, size: 40, color: Colors.white24),
+            child: Icon(icon, color: isSelected ? color : Colors.grey),
           ),
-          const SizedBox(height: 20),
-          const Text(
-            "Repos",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
-            "Aucune séance prévue pour ce jour.",
-            style: TextStyle(color: kTextGrey),
+            label,
+            style: TextStyle(
+              color: isSelected ? color : Colors.grey,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildIcon(IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: color),
     );
   }
 }
