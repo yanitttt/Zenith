@@ -1,9 +1,15 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_training_day_dao.dart';
 import '../../services/program_generator_service.dart';
 import '../../services/session_tracking_service.dart';
+import 'package:drift/drift.dart' as drift;
+
+// Enums for Smart Swap feature
+enum SwapReason { noEquipment, pain }
+enum SwapState { initial, loading, success, error }
 
 class WorkoutProgramViewModel extends ChangeNotifier {
   final AppDb _db;
@@ -12,9 +18,8 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   late final ProgramGeneratorService _programService;
   late final SessionTrackingService _sessionService;
   late final UserTrainingDayDao _trainingDayDao;
-  // TODO: PerformanceMonitorService demandé mais introuvable dans le projet.
 
-  // État
+  // State
   WorkoutProgramData? _currentProgram;
   List<ProgramDaySession> _programDays = [];
   Map<int, SessionData> _completedSessions = {};
@@ -23,9 +28,15 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   bool _generating = false;
   String? _error;
 
+  // State for Smart Swap
+  SwapState _swapState = SwapState.initial;
+  List<ExerciseData> _swapAlternatives = [];
+  String? _swapError;
+  int? _exerciseToSwapId;
+
   WorkoutProgramViewModel({required AppDb db, required AppPrefs prefs})
-    : _db = db,
-      _prefs = prefs {
+      : _db = db,
+        _prefs = prefs {
     _programService = ProgramGeneratorService(_db);
     _sessionService = SessionTrackingService(_db);
     _trainingDayDao = UserTrainingDayDao(_db);
@@ -42,7 +53,12 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   int? get currentUserId => _prefs.currentUserId;
   AppDb get db => _db;
 
-  // Setter pour la sélection du jour
+  // Getters for Smart Swap
+  SwapState get swapState => _swapState;
+  List<ExerciseData> get swapAlternatives => _swapAlternatives;
+  String? get swapError => _swapError;
+  int? get exerciseToSwapId => _exerciseToSwapId;
+
   void selectDay(int index) {
     if (index >= 0 && index < _programDays.length) {
       _selectedDayIndex = index;
@@ -50,7 +66,6 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     }
   }
 
-  /// Charge le programme de l'utilisateur
   Future<void> loadProgram() async {
     _isLoading = true;
     _error = null;
@@ -59,142 +74,186 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     try {
       final userId = _prefs.currentUserId;
       if (userId == null) {
-        throw Exception('Utilisateur non connecté');
+        throw Exception('User not logged in');
       }
 
       final program = await _programService.getActiveUserProgram(userId);
-      final trainingDays = await _trainingDayDao.getDayNumbersForUser(userId);
-
-      // Cas où un programme existe mais plus de jours d'entraînement définis
-      if (program != null && trainingDays.isEmpty) {
-        debugPrint(
-          '[WORKOUT_VM] Programme détecté sans jours définis -> Suppression pour forcer l\'état vide',
-        );
-        await (_db.delete(_db.userProgram)
-          ..where((tbl) => tbl.userId.equals(userId))).go();
-
-        _currentProgram = null;
-        _programDays = [];
-        _isLoading = false;
-        notifyListeners();
-        return;
-      }
-
       if (program == null) {
         _currentProgram = null;
         _programDays = [];
       } else {
         final days = await _programService.getProgramDays(program.id);
         final dayIds = days.map((d) => d.programDayId).toList();
-        final completedSessions = await _sessionService
-            .getCompletedSessionsForDays(dayIds);
+        final completed = await _sessionService.getCompletedSessionsForDays(dayIds);
 
         _currentProgram = program;
         _programDays = days;
-        _completedSessions = completedSessions;
+        _completedSessions = completed;
       }
-      _isLoading = false;
-      notifyListeners();
     } catch (e) {
-      debugPrint('[WORKOUT_VM] Erreur: $e');
       _error = e.toString();
+    } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// Génère un nouveau programme pour l'utilisateur
   Future<void> generateNewProgram() async {
     _generating = true;
     notifyListeners();
-
     try {
       final userId = _prefs.currentUserId;
-      if (userId == null) {
-        throw Exception('Utilisateur non connecté');
-      }
-
-      final programId = await _programService.generateUserProgram(
-        userId: userId,
-      );
-
-      final program =
-          await (_db.select(_db.workoutProgram)
-            ..where((tbl) => tbl.id.equals(programId))).getSingle();
-
+      if (userId == null) throw Exception('User not logged in');
+      final programId = await _programService.generateUserProgram(userId: userId);
+      final program = await (_db.select(_db.workoutProgram)..where((tbl) => tbl.id.equals(programId))).getSingle();
       final days = await _programService.getProgramDays(programId);
-
       _currentProgram = program;
       _programDays = days;
-      _generating = false;
-      _isLoading = false;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('[WORKOUT_VM] Erreur génération: $e');
+    } catch(e) {
       _error = e.toString();
-      _generating = false;
-      _isLoading = false;
-      notifyListeners();
-      // On propage l'erreur pour que l'UI puisse afficher un SnackBar
-      rethrow;
-    }
-  }
-
-  /// Régénère le programme existant
-  Future<void> regenerateProgram() async {
-    _generating = true;
-    notifyListeners();
-
-    try {
-      final userId = _prefs.currentUserId;
-      if (userId == null) return;
-
-      await _programService.regenerateUserProgram(userId: userId);
-      await loadProgram();
-    } catch (e) {
-      debugPrint('[WORKOUT_VM] Erreur régénération: $e');
-      _generating =
-          false; // loadProgram le met déjà à jour mais en cas d'erreur avant loadProgram
-      notifyListeners();
       rethrow;
     } finally {
       _generating = false;
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  /// Vérifie si l'utilisateur a défini des jours d'entraînement
+  Future<void> regenerateProgram() async {
+    _generating = true;
+    notifyListeners();
+    try {
+      final userId = _prefs.currentUserId;
+      if (userId == null) return;
+      await _programService.regenerateUserProgram(userId: userId);
+    } finally {
+      _generating = false;
+      await loadProgram();
+    }
+  }
+
   Future<bool> checkHasTrainingDays() async {
     final userId = _prefs.currentUserId;
     if (userId == null) return false;
-    final days = await _trainingDayDao.getDayNumbersForUser(userId);
-    return days.isNotEmpty;
+    return (await _trainingDayDao.getDayNumbersForUser(userId)).isNotEmpty;
   }
 
-  /// Sauvegarde les jours d'entraînement
   Future<void> saveTrainingDays(List<int> days) async {
     final userId = _prefs.currentUserId;
     if (userId == null) return;
     await _trainingDayDao.replace(userId, days);
   }
 
-  /// Met à jour les données après une séance
   Future<void> updateAfterSession() async {
-    debugPrint('[WORKOUT_VM] Retour de session, rechargement du programme...');
     await loadProgram();
+  }
 
-    // Logique optionnelle pour vérifier le prochain jour (debugging)
-    if (_programDays.length > 1) {
-      final nextDay = _programDays.firstWhere(
-        (d) => !_completedSessions.containsKey(d.programDayId),
-        orElse: () => _programDays.last,
-      );
-      if (nextDay.exercises.isNotEmpty) {
-        final firstEx = nextDay.exercises.first;
-        debugPrint(
-          '[WORKOUT_VM] Vérification jour ${nextDay.dayOrder}: ${firstEx.exerciseName} -> ${firstEx.setsSuggestion} (was ${firstEx.previousSetsSuggestion}) / ${firstEx.repsSuggestion}',
-        );
+  Future<void> getSmartAlternatives({
+    required int originalExerciseId,
+    required SwapReason reason,
+  }) async {
+    _exerciseToSwapId = originalExerciseId;
+    _swapState = SwapState.loading;
+    _swapAlternatives = [];
+    notifyListeners();
+
+    try {
+      final primaryMuscleGroupQuery = _db.select(_db.exerciseMuscle, distinct: true)
+        ..where((em) => em.exerciseId.equals(originalExerciseId))
+        ..orderBy([(em) => drift.OrderingTerm(expression: em.weight.abs(), mode: drift.OrderingMode.desc)])
+        ..limit(1);
+      final primaryMuscle = await primaryMuscleGroupQuery.getSingleOrNull();
+
+      if (primaryMuscle == null) {
+        throw Exception("Cannot determine primary muscle for the exercise.");
       }
+
+      final exercisesWithSameMuscle = _db.select(_db.exercise).join([
+        drift.innerJoin(_db.exerciseMuscle, _db.exerciseMuscle.exerciseId.equalsExp(_db.exercise.id))
+      ])..where(_db.exerciseMuscle.muscleId.equals(primaryMuscle.muscleId))
+        ..where(_db.exercise.id.isNotValue(originalExerciseId));
+
+      switch (reason) {
+        case SwapReason.noEquipment:
+          final bodyweightExercises = exercisesWithSameMuscle.join([
+            drift.leftOuterJoin(_db.exerciseEquipment, _db.exerciseEquipment.exerciseId.equalsExp(_db.exercise.id))
+          ])
+            ..where(_db.exerciseEquipment.equipmentId.isNull());
+          _swapAlternatives = (await bodyweightExercises.get()).map((row) => row.readTable(_db.exercise)).toList();
+
+          break;
+        case SwapReason.pain:
+          final originalExercise = await (_db.select(_db.exercise)..where((e) => e.id.equals(originalExerciseId))).getSingle();
+          exercisesWithSameMuscle.where(_db.exercise.type.isNotValue(originalExercise.type));
+          _swapAlternatives = (await exercisesWithSameMuscle.get()).map((row) => row.readTable(_db.exercise)).toList();
+          break;
+      }
+
+      _swapAlternatives.shuffle();
+      if(_swapAlternatives.length > 2) {
+        _swapAlternatives = _swapAlternatives.sublist(0, 2);
+      }
+
+      _swapState = SwapState.success;
+    } catch (e) {
+      _swapState = SwapState.error;
+      _swapError = "Failed to find alternatives: $e";
+    } finally {
+      notifyListeners();
     }
+  }
+
+  void applySwap(int dayIndex, ExerciseData newExercise) {
+    if (_exerciseToSwapId == null || dayIndex < 0 || dayIndex >= _programDays.length) return;
+
+    final day = _programDays[dayIndex];
+    final exercises = day.exercises;
+    final exerciseIndex = exercises.indexWhere((ex) => ex.exerciseId == _exerciseToSwapId);
+
+    if (exerciseIndex == -1) return;
+
+    final originalProgramExercise = exercises[exerciseIndex];
+    final newProgramExercise = ProgramExerciseDetail(
+      position: originalProgramExercise.position,
+      exerciseId: newExercise.id,
+      exerciseName: newExercise.name,
+      exerciseType: newExercise.type,
+      difficulty: newExercise.difficulty,
+      setsSuggestion: originalProgramExercise.setsSuggestion,
+      repsSuggestion: originalProgramExercise.repsSuggestion,
+      restSuggestionSec: originalProgramExercise.restSuggestionSec,
+      modality: originalProgramExercise.modality,
+      scheduledDate: originalProgramExercise.scheduledDate,
+      previousSetsSuggestion: originalProgramExercise.previousSetsSuggestion,
+      previousRepsSuggestion: originalProgramExercise.previousRepsSuggestion,
+      previousRestSuggestion: originalProgramExercise.previousRestSuggestion,
+    );
+
+    final updatedExercises = List<ProgramExerciseDetail>.from(exercises);
+    updatedExercises[exerciseIndex] = newProgramExercise;
+    _programDays[dayIndex] = day.copyWith(exercises: updatedExercises);
+
+    resetSwapState();
+    notifyListeners();
+  }
+
+  void resetSwapState() {
+    _swapState = SwapState.initial;
+    _swapAlternatives = [];
+    _swapError = null;
+    _exerciseToSwapId = null;
+    notifyListeners();
+  }
+}
+
+extension on ProgramDaySession {
+  ProgramDaySession copyWith({List<ProgramExerciseDetail>? exercises}) {
+    return ProgramDaySession(
+      programDayId: programDayId,
+      dayOrder: dayOrder,
+      dayName: dayName,
+      exercises: exercises ?? this.exercises,
+      scheduledDate: scheduledDate,
+    );
   }
 }

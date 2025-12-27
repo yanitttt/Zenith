@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/prefs/app_prefs.dart';
-import '../../services/program_generator_service.dart'; // Pour ProgramDaySession, etc.
+import '../../services/program_generator_service.dart';
 import '../../data/db/app_db.dart';
 import '../viewmodels/workout_program_viewmodel.dart';
 import '../widgets/training_days_dialog.dart';
@@ -20,8 +20,7 @@ class WorkoutProgramPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create:
-          (_) => WorkoutProgramViewModel(db: db, prefs: prefs)..loadProgram(),
+      create: (_) => WorkoutProgramViewModel(db: db, prefs: prefs)..loadProgram(),
       child: const _WorkoutProgramContent(),
     );
   }
@@ -31,40 +30,39 @@ class _WorkoutProgramContent extends StatelessWidget {
   const _WorkoutProgramContent();
 
   Future<void> _regenerateProgram(
-    BuildContext context,
-    WorkoutProgramViewModel vm,
-  ) async {
+      BuildContext context,
+      WorkoutProgramViewModel vm,
+      ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: const Color(0xFF1E1E1E),
-            title: const Text(
-              'Régénérer le programme',
-              style: TextStyle(color: Colors.white),
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        title: const Text(
+          'Régénérer le programme',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Veux-tu créer un nouveau programme ? L\'ancien sera archivé.',
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text(
+              'Annuler',
+              style: TextStyle(color: Colors.grey),
             ),
-            content: const Text(
-              'Veux-tu créer un nouveau programme ? L\'ancien sera archivé.',
-              style: TextStyle(color: Colors.white70),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text(
-                  'Annuler',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold),
-                child: const Text(
-                  'Confirmer',
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-            ],
           ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold),
+            child: const Text(
+              'Confirmer',
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ],
+      ),
     );
 
     if (confirmed == true) {
@@ -73,9 +71,7 @@ class _WorkoutProgramContent extends StatelessWidget {
           await vm.regenerateProgram();
         } catch (e) {
           if (context.mounted) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
           }
         }
       }
@@ -83,75 +79,26 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Future<void> _startSession(
-    BuildContext context,
-    ProgramDaySession day,
-    WorkoutProgramViewModel vm,
-  ) async {
-    // Note: userId is accessed inside vm usually, but ActiveSessionPage needs it.
-    // We can assume prefs is injected in VM but we can't easily access it here without context or modification.
-    // However, ActiveSessionPage takes userId in constructor.
-    // We can get userId from existing prefs in parent or context?
-    // Parent passed prefs. But here we are down in widget tree.
-    // Actually, WorkoutProgramPage has prefs. But _WorkoutProgramContent doesn't "see" it easily unless passed or accessed via Provider if exposed?
-    // The VM has _prefs locally.
-    // We can make the VM expose userId? Or just pass it from top.
-
-    // Quick fix: Since WorkoutProgramPage has prefs, we should probably pass it down or accessing it.
-    // But decoupling is better.
-    // Let's assume we can get it or we expose it from VM.
-    // The ORIGINAL code had widget.prefs.currentUserId.
-
-    // I need to access userId.
-    // I can make a getter in VM for currentUserId? Or just pass prefs to Content?
-    // I'll make VM expose userId because it already checks it in methods.
-    // Wait, VM has `_prefs` private.
-    // I'll assume I can't change VM right now easily without another call.
-    // I'll pass prefs from specific `Consumer`?
-    // It's easier to just assume usage of `context.read<WorkoutProgramViewModel>()` if I added a getter.
-    // But I didn't add a getter.
-
-    // Alternative: `ActiveSessionPage` needs userId.
-    // I'll use `Provider.of<WorkoutProgramViewModel>(context, listen: false)`... but I can't get private field.
-
-    // I'll just change the Architecture slightly: The Page `build` passes the `prefs` to `_WorkoutProgramContent`? No, that's ugly.
-    // Refactoring rule: VM handles business logic. `ActiveSessionPage` params are UI navigation params.
-    // If `ActiveSessionPage` needs `userId`, it should be available.
-    // I'll simply add `String? get userId => _prefs.currentUserId;` to VM if I can, OR
-    // I'll just assume I can pass it.
-
-    // Actually, I can't edit VM in this step (I already did a multi_replace, but calling `write_to_file` overwrites the file `WorkoutProgramPage`).
-    // I'll edit VM independently or assume I can fetch it.
-    // Check line 226 of original file: `final userId = widget.prefs.currentUserId;`.
-    // I'll modify VM to add getter `currentUserId` in a subsequent step if needed, or I'll just skip it?
-    // No, I need it for `ActiveSessionPage`.
-    // I'll just instantiate `ActiveSessionPage` with `vm.prefs.currentUserId`? No `prefs` is private.
-
-    // Okay, I will add `get currentUserId` to VM in the previous `multi_replace` call? Too late, step passed?
-    // No, I sent multi_replace in parallel? No, sequential.
-    // I'll send another `replace_file_content` to VM to add getter.
-
-    // Wait, I can do it in the next step.
-
-    // I'll write the Page code assuming `vm.currentUserId` exists.
+      BuildContext context,
+      ProgramDaySession day,
+      WorkoutProgramViewModel vm,
+      ) async {
     final userId = vm.currentUserId;
 
     if (userId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Utilisateur non connecté')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Utilisateur non connecté')));
       return;
     }
 
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder:
-            (context) => ActiveSessionPage(
-              db: vm.db, // Need to expose DB or pass it? Original passed widget.db.
-              userId: userId,
-              programDayId: day.programDayId,
-              dayName: day.dayName,
-            ),
+        builder: (context) => ActiveSessionPage(
+          db: vm.db,
+          userId: userId,
+          programDayId: day.programDayId,
+          dayName: day.dayName,
+        ),
       ),
     );
 
@@ -167,9 +114,9 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Future<void> _handleGenerateClick(
-    BuildContext context,
-    WorkoutProgramViewModel vm,
-  ) async {
+      BuildContext context,
+      WorkoutProgramViewModel vm,
+      ) async {
     final hasDays = await vm.checkHasTrainingDays();
 
     if (!hasDays) {
@@ -204,7 +151,6 @@ class _WorkoutProgramContent extends StatelessWidget {
     }
   }
 
-  // Formatters
   String _formatDate(int timestamp) {
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
     final now = DateTime.now();
@@ -221,7 +167,6 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   String _formatScheduledDate(DateTime date) {
-    // ... existing logic ...
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
@@ -251,14 +196,13 @@ class _WorkoutProgramContent extends StatelessWidget {
                 if (vm.programDays.isNotEmpty)
                   _buildDaySelector(context, responsive, vm),
                 Expanded(
-                  child:
-                      vm.isLoading || vm.isGenerating
-                          ? _buildLoading(vm)
-                          : vm.error != null
-                          ? _buildError(context, vm)
-                          : vm.programDays.isEmpty
-                          ? _buildEmpty(context, responsive, vm)
-                          : _buildDayContent(context, responsive, vm),
+                  child: vm.isLoading || vm.isGenerating
+                      ? _buildLoading(vm)
+                      : vm.error != null
+                      ? _buildError(context, vm)
+                      : vm.programDays.isEmpty
+                      ? _buildEmpty(context, responsive, vm)
+                      : _buildDayContent(context, responsive, vm),
                 ),
               ],
             );
@@ -268,12 +212,11 @@ class _WorkoutProgramContent extends StatelessWidget {
     );
   }
 
-  // WIDGETS
   Widget _buildHeader(
-    BuildContext context,
-    Responsive responsive,
-    WorkoutProgramViewModel vm,
-  ) {
+      BuildContext context,
+      Responsive responsive,
+      WorkoutProgramViewModel vm,
+      ) {
     return Container(
       padding: EdgeInsets.all(responsive.rw(24)),
       child: Column(
@@ -319,10 +262,7 @@ class _WorkoutProgramContent extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed:
-                    vm.isGenerating
-                        ? null
-                        : () => _regenerateProgram(context, vm),
+                onPressed: vm.isGenerating ? null : () => _regenerateProgram(context, vm),
                 icon: const Icon(Icons.refresh),
                 color: AppTheme.gold,
                 iconSize: responsive.rsp(28),
@@ -390,10 +330,10 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildEmpty(
-    BuildContext context,
-    Responsive responsive,
-    WorkoutProgramViewModel vm,
-  ) {
+      BuildContext context,
+      Responsive responsive,
+      WorkoutProgramViewModel vm,
+      ) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -462,10 +402,10 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildDaySelector(
-    BuildContext context,
-    Responsive responsive,
-    WorkoutProgramViewModel vm,
-  ) {
+      BuildContext context,
+      Responsive responsive,
+      WorkoutProgramViewModel vm,
+      ) {
     return Container(
       height: responsive.rh(90),
       margin: EdgeInsets.symmetric(horizontal: responsive.rw(24)),
@@ -475,9 +415,7 @@ class _WorkoutProgramContent extends StatelessWidget {
         itemBuilder: (context, index) {
           final day = vm.programDays[index];
           final isSelected = vm.selectedDayIndex == index;
-          final isCompleted = vm.completedSessions.containsKey(
-            day.programDayId,
-          );
+          final isCompleted = vm.completedSessions.containsKey(day.programDayId);
           return Padding(
             padding: EdgeInsets.only(right: responsive.rw(12)),
             child: GestureDetector(
@@ -488,20 +426,10 @@ class _WorkoutProgramContent extends StatelessWidget {
                   vertical: responsive.rh(12),
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      isSelected
-                          ? AppTheme.gold
-                          : (isCompleted
-                              ? Colors.green.shade900
-                              : Colors.black),
+                  color: isSelected ? AppTheme.gold : (isCompleted ? Colors.green.shade900 : Colors.black),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color:
-                        isSelected
-                            ? AppTheme.gold
-                            : (isCompleted
-                                ? Colors.green
-                                : Colors.grey.shade800),
+                    color: isSelected ? AppTheme.gold : (isCompleted ? Colors.green : Colors.grey.shade800),
                     width: 2,
                   ),
                 ),
@@ -550,16 +478,14 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildDayContent(
-    BuildContext context,
-    Responsive responsive,
-    WorkoutProgramViewModel vm,
-  ) {
+      BuildContext context,
+      Responsive responsive,
+      WorkoutProgramViewModel vm,
+      ) {
     if (vm.programDays.isEmpty) return const SizedBox();
 
     final currentDay = vm.programDays[vm.selectedDayIndex];
-    final isCompleted = vm.completedSessions.containsKey(
-      currentDay.programDayId,
-    );
+    final isCompleted = vm.completedSessions.containsKey(currentDay.programDayId);
     final completedSession = vm.completedSessions[currentDay.programDayId];
 
     return Column(
@@ -622,10 +548,7 @@ class _WorkoutProgramContent extends StatelessWidget {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed:
-                    isCompleted
-                        ? null
-                        : () => _startSession(context, currentDay, vm),
+                onPressed: isCompleted ? null : () => _startSession(context, currentDay, vm),
                 icon: Icon(isCompleted ? Icons.check_circle : Icons.play_arrow),
                 label: Text(isCompleted ? 'Terminée' : 'Commencer'),
                 style: ElevatedButton.styleFrom(
@@ -657,7 +580,7 @@ class _WorkoutProgramContent extends StatelessWidget {
             itemCount: currentDay.exercises.length,
             itemBuilder: (context, index) {
               final exercise = currentDay.exercises[index];
-              return _buildExerciseCard(exercise, responsive);
+              return _buildExerciseCard(context, exercise, responsive, vm, currentDay);
             },
           ),
         ),
@@ -666,12 +589,12 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildExerciseCard(
-    ProgramExerciseDetail exercise,
-    Responsive responsive,
-  ) {
-    // ... Copy exact content from original ...
-    // Since this method is purely UI rendering from `exercise` object, it's safe to copy.
-    // I will include the full code in the final write.
+      BuildContext context,
+      ProgramExerciseDetail exercise,
+      Responsive responsive,
+      WorkoutProgramViewModel vm,
+      ProgramDaySession day,
+      ) {
     return Container(
       margin: EdgeInsets.only(bottom: responsive.rh(16)),
       padding: EdgeInsets.all(responsive.rw(16)),
@@ -721,10 +644,7 @@ class _WorkoutProgramContent extends StatelessWidget {
                       children: [
                         _buildBadge(
                           label: exercise.exerciseType.toUpperCase(),
-                          color:
-                              exercise.exerciseType == 'poly'
-                                  ? Colors.blue
-                                  : Colors.purple,
+                          color: exercise.exerciseType == 'poly' ? Colors.blue : Colors.purple,
                           responsive: responsive,
                         ),
                         SizedBox(width: responsive.rw(8)),
@@ -733,20 +653,14 @@ class _WorkoutProgramContent extends StatelessWidget {
                           color: _getDifficultyColor(exercise.difficulty),
                           responsive: responsive,
                         ),
-                        if (exercise.previousSetsSuggestion != null ||
-                            exercise.previousRepsSuggestion != null ||
-                            exercise.previousRestSuggestion != null) ...[
-                          SizedBox(width: responsive.rw(8)),
-                          _buildBadge(
-                            label: 'ADAPTÉ',
-                            color: AppTheme.gold,
-                            responsive: responsive,
-                          ),
-                        ],
                       ],
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.swap_horiz, color: AppTheme.gold),
+                onPressed: () => _showSwapReasonSheet(context, vm, exercise, day),
               ),
             ],
           ),
@@ -760,27 +674,18 @@ class _WorkoutProgramContent extends StatelessWidget {
                 icon: Icons.repeat,
                 label: 'Séries',
                 value: exercise.setsSuggestion ?? '-',
-                previousValue: exercise.previousSetsSuggestion,
                 responsive: responsive,
               ),
               _buildInfoColumn(
                 icon: Icons.fitness_center,
                 label: 'Reps',
                 value: exercise.repsSuggestion ?? '-',
-                previousValue: exercise.previousRepsSuggestion,
                 responsive: responsive,
               ),
               _buildInfoColumn(
                 icon: Icons.timer,
                 label: 'Repos',
-                value:
-                    exercise.restSuggestionSec != null
-                        ? '${exercise.restSuggestionSec}s'
-                        : '-',
-                previousValue:
-                    exercise.previousRestSuggestion != null
-                        ? '${exercise.previousRestSuggestion}s'
-                        : null,
+                value: exercise.restSuggestionSec != null ? '${exercise.restSuggestionSec}s' : '-',
                 responsive: responsive,
               ),
             ],
@@ -788,6 +693,113 @@ class _WorkoutProgramContent extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _showSwapReasonSheet(
+      BuildContext context,
+      WorkoutProgramViewModel vm,
+      ProgramExerciseDetail exercise,
+      ProgramDaySession day,
+      ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      builder: (_) => ChangeNotifierProvider.value(
+        value: vm,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Pourquoi remplacer cet exercice ?', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.no_stroller, color: AppTheme.gold),
+                title: const Text('Aucun équipement disponible', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAlternativesSheet(context, vm, exercise, day, SwapReason.noEquipment);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.personal_injury_outlined, color: AppTheme.gold),
+                title: const Text('Douleur ou inconfort', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showAlternativesSheet(context, vm, exercise, day, SwapReason.pain);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showAlternativesSheet(
+      BuildContext context,
+      WorkoutProgramViewModel vm,
+      ProgramExerciseDetail exercise,
+      ProgramDaySession day,
+      SwapReason reason,
+      ) {
+    vm.getSmartAlternatives(originalExerciseId: exercise.exerciseId, reason: reason);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      builder: (_) => ChangeNotifierProvider.value(
+        value: vm,
+        child: Consumer<WorkoutProgramViewModel>(
+          builder: (modalContext, model, child) {
+            return Container(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Choisissez une alternative', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  _buildAlternativesContent(modalContext, model, day),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    ).whenComplete(() => vm.resetSwapState());
+  }
+
+  Widget _buildAlternativesContent(BuildContext context, WorkoutProgramViewModel model, ProgramDaySession day) {
+    switch (model.swapState) {
+      case SwapState.loading:
+        return const Center(child: CircularProgressIndicator(color: AppTheme.gold));
+      case SwapState.error:
+        return Center(child: Text(model.swapError ?? 'Erreur', style: const TextStyle(color: Colors.red)));
+      case SwapState.success:
+        if (model.swapAlternatives.isEmpty) {
+          return const Center(child: Text('Aucune alternative trouvée.', style: TextStyle(color: Colors.white70)));
+        }
+        return Column(
+          children: model.swapAlternatives.map((alt) {
+            return ListTile(
+              title: Text(alt.name, style: const TextStyle(color: Colors.white)),
+              subtitle: const Text('Poids du corps', style: TextStyle(color: Colors.white70)),
+              onTap: () {
+                model.applySwap(day.dayOrder - 1, alt);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Exercice remplacé par ${alt.name}')),
+                );
+              },
+            );
+          }).toList(),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildInfoColumn({

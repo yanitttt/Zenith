@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../data/db/app_db.dart';
-import '../../theme/app_theme.dart';
+import '../../../core/theme/app_theme.dart';
 
 class ObjectivesPage extends StatefulWidget {
   final AppDb db;
