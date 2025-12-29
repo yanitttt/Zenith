@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'welcome_page.dart';
 import '../../../core/prefs/app_prefs.dart';
 import '../../../data/db/app_db.dart';
 import '../../../data/repositories/user_repository.dart';
@@ -165,7 +166,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
         metabolism: metabolism.name,
       );
 
-
       for (final objectiveId in objectiveIds) {
         await widget.db
             .into(widget.db.userGoal)
@@ -178,7 +178,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             );
       }
 
-
       for (final equipmentId in equipmentIds) {
         await widget.db
             .into(widget.db.userEquipment)
@@ -190,13 +189,11 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             );
       }
 
-
       await (widget.db.delete(widget.db.userProgram)
         ..where((tbl) => tbl.userId.equals(id))).go();
 
       await widget.prefs.setCurrentUserId(id);
       await widget.prefs.setOnboarded(true);
-
 
       final widgetService = HomeWidgetService(widget.db);
       await widgetService.updateHomeWidget();
@@ -218,57 +215,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0b0f1a),
-
-      body: Column(
-        children: [
-          const SizedBox(height: 80),
-
-          const Text(
-            "Bienvenue !",
-            style: TextStyle(
-              color: Color(0xFFD9BE77),
-              fontSize: 45,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 40),
-
-          Expanded(
-            child: Center(
-              child: Image.asset(
-                'assets/images/exercises/image.jpg',
-                width: 500,
-                height: 500,
-                fit: BoxFit.contain,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-        ],
-      ),
-
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: ElevatedButton(
-          onPressed: _startOnboarding,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFD9BE77),
-            foregroundColor: const Color(0xFF0b0f1a),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
-          child: const Text(
-            'Commencer',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-    );
+    return WelcomePage(onStart: _startOnboarding);
   }
 }
