@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:recommandation_mobile/core/prefs/app_prefs.dart';
+import 'package:recommandation_mobile/services/inactivity_service.dart';
 
 import '../../data/db/app_db.dart';
 import '../../core/theme/app_theme.dart';
@@ -11,11 +13,12 @@ import '../../core/perf/perf_monitor_widget.dart';
 import '../../core/perf/perf_service.dart';
 import '../viewmodels/dashboard_view_model.dart';
 import '../../services/dashboard_service.dart'; // Pour le type DashboardData
+import '../../services/reminder_service.dart';
 
 class DashboardPage extends StatelessWidget {
   final AppDb db;
-
-  const DashboardPage({super.key, required this.db});
+  final AppPrefs? prefs;
+  const DashboardPage({super.key, required this.db, this.prefs});
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +27,13 @@ class DashboardPage extends StatelessWidget {
     // mais ici c'est safe car on est dans build.
     final responsive = Responsive(context);
 
+    final inactivityService = InactivityService(db);
+      final reminderService = (prefs != null)
+      ? ReminderService(
+          inactivityService: inactivityService,
+          prefs: prefs!,
+        )
+      : null;
     // Initialisation du ViewModel via Provider
     return ChangeNotifierProvider<DashboardViewModel>(
       create: (_) => DashboardViewModel(db),
@@ -76,6 +86,32 @@ class DashboardPage extends StatelessWidget {
                         children: [
                           /// HEADER COMPACT
                           _buildHeader(vm.userName, vm.todayDate),
+
+                          const SizedBox(height: 16),
+                          /// RAPPEL INACTIVITÉ
+                          if (reminderService != null)
+                            FutureBuilder<String?>(
+                              future: reminderService.getReminderMessage(),
+                              builder: (context, snap) {
+                                if (!snap.hasData || snap.data == null) return const SizedBox();
+
+                                return Container(
+                                  padding: const EdgeInsets.all(12),
+                                  margin: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    snap.data!,
+                                    style: const TextStyle(color: Colors.orange),
+                                  ),
+                                );
+                              },
+                            ),
+
+
+  
 
                           const SizedBox(height: 16),
 

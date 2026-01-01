@@ -14,7 +14,8 @@ import 'perf/performance_lab_page.dart';
 
 class RootShell extends StatefulWidget {
   final AppDb db;
-  const RootShell({super.key, required this.db});
+  final AppPrefs? prefs;
+  const RootShell({super.key, required this.db, this.prefs});
 
   @override
   State<RootShell> createState() => _RootShellState();
@@ -48,7 +49,7 @@ class _RootShellState extends State<RootShell> {
     }
 
     final pages = [
-      DashboardPage(db: widget.db),
+      DashboardPage(db: widget.db,prefs: widget.prefs),
       PlanningPage(key: _planningKey, db: widget.db),
       WorkoutProgramPage(db: widget.db, prefs: _prefs!),
       ExercisesPage(db: widget.db),
