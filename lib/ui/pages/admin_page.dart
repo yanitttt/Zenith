@@ -74,7 +74,96 @@ class _AdminPageView extends StatelessWidget {
               ),
 
               const SizedBox(height: 20),
+              // OPTION RAPPEL D'INACTIVITÉ
+              Builder(
+                builder: (context) {
+                  final prefs = context.read<AdminViewModel>().prefs;
 
+                  return Card(
+                    color: AppTheme.gold,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Rappel d'inactivité",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.gold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // SWITCH ACTIVER / DESACTIVER
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Activer le rappel",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              StatefulBuilder(
+                                builder: (context, setState) {
+                                  return Switch(
+                                    value: prefs.reminderEnabled,
+                                    activeColor: AppTheme.success,
+                                    onChanged: (v) async {
+                                      await prefs.setReminderEnabled(v);
+                                      setState(() {});
+                                    },
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // CHOIX DU NOMBRE DE JOURS
+                          if (prefs.reminderEnabled)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  "Rappel après",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                StatefulBuilder(
+                                  builder: (context, setState) {
+                                    return DropdownButton<int>(
+                                      value: prefs.reminderDays,
+                                      dropdownColor: AppTheme.scaffold,
+                                      style: const TextStyle(color: Colors.white),
+                                      items: const [
+                                        DropdownMenuItem(value: 3, child: Text("3 jours")),
+                                        DropdownMenuItem(value: 5, child: Text("5 jours")),
+                                        DropdownMenuItem(value: 7, child: Text("7 jours")),
+                                        DropdownMenuItem(value: 10, child: Text("10 jours")),
+                                      ],
+                                      onChanged: (v) async {
+                                        if (v == null) return;
+                                        await prefs.setReminderDays(v);
+                                        setState(() {});
+                                      },
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+
+              const SizedBox(height: 20),
               // LISTE DES UTILISATEURS
               Expanded(
                 child: Builder(
