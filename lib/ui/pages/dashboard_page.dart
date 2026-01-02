@@ -14,11 +14,19 @@ import '../../core/perf/perf_service.dart';
 import '../viewmodels/dashboard_view_model.dart';
 import '../../services/dashboard_service.dart'; // Pour le type DashboardData
 import '../../services/reminder_service.dart';
+import '../widgets/dashboard_skeleton.dart';
 
 class DashboardPage extends StatelessWidget {
   final AppDb db;
   final AppPrefs? prefs;
-  const DashboardPage({super.key, required this.db, this.prefs});
+  final void Function(int)? onNavigateToTab;
+
+  const DashboardPage({
+    super.key,
+    required this.db,
+    this.prefs,
+    this.onNavigateToTab,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +36,13 @@ class DashboardPage extends StatelessWidget {
     final responsive = Responsive(context);
 
     final inactivityService = InactivityService(db);
-      final reminderService = (prefs != null)
-      ? ReminderService(
-          inactivityService: inactivityService,
-          prefs: prefs!,
-        )
-      : null;
+    final reminderService =
+        (prefs != null)
+            ? ReminderService(
+              inactivityService: inactivityService,
+              prefs: prefs!,
+            )
+            : null;
     // Initialisation du ViewModel via Provider
     return ChangeNotifierProvider<DashboardViewModel>(
       create: (_) => DashboardViewModel(db),
@@ -68,6 +77,7 @@ class DashboardPage extends StatelessWidget {
 
                     // Valeurs par défaut si pas de data ou chargement
                     final data = snapshot.data;
+
                     final streakWeeks = data?.streakWeeks ?? 0;
                     // final volumeVariation = data?.volumeVariation ?? 0.0; // Inutilisé dans code d'origine
                     // final efficiency = data?.efficiency ?? 0.0; // Inutilisé dans code d'origine
@@ -77,23 +87,25 @@ class DashboardPage extends StatelessWidget {
                     final totalSeances = data?.totalSeances ?? 0;
                     // final moyennePlaisir = data?.moyennePlaisir ?? 0.0; // Inutilisé dans code d'origine
 
-                    return PerfMonitorWidget(
-                      label: 'Dashboard_Body',
-                      logOnBuild: PerfService.isPerfMode,
-                      logOnRender: PerfService.isPerfMode,
-                      child: Column(
+                    final hasProgram = data?.hasProgram ?? false;
+
+                    // Contenu principal (Squelette ou Stats)
+                    Widget mainContent;
+
+                    if (!hasProgram) {
+                      mainContent = const DashboardSkeleton();
+                    } else {
+                      mainContent = Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          /// HEADER COMPACT
-                          _buildHeader(vm.userName, vm.todayDate),
-
-                          const SizedBox(height: 16),
                           /// RAPPEL INACTIVITÉ
                           if (reminderService != null)
                             FutureBuilder<String?>(
                               future: reminderService.getReminderMessage(),
                               builder: (context, snap) {
-                                if (!snap.hasData || snap.data == null) return const SizedBox();
+                                if (!snap.hasData || snap.data == null) {
+                                  return const SizedBox();
+                                }
 
                                 return Container(
                                   padding: const EdgeInsets.all(12),
@@ -104,14 +116,13 @@ class DashboardPage extends StatelessWidget {
                                   ),
                                   child: Text(
                                     snap.data!,
-                                    style: const TextStyle(color: Colors.orange),
+                                    style: const TextStyle(
+                                      color: Colors.orange,
+                                    ),
                                   ),
                                 );
                               },
                             ),
-
-
-  
 
                           const SizedBox(height: 16),
 
@@ -189,6 +200,23 @@ class DashboardPage extends StatelessWidget {
                               ],
                             ),
                           ),
+                        ],
+                      );
+                    }
+
+                    return PerfMonitorWidget(
+                      label: 'Dashboard_Body',
+                      logOnBuild: PerfService.isPerfMode,
+                      logOnRender: PerfService.isPerfMode,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          /// HEADER COMPACT (Toujours visible)
+                          _buildHeader(vm.userName, vm.todayDate),
+
+                          const SizedBox(height: 16),
+
+                          Expanded(child: mainContent),
                         ],
                       ),
                     );

@@ -50,7 +50,11 @@ class _RootShellState extends State<RootShell> {
     }
 
     final pages = [
-      DashboardPage(db: widget.db, prefs: widget.prefs),
+      DashboardPage(
+        db: widget.db,
+        prefs: widget.prefs,
+        onNavigateToTab: (i) => setState(() => _index = i),
+      ),
       PlanningPage(key: _planningKey, db: widget.db),
       WorkoutProgramPage(
         db: widget.db,
