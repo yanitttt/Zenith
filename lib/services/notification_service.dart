@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -8,6 +9,14 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+
+  // Constantes
+  static const String motivationChannelId = 'zenith_motivation_channel';
+  static const String motivationChannelName = 'Motivation & Rappels';
+  static const String motivationDescription =
+      'Canal pour les rappels de motivation';
+  static const String motivationSoundName =
+      'alert_motivation'; // Sans extension pour Android
 
   Future<void> init({bool isBackground = false}) async {
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -32,8 +41,31 @@ class NotificationService {
             >();
 
     // On ne demande la permission que si on est au premier plan (pas en background)
-    if (androidImplementation != null && !isBackground) {
-      await androidImplementation.requestNotificationsPermission();
+    // On ne demande la permission que si on est au premier plan (pas en background)
+    if (androidImplementation != null) {
+      // Configuration du canal de motivation
+      AndroidNotificationChannel motivationChannel = AndroidNotificationChannel(
+        motivationChannelId,
+        motivationChannelName,
+        description: motivationDescription,
+        importance: Importance.max,
+        playSound: true,
+        sound: const RawResourceAndroidNotificationSound(motivationSoundName),
+        enableVibration: true,
+        vibrationPattern: Int64List.fromList([
+          0,
+          200,
+          100,
+          200,
+        ]), // Heartbeat pattern
+      );
+
+      // Création du canal
+      await androidImplementation.createNotificationChannel(motivationChannel);
+
+      if (!isBackground) {
+        await androidImplementation.requestNotificationsPermission();
+      }
     }
   }
 
@@ -85,16 +117,36 @@ class NotificationService {
     required int id,
     required String title,
     required String body,
+    String? channelId, // Paramètre optionnel pour choisir le canal
   }) async {
-    final String channelId = _getChannelId();
-    final String channelName = _getChannelName();
+    // Si un channelId spécifique est fourni, on l'utilise
+    // Sinon, on utilise la logique par défaut
+    String effectiveChannelId = channelId ?? _getChannelId();
+    String effectiveChannelName =
+        channelId == motivationChannelId
+            ? motivationChannelName
+            : _getChannelName();
 
     AndroidNotificationDetails androidPlatformChannelSpecifics;
 
-    if (!_soundEnabled) {
+    if (channelId == motivationChannelId) {
+      // Configuration spécifique pour le canal motivation (redondance pour garantir l'envoi correct)
+      // Note: La plupart des params sont définis par le channel lui-même sur Android 8+
       androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        channelId,
-        channelName,
+        motivationChannelId,
+        motivationChannelName,
+        channelDescription: motivationDescription,
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        sound: const RawResourceAndroidNotificationSound(motivationSoundName),
+        enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 200, 100, 200]),
+      );
+    } else if (!_soundEnabled) {
+      androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        effectiveChannelId,
+        effectiveChannelName,
         channelDescription: 'Notifications sans son',
         importance: Importance.max,
         priority: Priority.high,
@@ -109,8 +161,8 @@ class NotificationService {
       }
 
       androidPlatformChannelSpecifics = AndroidNotificationDetails(
-        channelId,
-        channelName,
+        effectiveChannelId,
+        effectiveChannelName,
         channelDescription:
             'Canal pour les notifications avec son personnalisé',
         importance: Importance.max,

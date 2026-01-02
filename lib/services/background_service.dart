@@ -10,7 +10,7 @@ const String _inactivityTaskKey = "com.recommandation_mobile.inactivity_check";
 
 // Paramètre configurable : seuil d'inactivité avant notif
 // Modifier ici pour tester en minutes (ex: Duration(minutes: 10)) ou en jours (ex: Duration(days: 7))
-const Duration INACTIVITY_THRESHOLD = Duration(days: 7);
+const Duration INACTIVITY_THRESHOLD = Duration(minutes: 1);
 
 // Entry point pour la background task (Doit être top-level ou static)
 @pragma('vm:entry-point')
@@ -57,6 +57,7 @@ void callbackDispatcher() {
                 title: "On ne lâche rien !",
                 body:
                     "Attention, cela fait $timeString que vous n'avez pas fait votre sport. Revenez vite !",
+                channelId: NotificationService.motivationChannelId,
               );
               print("[BackgroundService] Notification envoyée !");
             }
