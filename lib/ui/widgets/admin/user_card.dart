@@ -281,11 +281,15 @@ class UserCard extends StatelessWidget {
     );
 
     if (ok == true) {
+      // Capture du navigateur avant la suppression car le widget risque d'être démonté
+      // (la liste des user devient vide -> UserCard est retiré de l'arbre)
+      final navigator = Navigator.of(context);
+
       // Appel au ViewModel pour la suppression logique
       final isCurrentUser = await vm.deleteUser(userId);
 
-      if (isCurrentUser && context.mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
+      if (isCurrentUser) {
+        navigator.pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (_) => OnboardingFlow(db: vm.db, prefs: vm.prefs),
           ),

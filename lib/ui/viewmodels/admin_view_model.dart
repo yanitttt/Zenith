@@ -78,7 +78,7 @@ class AdminViewModel extends ChangeNotifier {
       // Vérifier si c'était l'utilisateur courant
       final currentId = prefs.currentUserId;
       if (currentId == userId) {
-        await prefs.setCurrentUserId(-1);
+        await prefs.clearCurrentUserId();
         await prefs.setOnboarded(false);
         return true; // Indique qu'il faut rediriger vers l'onboarding
       }
