@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'data/db/app_db.dart';
 import 'core/prefs/app_prefs.dart';
-import 'core/perf/perf_service.dart'; // ⬅️ Module Perf
+import 'core/perf/perf_service.dart'; //  Module Perf
 import 'core/theme/app_theme.dart';
 import 'ui/pages/root_shell.dart';
 import 'ui/pages/onboarding/onboarding_flow.dart';
