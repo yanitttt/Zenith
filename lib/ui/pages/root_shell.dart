@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'planning_page.dart';
 import '../../core/perf/perf_service.dart';
 import 'perf/performance_lab_page.dart';
+import '../../services/home_widget_service.dart'; // Added
 
 class RootShell extends StatefulWidget {
   final AppDb db;
@@ -49,9 +50,13 @@ class _RootShellState extends State<RootShell> {
     }
 
     final pages = [
-      DashboardPage(db: widget.db,prefs: widget.prefs),
+      DashboardPage(db: widget.db, prefs: widget.prefs),
       PlanningPage(key: _planningKey, db: widget.db),
-      WorkoutProgramPage(db: widget.db, prefs: _prefs!),
+      WorkoutProgramPage(
+        db: widget.db,
+        prefs: _prefs!,
+        homeWidgetService: HomeWidgetService(widget.db), // Instantiate here
+      ),
       ExercisesPage(db: widget.db),
       AdminPage(db: widget.db, prefs: _prefs!),
     ];

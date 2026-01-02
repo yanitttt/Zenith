@@ -1,10 +1,10 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 import '../../core/prefs/app_prefs.dart';
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_training_day_dao.dart';
 import '../../services/program_generator_service.dart';
 import '../../services/session_tracking_service.dart';
+import '../../services/home_widget_service.dart'; // Added
 import 'package:drift/drift.dart' as drift;
 
 // Enums for Smart Swap feature
@@ -15,6 +15,7 @@ enum SwapState { initial, loading, success, error }
 class WorkoutProgramViewModel extends ChangeNotifier {
   final AppDb _db;
   final AppPrefs _prefs;
+  final HomeWidgetService _homeWidgetService; // Added
 
   late final ProgramGeneratorService _programService;
   late final SessionTrackingService _sessionService;
@@ -35,9 +36,13 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   String? _swapError;
   int? _exerciseToSwapId;
 
-  WorkoutProgramViewModel({required AppDb db, required AppPrefs prefs})
-    : _db = db,
-      _prefs = prefs {
+  WorkoutProgramViewModel({
+    required AppDb db,
+    required AppPrefs prefs,
+    required HomeWidgetService homeWidgetService, // Added argument
+  }) : _db = db,
+       _prefs = prefs,
+       _homeWidgetService = homeWidgetService {
     _programService = ProgramGeneratorService(_db);
     _sessionService = SessionTrackingService(_db);
     _trainingDayDao = UserTrainingDayDao(_db);
@@ -117,6 +122,9 @@ class WorkoutProgramViewModel extends ChangeNotifier {
       final days = await _programService.getProgramDays(programId);
       _currentProgram = program;
       _programDays = days;
+
+      // Update Widget Logic
+      await _homeWidgetService.updateHomeWidget();
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -134,6 +142,8 @@ class WorkoutProgramViewModel extends ChangeNotifier {
       final userId = _prefs.currentUserId;
       if (userId == null) return;
       await _programService.regenerateUserProgram(userId: userId);
+      // Update Widget Logic
+      await _homeWidgetService.updateHomeWidget();
     } finally {
       _generating = false;
       await loadProgram();
@@ -160,6 +170,8 @@ class WorkoutProgramViewModel extends ChangeNotifier {
 
   Future<void> updateAfterSession() async {
     await loadProgram();
+    // Update Widget Logic
+    await _homeWidgetService.updateHomeWidget();
   }
 
   Future<void> getSmartAlternatives({

@@ -1,123 +1,137 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:home_widget/home_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/db/app_db.dart';
 import '../data/db/daos/program_dao.dart';
-import '../core/prefs/app_prefs.dart'; // Pour récupérer l'userId courant si dispo
-import 'package:shared_preferences/shared_preferences.dart';
+import '../core/prefs/app_prefs.dart';
+
+// --- Constants (OCP/Maintenance) ---
+class WidgetKeys {
+  static const String widgetState = 'widget_state';
+  static const String dayName = 'dayName';
+  static const String dayNumber = 'dayNumber';
+  static const String monthName = 'monthName';
+  static const String duration = 'durationMinutes';
+  static const String type = 'sessionType';
+  static const String exercise1 = 'exercise1';
+  static const String exercise2 = 'exercise2';
+}
+
+// --- States (Explicit State Management) ---
+class WidgetState {
+  static const String newUser = 'new_user';
+  static const String session = 'session';
+  static const String empty = 'empty';
+}
 
 class HomeWidgetService {
   final AppDb db;
 
   HomeWidgetService(this.db);
 
+  /// Entry point to update the widget.
+  /// Designed to be battery-efficient: only fetches necessary data and pushes changes.
   Future<void> updateHomeWidget() async {
+    debugPrint('[HOME_WIDGET] === Début updateHomeWidget (Optimized) ===');
+
+    // Lazy load deps to keep startup fast
+    final sp = await SharedPreferences.getInstance();
+    final prefs = AppPrefs(sp);
+    final userId = prefs.currentUserId;
+
+    if (userId == null) {
+      debugPrint('[HOME_WIDGET] Pas d\'utilisateur connecté. Abort.');
+      return;
+    }
+
+    final programDao = ProgramDao(db);
+
     try {
-      debugPrint('[HOME_WIDGET] === Début updateHomeWidget (Real Data) ===');
-
-      // Récupérer l'ID utilisateur courant (on suppose qu'il est stocké dans les prefs ou on prend le premier/seul user)
-      // Comme AppPrefs demande SharedPreferences, on l'instancie
-      final sp = await SharedPreferences.getInstance();
-      final prefs = AppPrefs(sp);
-      final userId = prefs.currentUserId;
-
-      if (userId == null) {
-        debugPrint(
-          '[HOME_WIDGET] Pas d\'utilisateur connecté, impossible de mettre à jour le widget.',
-        );
-        return;
-      }
-
-      final programDao = ProgramDao(db);
+      // 1. Fetch Data
       final nextSession = await programDao.getNextSession(userId);
 
-      if (nextSession == null) {
+      // 2. Determine State & Data to Save
+      final Map<String, dynamic> dataToSave = {};
+
+      if (nextSession != null) {
+        // STATE: SESSION
         debugPrint(
-          '[HOME_WIDGET] Aucune prochaine session trouvée. Mise à jour avec message vide.',
+          '[HOME_WIDGET] Session trouvée. State: ${WidgetState.session}',
         );
-        await HomeWidget.saveWidgetData<String>('dayName', 'Aucune');
-        await HomeWidget.saveWidgetData<String>('dayNumber', '');
-        await HomeWidget.saveWidgetData<String>('monthName', 'séance');
-        await HomeWidget.saveWidgetData<String>('durationMinutes', '0');
-        await HomeWidget.saveWidgetData<String>('sessionType', 'REPOS');
-        await HomeWidget.saveWidgetData<String>(
-          'exercise1',
-          'Aucune séance programmée\nProfitez de votre repos !',
-        );
-        await HomeWidget.saveWidgetData<String>('exercise2', '');
+        dataToSave[WidgetKeys.widgetState] = WidgetState.session;
+        dataToSave[WidgetKeys.dayName] = nextSession.dayName;
+        dataToSave[WidgetKeys.dayNumber] =
+            nextSession.dayNumber.toString(); // Fix: Save as String
+        dataToSave[WidgetKeys.monthName] = nextSession.monthName;
+        dataToSave[WidgetKeys.duration] =
+            nextSession.durationMinutes.toString(); // Fix: Save as String
+        dataToSave[WidgetKeys.type] = nextSession.sessionType;
 
-        await HomeWidget.updateWidget(
-          name: 'SessionWidgetProvider',
-          androidName: 'SessionWidgetProvider',
-          iOSName: 'SessionWidget',
-        );
-        return;
-      }
+        // Format exercises efficiently
+        if (nextSession.exercises.isNotEmpty) {
+          dataToSave[WidgetKeys.exercise1] = _formatExercise(
+            nextSession.exercises[0],
+          );
+        } else {
+          dataToSave[WidgetKeys.exercise1] = "";
+        }
 
-      debugPrint(
-        '[HOME_WIDGET] Session trouvée: ${nextSession.dayName} ${nextSession.dayNumber}',
-      );
-
-      // Utilisation du plugin home_widget pour sauvegarder les données
-      // Cela écrit dans le fichier SharedPreferences attendu par le plugin (accessible nativement)
-
-      await HomeWidget.saveWidgetData<String>('dayName', nextSession.dayName);
-      await HomeWidget.saveWidgetData<String>(
-        'dayNumber',
-        nextSession.dayNumber.toString(),
-      );
-      await HomeWidget.saveWidgetData<String>(
-        'monthName',
-        nextSession.monthName,
-      );
-      await HomeWidget.saveWidgetData<String>(
-        'durationMinutes',
-        nextSession.durationMinutes.toString(),
-      );
-      await HomeWidget.saveWidgetData<String>(
-        'sessionType',
-        nextSession.sessionType,
-      );
-
-      if (nextSession.exercises.isNotEmpty) {
-        final ex1 = nextSession.exercises[0];
-        // Formatage pour le widget Android (String simple)
-        final ex1Str = "${ex1.name}\n${ex1.sets} / ${ex1.reps} / ${ex1.load}";
-        await HomeWidget.saveWidgetData<String>('exercise1', ex1Str);
+        if (nextSession.exercises.length > 1) {
+          dataToSave[WidgetKeys.exercise2] = _formatExercise(
+            nextSession.exercises[1],
+          );
+        } else {
+          dataToSave[WidgetKeys.exercise2] = "";
+        }
       } else {
-        await HomeWidget.saveWidgetData<String>('exercise1', "");
+        // No next session. Check if New User or Finished.
+        final hasProgram = await programDao.hasAnyProgram(userId);
+        if (!hasProgram) {
+          // STATE: NEW USER
+          debugPrint(
+            '[HOME_WIDGET] Aucune historique. State: ${WidgetState.newUser}',
+          );
+          dataToSave[WidgetKeys.widgetState] = WidgetState.newUser;
+        } else {
+          // STATE: EMPTY (Rest/Finished)
+          debugPrint(
+            '[HOME_WIDGET] Programme terminé/Repos. State: ${WidgetState.empty}',
+          );
+          dataToSave[WidgetKeys.widgetState] = WidgetState.empty;
+          dataToSave[WidgetKeys.dayName] = "Aucune";
+          dataToSave[WidgetKeys.exercise1] = "Aucune séance programmée";
+          dataToSave[WidgetKeys.exercise2] = "Profitez de votre repos !";
+          dataToSave[WidgetKeys.type] = "REPOS";
+        }
       }
 
-      if (nextSession.exercises.length > 1) {
-        final ex2 = nextSession.exercises[1];
-        final ex2Str = "${ex2.name}\n${ex2.sets} / ${ex2.reps} / ${ex2.load}";
-        await HomeWidget.saveWidgetData<String>('exercise2', ex2Str);
-      } else {
-        await HomeWidget.saveWidgetData<String>('exercise2', "");
-      }
+      // 3. Batched Save (Performance)
+      await _saveData(dataToSave);
 
-      // Important: forcer la mise à jour du widget pour repeindre l'UI native
+      // 4. Notify Native Widget
       await HomeWidget.updateWidget(
         name: 'SessionWidgetProvider',
         androidName: 'SessionWidgetProvider',
-        iOSName: 'SessionWidget', // Si applicable
+        iOSName: 'SessionWidget',
       );
 
-      debugPrint(
-        '[HOME_WIDGET] === Widget mis à jour avec succès (via home_widget) ===',
-      );
-    } catch (e, st) {
-      debugPrint('[HOME_WIDGET] Erreur lors de la mise à jour du widget: $e');
-      debugPrint('[HOME_WIDGET] StackTrace: $st');
+      debugPrint('[HOME_WIDGET] Mise à jour terminée avec succès.');
+    } catch (e, stack) {
+      debugPrint('[HOME_WIDGET] Erreur critique: $e\n$stack');
+    }
+  }
+
+  String _formatExercise(NextSessionExerciseData ex) {
+    return "${ex.name}\n${ex.sets} / ${ex.reps} / ${ex.load}";
+  }
+
+  Future<void> _saveData(Map<String, dynamic> data) async {
+    for (final entry in data.entries) {
+      await HomeWidget.saveWidgetData(entry.key, entry.value);
     }
   }
 
   Future<void> initializeWidget() async {
-    try {
-      // Configurer le groupe de partage iOS si nécessaire
-      // await HomeWidget.setAppGroupId('group.your.app');
-      await updateHomeWidget();
-    } catch (e) {
-      debugPrint('[HOME_WIDGET] Erreur lors de l\'initialisation: $e');
-    }
+    await updateHomeWidget();
   }
 }

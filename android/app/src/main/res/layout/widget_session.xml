@@ -7,190 +7,252 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Header avec titre -->
+    <!-- STATE 1: SESSION CONTENT & EMPTY STATE (Dynamic Text) -->
     <LinearLayout
+        android:id="@+id/ll_session_content"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:orientation="vertical"
+        android:visibility="visible">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Prochaine séance"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:alpha="0.7" />
-
+        <!-- Header avec titre -->
         <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <!-- Tag DEMO -->
-        <FrameLayout
-            android:id="@+id/widget_demo_tag"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/widget_demo_tag_background"
-            android:paddingStart="4dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="4dp"
-            android:paddingBottom="2dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="DEMO"
+                android:text="Prochaine séance"
                 android:textColor="#FFFFFF"
-                android:textSize="9sp"
-                android:textStyle="bold" />
-        </FrameLayout>
-    </LinearLayout>
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:alpha="0.7" />
 
-    <!-- Date et duration -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="8dp"
-        android:gravity="center_vertical">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <!-- Jour -->
             <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Tag DEMO -->
+            <FrameLayout
+                android:id="@+id/widget_demo_tag"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:background="@drawable/widget_demo_tag_background"
+                android:paddingStart="4dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="2dp">
 
                 <TextView
-                    android:id="@+id/widget_day_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Lundi"
+                    android:text="Zenith"
                     android:textColor="#FFFFFF"
-                    android:textSize="14sp"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
+            </FrameLayout>
+        </LinearLayout>
 
-                <TextView
-                    android:id="@+id/widget_day_number"
+        <!-- Date et duration -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- Jour -->
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="15"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/widget_day_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Lundi"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/widget_day_number"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="15"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/widget_month_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:text="Novembre"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Duration -->
+                <TextView
+                    android:id="@+id/widget_duration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="60 min"
                     android:textColor="#FFFFFF"
-                    android:textSize="14sp"
+                    android:textSize="12sp"
+                    android:alpha="0.7" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Type de séance -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/widget_tag_background"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp">
+
+                <TextView
+                    android:id="@+id/widget_session_type"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PUSH"
+                    android:textColor="#000000"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
+            </FrameLayout>
+        </LinearLayout>
+
+        <!-- Exercices -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical">
+
+            <!-- Exercice 1 -->
+            <TextView
+                android:id="@+id/widget_exercise_1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Squat\n4 séries / 8 reps / 60kg de charge"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:lineSpacingMultiplier="1.2" />
+
+            <!-- Exercice 2 -->
+            <TextView
+                android:id="@+id/widget_exercise_2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Tapis\n4 séries / 8 reps / 60kg de charge"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:lineSpacingMultiplier="1.2" />
+        </LinearLayout>
+
+        <!-- Bouton Suite -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/widget_button_background"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/widget_month_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:text="Novembre"
-                    android:textColor="#FFFFFF"
+                    android:text="Suite"
+                    android:textColor="#000000"
                     android:textSize="14sp"
                     android:textStyle="bold" />
             </LinearLayout>
-
-            <!-- Duration -->
-            <TextView
-                android:id="@+id/widget_duration"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="60 min"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:alpha="0.7" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_weight="1" />
-
-        <!-- Type de séance -->
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/widget_tag_background"
-            android:paddingStart="8dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="4dp">
-
-            <TextView
-                android:id="@+id/widget_session_type"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PUSH"
-                android:textColor="#000000"
-                android:textSize="11sp"
-                android:textStyle="bold" />
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Exercices -->
+    <!-- STATE 2: NEW USER / WELCOME -->
     <LinearLayout
+        android:id="@+id/ll_new_user"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
 
-        <!-- Exercice 1 -->
         <TextView
-            android:id="@+id/widget_exercise_1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Démarrer"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ta transformation commence ici."
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:alpha="0.8"
+            android:gravity="center"
+            android:layout_marginBottom="24dp"/>
+
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Squat\n4 séries / 8 reps / 60kg de charge"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:lineSpacingMultiplier="1.2" />
+            android:background="@drawable/widget_button_background"
+            android:paddingTop="12dp"
+            android:paddingBottom="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
-        <!-- Exercice 2 -->
-        <TextView
-            android:id="@+id/widget_exercise_2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Tapis\n4 séries / 8 reps / 60kg de charge"
-            android:textColor="#FFFFFF"
-            android:textSize="11sp"
-            android:lineSpacingMultiplier="1.2" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Créer mon programme"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
 
-    <!-- Bouton Suite -->
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:background="@drawable/widget_button_background"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Suite"
-                android:textColor="#000000"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-    </FrameLayout>
 </LinearLayout>

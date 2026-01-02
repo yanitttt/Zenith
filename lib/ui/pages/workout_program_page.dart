@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
+
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../core/prefs/app_prefs.dart';
@@ -11,17 +11,29 @@ import '../../core/theme/app_theme.dart';
 import 'active_session_page.dart';
 import '../utils/responsive.dart';
 
+import '../../services/home_widget_service.dart'; // Add import
+
 class WorkoutProgramPage extends StatelessWidget {
   final AppDb db;
   final AppPrefs prefs;
+  final HomeWidgetService homeWidgetService; // Add field
 
-  const WorkoutProgramPage({super.key, required this.db, required this.prefs});
+  const WorkoutProgramPage({
+    super.key,
+    required this.db,
+    required this.prefs,
+    required this.homeWidgetService, // Add to constructor
+  });
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create:
-          (_) => WorkoutProgramViewModel(db: db, prefs: prefs)..loadProgram(),
+          (_) => WorkoutProgramViewModel(
+            db: db,
+            prefs: prefs,
+            homeWidgetService: homeWidgetService, // Pass to VM
+          )..loadProgram(),
       child: const _WorkoutProgramContent(),
     );
   }

@@ -44,12 +44,13 @@ class ProgramDao {
   Future<NextSessionData?> getNextSession(int userId) async {
     debugPrint('[PROGRAM_DAO] getNextSession pour user $userId');
 
-    // 1. Récupérer le programme actif
+    // 1. Récupérer le programme actif (le plus récent)
     final userProgram =
         await (db.select(db.userProgram)
               ..where(
                 (tbl) => tbl.userId.equals(userId) & tbl.isActive.equals(1),
               )
+              ..orderBy([(t) => OrderingTerm.desc(t.startDateTs)])
               ..limit(1))
             .getSingleOrNull();
 
@@ -60,7 +61,7 @@ class ProgramDao {
       return null;
     }
     debugPrint(
-      '[PROGRAM_DAO] Programme actif trouvé: ID ${userProgram.programId}',
+      '[PROGRAM_DAO] Programme actif trouvé: ID ${userProgram.programId} (User: ${userProgram.userId})',
     );
 
     // 2. Récupérer tous les jours du programme
@@ -211,5 +212,12 @@ class ProgramDao {
   int _estimateDuration(int exerciseCount) {
     // Estimation grossière : 10 min par exo + échauffement
     return 10 + (exerciseCount * 8);
+  }
+
+  Future<bool> hasAnyProgram(int userId) async {
+    final count =
+        await (db.select(db.userProgram)
+          ..where((tbl) => tbl.userId.equals(userId))).get();
+    return count.isNotEmpty;
   }
 }
