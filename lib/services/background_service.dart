@@ -10,7 +10,7 @@ const String _inactivityTaskKey = "com.recommandation_mobile.inactivity_check";
 
 // Paramètre configurable : seuil d'inactivité avant notif
 // Modifier ici pour tester en minutes (ex: Duration(minutes: 10)) ou en jours (ex: Duration(days: 7))
-const Duration INACTIVITY_THRESHOLD = Duration(minutes: 2);
+const Duration INACTIVITY_THRESHOLD = Duration(minutes: 1);
 
 // Entry point pour la background task (Doit être top-level ou static)
 @pragma('vm:entry-point')
@@ -27,8 +27,8 @@ void callbackDispatcher() {
           final inactivityService = InactivityService(db);
           final notificationService = NotificationService();
 
-          // Initialisation nécessaire pour les notifs en background
-          await notificationService.init();
+          // Initialisation nécessaire pour les notifs en background (sans demander la permission)
+          await notificationService.init(isBackground: true);
 
           // 3. Vérifier la date de dernière séance
           final lastSessionDate = await inactivityService.getLastSessionDate();
@@ -107,6 +107,19 @@ class BackgroundService {
               .keep, // Evite de replanifier si existe dejà
     );
     print("[BackgroundService] Service initialisé et tâche planifiée.");
+  }
+
+  /// Pour TESTER : Lance une vérification immédiate (OneTimeTask)
+  Future<void> triggerImmediateCheck() async {
+    await Workmanager().registerOneOffTask(
+      "debug_test_${DateTime.now().millisecondsSinceEpoch}",
+      _inactivityTaskKey,
+      constraints: Constraints(networkType: NetworkType.notRequired),
+      initialDelay: const Duration(
+        seconds: 10,
+      ), // Petite pause pour laisser le temps de fermer l'app
+    );
+    print("[BackgroundService] Tâche UNIQUE immédiate planifiée (dans 10s)");
   }
 
   /// Permet de forcer une annulation si besoin

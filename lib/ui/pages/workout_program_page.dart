@@ -20,7 +20,8 @@ class WorkoutProgramPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => WorkoutProgramViewModel(db: db, prefs: prefs)..loadProgram(),
+      create:
+          (_) => WorkoutProgramViewModel(db: db, prefs: prefs)..loadProgram(),
       child: const _WorkoutProgramContent(),
     );
   }
@@ -30,39 +31,40 @@ class _WorkoutProgramContent extends StatelessWidget {
   const _WorkoutProgramContent();
 
   Future<void> _regenerateProgram(
-      BuildContext context,
-      WorkoutProgramViewModel vm,
-      ) async {
+    BuildContext context,
+    WorkoutProgramViewModel vm,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text(
-          'Régénérer le programme',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'Veux-tu créer un nouveau programme ? L\'ancien sera archivé.',
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'Annuler',
-              style: TextStyle(color: Colors.grey),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF1E1E1E),
+            title: const Text(
+              'Régénérer le programme',
+              style: TextStyle(color: Colors.white),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold),
-            child: const Text(
-              'Confirmer',
-              style: TextStyle(color: Colors.black),
+            content: const Text(
+              'Veux-tu créer un nouveau programme ? L\'ancien sera archivé.',
+              style: TextStyle(color: Colors.white70),
             ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  'Annuler',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.gold),
+                child: const Text(
+                  'Confirmer',
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     if (confirmed == true) {
@@ -71,7 +73,9 @@ class _WorkoutProgramContent extends StatelessWidget {
           await vm.regenerateProgram();
         } catch (e) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('Erreur: $e')));
           }
         }
       }
@@ -79,26 +83,29 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Future<void> _startSession(
-      BuildContext context,
-      ProgramDaySession day,
-      WorkoutProgramViewModel vm,
-      ) async {
+    BuildContext context,
+    ProgramDaySession day,
+    WorkoutProgramViewModel vm,
+  ) async {
     final userId = vm.currentUserId;
 
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Utilisateur non connecté')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Utilisateur non connecté')));
       return;
     }
 
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => ActiveSessionPage(
-          db: vm.db,
-          userId: userId,
-          programDayId: day.programDayId,
-          dayName: day.dayName,
-        ),
+        builder:
+            (context) => ActiveSessionPage(
+              db: vm.db,
+              userId: userId,
+              programDayId: day.programDayId,
+              dayName: day.dayName,
+            ),
       ),
     );
 
@@ -114,12 +121,13 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Future<void> _handleGenerateClick(
-      BuildContext context,
-      WorkoutProgramViewModel vm,
-      ) async {
-    final hasDays = await vm.checkHasTrainingDays();
+    BuildContext context,
+    WorkoutProgramViewModel vm,
+  ) async {
+    // 1. Récupérer ou définir les jours d'entraînement
+    List<int> selectedDays = await vm.getUserTrainingDays();
 
-    if (!hasDays) {
+    if (selectedDays.isEmpty) {
       if (!context.mounted) return;
       final result = await showDialog<List<int>>(
         context: context,
@@ -127,8 +135,60 @@ class _WorkoutProgramContent extends StatelessWidget {
       );
 
       if (result != null && result.isNotEmpty) {
+        selectedDays = result;
         await vm.saveTrainingDays(result);
-        await vm.generateNewProgram();
+      } else {
+        return; // Annulation par l'utilisateur
+      }
+    }
+
+    // 2. Vérifier si aujourd'hui correspond à un jour d'entraînement
+    bool startToday = false;
+    final int todayIndex = DateTime.now().weekday;
+
+    if (context.mounted && selectedDays.contains(todayIndex)) {
+      final shouldStartToday = await showDialog<bool>(
+        context: context,
+        builder:
+            (ctx) => AlertDialog(
+              backgroundColor: const Color(0xFF1E1E1E),
+              title: const Text(
+                "C'est aujourd'hui !",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: const Text(
+                "Vous avez sélectionné le jour actuel pour vos entraînements.\nVoulez-vous commencer votre programme dès aujourd'hui ?",
+                style: TextStyle(color: Colors.white70),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text(
+                    "Non, semaine prochaine",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.gold,
+                    foregroundColor: Colors.black,
+                  ),
+                  child: const Text("Oui, commencer aujourd'hui"),
+                ),
+              ],
+            ),
+      );
+      startToday = shouldStartToday ?? false;
+    }
+
+    // 3. Générer le programme
+    if (context.mounted) {
+      try {
+        await vm.generateNewProgram(startToday: startToday);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -137,16 +197,12 @@ class _WorkoutProgramContent extends StatelessWidget {
             ),
           );
         }
-      }
-    } else {
-      await vm.generateNewProgram();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Programme généré avec succès !'),
-            backgroundColor: AppTheme.gold,
-          ),
-        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          );
+        }
       }
     }
   }
@@ -196,13 +252,14 @@ class _WorkoutProgramContent extends StatelessWidget {
                 if (vm.programDays.isNotEmpty)
                   _buildDaySelector(context, responsive, vm),
                 Expanded(
-                  child: vm.isLoading || vm.isGenerating
-                      ? _buildLoading(vm)
-                      : vm.error != null
-                      ? _buildError(context, vm)
-                      : vm.programDays.isEmpty
-                      ? _buildEmpty(context, responsive, vm)
-                      : _buildDayContent(context, responsive, vm),
+                  child:
+                      vm.isLoading || vm.isGenerating
+                          ? _buildLoading(vm)
+                          : vm.error != null
+                          ? _buildError(context, vm)
+                          : vm.programDays.isEmpty
+                          ? _buildEmpty(context, responsive, vm)
+                          : _buildDayContent(context, responsive, vm),
                 ),
               ],
             );
@@ -213,10 +270,10 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildHeader(
-      BuildContext context,
-      Responsive responsive,
-      WorkoutProgramViewModel vm,
-      ) {
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
     return Container(
       padding: EdgeInsets.all(responsive.rw(24)),
       child: Column(
@@ -262,7 +319,10 @@ class _WorkoutProgramContent extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: vm.isGenerating ? null : () => _regenerateProgram(context, vm),
+                onPressed:
+                    vm.isGenerating
+                        ? null
+                        : () => _regenerateProgram(context, vm),
                 icon: const Icon(Icons.refresh),
                 color: AppTheme.gold,
                 iconSize: responsive.rsp(28),
@@ -330,10 +390,10 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildEmpty(
-      BuildContext context,
-      Responsive responsive,
-      WorkoutProgramViewModel vm,
-      ) {
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -402,10 +462,10 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildDaySelector(
-      BuildContext context,
-      Responsive responsive,
-      WorkoutProgramViewModel vm,
-      ) {
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
     return Container(
       height: responsive.rh(90),
       margin: EdgeInsets.symmetric(horizontal: responsive.rw(24)),
@@ -415,7 +475,9 @@ class _WorkoutProgramContent extends StatelessWidget {
         itemBuilder: (context, index) {
           final day = vm.programDays[index];
           final isSelected = vm.selectedDayIndex == index;
-          final isCompleted = vm.completedSessions.containsKey(day.programDayId);
+          final isCompleted = vm.completedSessions.containsKey(
+            day.programDayId,
+          );
           return Padding(
             padding: EdgeInsets.only(right: responsive.rw(12)),
             child: GestureDetector(
@@ -426,10 +488,20 @@ class _WorkoutProgramContent extends StatelessWidget {
                   vertical: responsive.rh(12),
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppTheme.gold : (isCompleted ? Colors.green.shade900 : Colors.black),
+                  color:
+                      isSelected
+                          ? AppTheme.gold
+                          : (isCompleted
+                              ? Colors.green.shade900
+                              : Colors.black),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? AppTheme.gold : (isCompleted ? Colors.green : Colors.grey.shade800),
+                    color:
+                        isSelected
+                            ? AppTheme.gold
+                            : (isCompleted
+                                ? Colors.green
+                                : Colors.grey.shade800),
                     width: 2,
                   ),
                 ),
@@ -478,14 +550,16 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildDayContent(
-      BuildContext context,
-      Responsive responsive,
-      WorkoutProgramViewModel vm,
-      ) {
+    BuildContext context,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+  ) {
     if (vm.programDays.isEmpty) return const SizedBox();
 
     final currentDay = vm.programDays[vm.selectedDayIndex];
-    final isCompleted = vm.completedSessions.containsKey(currentDay.programDayId);
+    final isCompleted = vm.completedSessions.containsKey(
+      currentDay.programDayId,
+    );
     final completedSession = vm.completedSessions[currentDay.programDayId];
 
     return Column(
@@ -548,7 +622,10 @@ class _WorkoutProgramContent extends StatelessWidget {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: isCompleted ? null : () => _startSession(context, currentDay, vm),
+                onPressed:
+                    isCompleted
+                        ? null
+                        : () => _startSession(context, currentDay, vm),
                 icon: Icon(isCompleted ? Icons.check_circle : Icons.play_arrow),
                 label: Text(isCompleted ? 'Terminée' : 'Commencer'),
                 style: ElevatedButton.styleFrom(
@@ -580,7 +657,13 @@ class _WorkoutProgramContent extends StatelessWidget {
             itemCount: currentDay.exercises.length,
             itemBuilder: (context, index) {
               final exercise = currentDay.exercises[index];
-              return _buildExerciseCard(context, exercise, responsive, vm, currentDay);
+              return _buildExerciseCard(
+                context,
+                exercise,
+                responsive,
+                vm,
+                currentDay,
+              );
             },
           ),
         ),
@@ -589,12 +672,12 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   Widget _buildExerciseCard(
-      BuildContext context,
-      ProgramExerciseDetail exercise,
-      Responsive responsive,
-      WorkoutProgramViewModel vm,
-      ProgramDaySession day,
-      ) {
+    BuildContext context,
+    ProgramExerciseDetail exercise,
+    Responsive responsive,
+    WorkoutProgramViewModel vm,
+    ProgramDaySession day,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: responsive.rh(16)),
       padding: EdgeInsets.all(responsive.rw(16)),
@@ -644,7 +727,10 @@ class _WorkoutProgramContent extends StatelessWidget {
                       children: [
                         _buildBadge(
                           label: exercise.exerciseType.toUpperCase(),
-                          color: exercise.exerciseType == 'poly' ? Colors.blue : Colors.purple,
+                          color:
+                              exercise.exerciseType == 'poly'
+                                  ? Colors.blue
+                                  : Colors.purple,
                           responsive: responsive,
                         ),
                         SizedBox(width: responsive.rw(8)),
@@ -660,7 +746,8 @@ class _WorkoutProgramContent extends StatelessWidget {
               ),
               IconButton(
                 icon: const Icon(Icons.swap_horiz, color: AppTheme.gold),
-                onPressed: () => _showSwapReasonSheet(context, vm, exercise, day),
+                onPressed:
+                    () => _showSwapReasonSheet(context, vm, exercise, day),
               ),
             ],
           ),
@@ -685,7 +772,10 @@ class _WorkoutProgramContent extends StatelessWidget {
               _buildInfoColumn(
                 icon: Icons.timer,
                 label: 'Repos',
-                value: exercise.restSuggestionSec != null ? '${exercise.restSuggestionSec}s' : '-',
+                value:
+                    exercise.restSuggestionSec != null
+                        ? '${exercise.restSuggestionSec}s'
+                        : '-',
                 responsive: responsive,
               ),
             ],
@@ -696,106 +786,174 @@ class _WorkoutProgramContent extends StatelessWidget {
   }
 
   void _showSwapReasonSheet(
-      BuildContext context,
-      WorkoutProgramViewModel vm,
-      ProgramExerciseDetail exercise,
-      ProgramDaySession day,
-      ) {
+    BuildContext context,
+    WorkoutProgramViewModel vm,
+    ProgramExerciseDetail exercise,
+    ProgramDaySession day,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF1E1E1E),
-      builder: (_) => ChangeNotifierProvider.value(
-        value: vm,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Pourquoi remplacer cet exercice ?', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.no_stroller, color: AppTheme.gold),
-                title: const Text('Aucun équipement disponible', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAlternativesSheet(context, vm, exercise, day, SwapReason.noEquipment);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.personal_injury_outlined, color: AppTheme.gold),
-                title: const Text('Douleur ou inconfort', style: TextStyle(color: Colors.white)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showAlternativesSheet(context, vm, exercise, day, SwapReason.pain);
-                },
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showAlternativesSheet(
-      BuildContext context,
-      WorkoutProgramViewModel vm,
-      ProgramExerciseDetail exercise,
-      ProgramDaySession day,
-      SwapReason reason,
-      ) {
-    vm.getSmartAlternatives(originalExerciseId: exercise.exerciseId, reason: reason);
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
-      builder: (_) => ChangeNotifierProvider.value(
-        value: vm,
-        child: Consumer<WorkoutProgramViewModel>(
-          builder: (modalContext, model, child) {
-            return Container(
+      builder:
+          (_) => ChangeNotifierProvider.value(
+            value: vm,
+            child: Container(
               padding: const EdgeInsets.all(16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Choisissez une alternative', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Pourquoi remplacer cet exercice ?',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  _buildAlternativesContent(modalContext, model, day),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.no_stroller,
+                      color: AppTheme.gold,
+                    ),
+                    title: const Text(
+                      'Aucun équipement disponible',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showAlternativesSheet(
+                        context,
+                        vm,
+                        exercise,
+                        day,
+                        SwapReason.noEquipment,
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(
+                      Icons.personal_injury_outlined,
+                      color: AppTheme.gold,
+                    ),
+                    title: const Text(
+                      'Douleur ou inconfort',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _showAlternativesSheet(
+                        context,
+                        vm,
+                        exercise,
+                        day,
+                        SwapReason.pain,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
                 ],
               ),
-            );
-          },
-        ),
-      ),
+            ),
+          ),
+    );
+  }
+
+  void _showAlternativesSheet(
+    BuildContext context,
+    WorkoutProgramViewModel vm,
+    ProgramExerciseDetail exercise,
+    ProgramDaySession day,
+    SwapReason reason,
+  ) {
+    vm.getSmartAlternatives(
+      originalExerciseId: exercise.exerciseId,
+      reason: reason,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1E1E1E),
+      builder:
+          (_) => ChangeNotifierProvider.value(
+            value: vm,
+            child: Consumer<WorkoutProgramViewModel>(
+              builder: (modalContext, model, child) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Choisissez une alternative',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildAlternativesContent(modalContext, model, day),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
     ).whenComplete(() => vm.resetSwapState());
   }
 
-  Widget _buildAlternativesContent(BuildContext context, WorkoutProgramViewModel model, ProgramDaySession day) {
+  Widget _buildAlternativesContent(
+    BuildContext context,
+    WorkoutProgramViewModel model,
+    ProgramDaySession day,
+  ) {
     switch (model.swapState) {
       case SwapState.loading:
-        return const Center(child: CircularProgressIndicator(color: AppTheme.gold));
+        return const Center(
+          child: CircularProgressIndicator(color: AppTheme.gold),
+        );
       case SwapState.error:
-        return Center(child: Text(model.swapError ?? 'Erreur', style: const TextStyle(color: Colors.red)));
+        return Center(
+          child: Text(
+            model.swapError ?? 'Erreur',
+            style: const TextStyle(color: Colors.red),
+          ),
+        );
       case SwapState.success:
         if (model.swapAlternatives.isEmpty) {
-          return const Center(child: Text('Aucune alternative trouvée.', style: TextStyle(color: Colors.white70)));
+          return const Center(
+            child: Text(
+              'Aucune alternative trouvée.',
+              style: TextStyle(color: Colors.white70),
+            ),
+          );
         }
         return Column(
-          children: model.swapAlternatives.map((alt) {
-            return ListTile(
-              title: Text(alt.name, style: const TextStyle(color: Colors.white)),
-              subtitle: const Text('Poids du corps', style: TextStyle(color: Colors.white70)),
-              onTap: () {
-                model.applySwap(day.dayOrder - 1, alt);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Exercice remplacé par ${alt.name}')),
+          children:
+              model.swapAlternatives.map((alt) {
+                return ListTile(
+                  title: Text(
+                    alt.name,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  subtitle: const Text(
+                    'Poids du corps',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  onTap: () {
+                    model.applySwap(day.dayOrder - 1, alt);
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Exercice remplacé par ${alt.name}'),
+                      ),
+                    );
+                  },
                 );
-              },
-            );
-          }).toList(),
+              }).toList(),
         );
       default:
         return const SizedBox.shrink();

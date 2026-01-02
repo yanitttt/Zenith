@@ -91,6 +91,27 @@ class UserCard extends StatelessWidget {
                     ],
                   ),
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black26,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFD9BE77).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Text(
+                    '#${u.id}',
+                    style: const TextStyle(
+                      color: Color(0xFFD9BE77),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

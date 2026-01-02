@@ -31,6 +31,8 @@ void main() async {
 
   await NotificationService().init();
   await BackgroundService().init();
+  // DECOMMENTER LIGNE CI-DESSOUS POUR TESTER IMMEDIATEMENT (PUIS RE-COMMENTER)
+  // await BackgroundService().triggerImmediateCheck();
 
   final userDao = UserDao(db);
   await userDao.ensureSingleton();

@@ -9,6 +9,7 @@ import 'package:drift/drift.dart' as drift;
 
 // Enums for Smart Swap feature
 enum SwapReason { noEquipment, pain }
+
 enum SwapState { initial, loading, success, error }
 
 class WorkoutProgramViewModel extends ChangeNotifier {
@@ -35,8 +36,8 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   int? _exerciseToSwapId;
 
   WorkoutProgramViewModel({required AppDb db, required AppPrefs prefs})
-      : _db = db,
-        _prefs = prefs {
+    : _db = db,
+      _prefs = prefs {
     _programService = ProgramGeneratorService(_db);
     _sessionService = SessionTrackingService(_db);
     _trainingDayDao = UserTrainingDayDao(_db);
@@ -84,7 +85,9 @@ class WorkoutProgramViewModel extends ChangeNotifier {
       } else {
         final days = await _programService.getProgramDays(program.id);
         final dayIds = days.map((d) => d.programDayId).toList();
-        final completed = await _sessionService.getCompletedSessionsForDays(dayIds);
+        final completed = await _sessionService.getCompletedSessionsForDays(
+          dayIds,
+        );
 
         _currentProgram = program;
         _programDays = days;
@@ -98,18 +101,23 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> generateNewProgram() async {
+  Future<void> generateNewProgram({bool startToday = false}) async {
     _generating = true;
     notifyListeners();
     try {
       final userId = _prefs.currentUserId;
       if (userId == null) throw Exception('User not logged in');
-      final programId = await _programService.generateUserProgram(userId: userId);
-      final program = await (_db.select(_db.workoutProgram)..where((tbl) => tbl.id.equals(programId))).getSingle();
+      final programId = await _programService.generateUserProgram(
+        userId: userId,
+        startToday: startToday,
+      );
+      final program =
+          await (_db.select(_db.workoutProgram)
+            ..where((tbl) => tbl.id.equals(programId))).getSingle();
       final days = await _programService.getProgramDays(programId);
       _currentProgram = program;
       _programDays = days;
-    } catch(e) {
+    } catch (e) {
       _error = e.toString();
       rethrow;
     } finally {
@@ -138,6 +146,12 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     return (await _trainingDayDao.getDayNumbersForUser(userId)).isNotEmpty;
   }
 
+  Future<List<int>> getUserTrainingDays() async {
+    final userId = _prefs.currentUserId;
+    if (userId == null) return [];
+    return await _trainingDayDao.getDayNumbersForUser(userId);
+  }
+
   Future<void> saveTrainingDays(List<int> days) async {
     final userId = _prefs.currentUserId;
     if (userId == null) return;
@@ -158,39 +172,62 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final primaryMuscleGroupQuery = _db.select(_db.exerciseMuscle, distinct: true)
-        ..where((em) => em.exerciseId.equals(originalExerciseId))
-        ..orderBy([(em) => drift.OrderingTerm(expression: em.weight.abs(), mode: drift.OrderingMode.desc)])
-        ..limit(1);
+      final primaryMuscleGroupQuery =
+          _db.select(_db.exerciseMuscle, distinct: true)
+            ..where((em) => em.exerciseId.equals(originalExerciseId))
+            ..orderBy([
+              (em) => drift.OrderingTerm(
+                expression: em.weight.abs(),
+                mode: drift.OrderingMode.desc,
+              ),
+            ])
+            ..limit(1);
       final primaryMuscle = await primaryMuscleGroupQuery.getSingleOrNull();
 
       if (primaryMuscle == null) {
         throw Exception("Cannot determine primary muscle for the exercise.");
       }
 
-      final exercisesWithSameMuscle = _db.select(_db.exercise).join([
-        drift.innerJoin(_db.exerciseMuscle, _db.exerciseMuscle.exerciseId.equalsExp(_db.exercise.id))
-      ])..where(_db.exerciseMuscle.muscleId.equals(primaryMuscle.muscleId))
-        ..where(_db.exercise.id.isNotValue(originalExerciseId));
+      final exercisesWithSameMuscle =
+          _db.select(_db.exercise).join([
+              drift.innerJoin(
+                _db.exerciseMuscle,
+                _db.exerciseMuscle.exerciseId.equalsExp(_db.exercise.id),
+              ),
+            ])
+            ..where(_db.exerciseMuscle.muscleId.equals(primaryMuscle.muscleId))
+            ..where(_db.exercise.id.isNotValue(originalExerciseId));
 
       switch (reason) {
         case SwapReason.noEquipment:
           final bodyweightExercises = exercisesWithSameMuscle.join([
-            drift.leftOuterJoin(_db.exerciseEquipment, _db.exerciseEquipment.exerciseId.equalsExp(_db.exercise.id))
-          ])
-            ..where(_db.exerciseEquipment.equipmentId.isNull());
-          _swapAlternatives = (await bodyweightExercises.get()).map((row) => row.readTable(_db.exercise)).toList();
+            drift.leftOuterJoin(
+              _db.exerciseEquipment,
+              _db.exerciseEquipment.exerciseId.equalsExp(_db.exercise.id),
+            ),
+          ])..where(_db.exerciseEquipment.equipmentId.isNull());
+          _swapAlternatives =
+              (await bodyweightExercises.get())
+                  .map((row) => row.readTable(_db.exercise))
+                  .toList();
 
           break;
         case SwapReason.pain:
-          final originalExercise = await (_db.select(_db.exercise)..where((e) => e.id.equals(originalExerciseId))).getSingle();
-          exercisesWithSameMuscle.where(_db.exercise.type.isNotValue(originalExercise.type));
-          _swapAlternatives = (await exercisesWithSameMuscle.get()).map((row) => row.readTable(_db.exercise)).toList();
+          final originalExercise =
+              await (_db.select(_db.exercise)
+                ..where((e) => e.id.equals(originalExerciseId))).getSingle();
+          exercisesWithSameMuscle.where(
+            _db.exercise.type.isNotValue(originalExercise.type),
+          );
+          _swapAlternatives =
+              (await exercisesWithSameMuscle.get())
+                  .map((row) => row.readTable(_db.exercise))
+                  .toList();
           break;
       }
 
       _swapAlternatives.shuffle();
-      if(_swapAlternatives.length > 2) {
+      if (_swapAlternatives.length > 2) {
         _swapAlternatives = _swapAlternatives.sublist(0, 2);
       }
 
@@ -204,11 +241,16 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   }
 
   void applySwap(int dayIndex, ExerciseData newExercise) {
-    if (_exerciseToSwapId == null || dayIndex < 0 || dayIndex >= _programDays.length) return;
+    if (_exerciseToSwapId == null ||
+        dayIndex < 0 ||
+        dayIndex >= _programDays.length)
+      return;
 
     final day = _programDays[dayIndex];
     final exercises = day.exercises;
-    final exerciseIndex = exercises.indexWhere((ex) => ex.exerciseId == _exerciseToSwapId);
+    final exerciseIndex = exercises.indexWhere(
+      (ex) => ex.exerciseId == _exerciseToSwapId,
+    );
 
     if (exerciseIndex == -1) return;
 
