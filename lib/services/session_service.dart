@@ -3,16 +3,61 @@ import 'package:flutter/material.dart';
 import '../data/db/app_db.dart';
 import '../data/repositories/exercise_repository.dart';
 import '../ui/widgets/session/session_card.dart';
-
+import '../core/prefs/app_prefs.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../data/db/daos/program_dao.dart';
 
 class SessionService {
   final AppDb db;
   SessionService(this.db);
 
+  Future<SessionInfo?> getNextSession() async {
+    try {
+      final sp = await SharedPreferences.getInstance();
+      final prefs = AppPrefs(sp);
+      final userId = prefs.currentUserId;
+
+      if (userId == null) return null;
+
+      final dao = ProgramDao(db);
+      final nextSession = await dao.getNextSession(userId);
+
+      if (nextSession == null) return null;
+
+      return SessionInfo(
+        dayName: nextSession.dayName,
+        dayNumber: nextSession.dayNumber,
+        monthName: nextSession.monthName,
+        durationMinutes: nextSession.durationMinutes,
+        sessionType: nextSession.sessionType,
+        exercises:
+            nextSession.exercises
+                .map(
+                  (e) => ExerciseItem(
+                    name: e.name,
+                    sets: e.sets,
+                    reps: e.reps,
+                    rest:
+                        "? min", // Pas dispo dans NextSessionData pour l'instant
+                    load: e.load,
+                    icon: _getExerciseIcon(e.name), // Ou utiliser e.type
+                  ),
+                )
+                .toList(),
+      );
+    } catch (e) {
+      debugPrint('[SESSION_SERVICE] Erreur getNextSession: $e');
+      return null;
+    }
+  }
 
   Future<SessionInfo> getRandomSessionInfo({int exerciseCount = 4}) async {
-    try {
+    // Si on peut avoir la vraie prochaine séance, on l'utilise !
+    final realSession = await getNextSession();
+    if (realSession != null) return realSession;
 
+    try {
+      // Fallback sur le random si pas de programme actif
       final exerciseRepo = ExerciseRepository(db);
       final allExercises = await exerciseRepo.all();
 
@@ -20,30 +65,45 @@ class SessionService {
         return _getFallbackSession();
       }
 
-
       allExercises.shuffle();
       final selectedExercises = allExercises.take(exerciseCount).toList();
 
-
-      final exerciseItems = selectedExercises.map((e) {
-        return ExerciseItem(
-          name: e.name,
-          sets: '${_randomInt(3, 5)} séries',
-          reps: '${_randomInt(6, 12)} répétitions',
-          rest: '${_randomInt(1, 3)}min',
-          load: '${_randomInt(40, 100)}kg de charge',
-          icon: _getExerciseIcon(e.name),
-        );
-      }).toList();
-
+      final exerciseItems =
+          selectedExercises.map((e) {
+            return ExerciseItem(
+              name: e.name,
+              sets: '${_randomInt(3, 5)} séries',
+              reps: '${_randomInt(6, 12)} répétitions',
+              rest: '${_randomInt(1, 3)}min',
+              load: '${_randomInt(40, 100)}kg de charge',
+              icon: _getExerciseIcon(e.name),
+            );
+          }).toList();
 
       final now = DateTime.now();
-      final daysOfWeek = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
-      const monthsOfYear = [
-        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      final daysOfWeek = [
+        'Lundi',
+        'Mardi',
+        'Mercredi',
+        'Jeudi',
+        'Vendredi',
+        'Samedi',
+        'Dimanche',
       ];
-
+      const monthsOfYear = [
+        'Janvier',
+        'Février',
+        'Mars',
+        'Avril',
+        'Mai',
+        'Juin',
+        'Juillet',
+        'Août',
+        'Septembre',
+        'Octobre',
+        'Novembre',
+        'Décembre',
+      ];
 
       final futureDate = now.add(Duration(days: _randomInt(1, 7)));
       final dayName = daysOfWeek[futureDate.weekday % 7];
@@ -61,11 +121,10 @@ class SessionService {
         exercises: exerciseItems,
       );
     } catch (e) {
-      debugPrint('[SESSION_SERVICE] Erreur: $e');
+      debugPrint('[SESSION_SERVICE] Erreur getRandomSessionInfo: $e');
       return _getFallbackSession();
     }
   }
-
 
   SessionInfo _getFallbackSession() {
     return SessionInfo(
@@ -95,7 +154,6 @@ class SessionService {
     );
   }
 
-
   IconData _getExerciseIcon(String exerciseName) {
     final lowerName = exerciseName.toLowerCase();
 
@@ -119,7 +177,6 @@ class SessionService {
 
     return Icons.fit_screen;
   }
-
 
   int _randomInt(int min, int max) {
     return min + Random().nextInt(max - min + 1);

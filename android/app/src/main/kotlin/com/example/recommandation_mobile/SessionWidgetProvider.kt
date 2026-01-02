@@ -64,6 +64,26 @@ class SessionWidgetProvider : AppWidgetProvider() {
                     Log.d(TAG, "home_widget has ${sharedPref.all.size} keys")
                 }
 
+                // Si toujours vide, essayer HomeWidgetPreferences (défaut interne du plugin)
+                if (sharedPref.all.isEmpty()) {
+                    Log.d(TAG, "home_widget empty, trying 'HomeWidgetPreferences'...")
+                    sharedPref = context.getSharedPreferences(
+                        "HomeWidgetPreferences",
+                        Context.MODE_PRIVATE
+                    )
+                    Log.d(TAG, "HomeWidgetPreferences has ${sharedPref.all.size} keys")
+                }
+
+                // Si toujours vide, essayer FlutterSharedPreferences (standard Flutter)
+                if (sharedPref.all.isEmpty()) {
+                    Log.d(TAG, "HomeWidgetPreferences empty, trying 'FlutterSharedPreferences'...")
+                    sharedPref = context.getSharedPreferences(
+                        "FlutterSharedPreferences",
+                        Context.MODE_PRIVATE
+                    )
+                    Log.d(TAG, "FlutterSharedPreferences has ${sharedPref.all.size} keys")
+                }
+
                 // Afficher tous les contenus de SharedPreferences
                 Log.d(TAG, "SharedPreferences contents:")
                 for ((key, value) in sharedPref.all) {
