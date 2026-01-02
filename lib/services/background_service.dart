@@ -1,6 +1,8 @@
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/prefs/app_prefs.dart';
 import '../data/db/app_db.dart';
 import 'inactivity_service.dart';
 import 'notification_service.dart';
@@ -10,7 +12,8 @@ const String _inactivityTaskKey = "com.recommandation_mobile.inactivity_check";
 
 // Paramètre configurable : seuil d'inactivité avant notif
 // Modifier ici pour tester en minutes (ex: Duration(minutes: 10)) ou en jours (ex: Duration(days: 7))
-const Duration INACTIVITY_THRESHOLD = Duration(minutes: 1);
+// NOTE: Ce paramètre est maintenant récupéré via AppPrefs
+// const Duration INACTIVITY_THRESHOLD = Duration(minutes: 1);
 
 // Entry point pour la background task (Doit être top-level ou static)
 @pragma('vm:entry-point')
@@ -20,6 +23,19 @@ void callbackDispatcher() {
       case _inactivityTaskKey:
         print("[BackgroundService] Exécution de la tâche d'inactivité...");
         try {
+          // 0. Initialiser les préférences partagées
+          final sp = await SharedPreferences.getInstance();
+          final prefs = AppPrefs(sp);
+
+          // Vérifier si le rappel est activé
+          if (!prefs.reminderEnabled) {
+            print("[BackgroundService] Rappels désactivés par l'utilisateur.");
+            return Future.value(true);
+          }
+
+          final reminderDays = prefs.reminderDays;
+          final inactivityThreshold = Duration(days: reminderDays);
+
           // 1. Initialiser la DB (Nécessaire car on est dans un nouvel Isolate)
           final db = AppDb();
 
@@ -38,10 +54,10 @@ void callbackDispatcher() {
             final difference = now.difference(lastSessionDate);
 
             print(
-              "[BackgroundService] Derniere session: $lastSessionDate (Duration: $difference)",
+              "[BackgroundService] Derniere session: $lastSessionDate (Duration: $difference). Seuil configuré: $reminderDays jours",
             );
 
-            if (difference >= INACTIVITY_THRESHOLD) {
+            if (difference >= inactivityThreshold) {
               // Vérification supplémentaire pour éviter le spam
               // On pourrait stocker la date de dernière notif dans SharedPreferences si besoin.
               // Ici, on envoie simplement si la condition est remplie.
