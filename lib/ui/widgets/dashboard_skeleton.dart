@@ -211,11 +211,30 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                   ),
                 ),
                 SizedBox(height: responsive.rh(8)),
-                Text(
-                  "Onglet Programme",
-                  style: TextStyle(
-                    color: Colors.white60,
-                    fontSize: responsive.rsp(12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.gold.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    "Onglet Programme",
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: responsive.rsp(13),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],
