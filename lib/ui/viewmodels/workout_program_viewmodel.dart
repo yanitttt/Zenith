@@ -5,6 +5,7 @@ import '../../data/db/daos/user_training_day_dao.dart';
 import '../../services/program_generator_service.dart';
 import '../../services/session_tracking_service.dart';
 import '../../services/home_widget_service.dart'; // Added
+import '../../services/gamification_service.dart';
 import 'package:drift/drift.dart' as drift;
 
 // Enums for Smart Swap feature
@@ -44,7 +45,7 @@ class WorkoutProgramViewModel extends ChangeNotifier {
        _prefs = prefs,
        _homeWidgetService = homeWidgetService {
     _programService = ProgramGeneratorService(_db);
-    _sessionService = SessionTrackingService(_db);
+    _sessionService = SessionTrackingService(_db, GamificationService(_db));
     _trainingDayDao = UserTrainingDayDao(_db);
   }
 

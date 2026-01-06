@@ -4,6 +4,7 @@ import '../../data/db/app_db.dart';
 import '../../services/session_tracking_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/program_generator_service.dart';
+import '../../services/gamification_service.dart';
 
 class ActiveSessionPage extends StatefulWidget {
   final AppDb db;
@@ -36,7 +37,10 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
   @override
   void initState() {
     super.initState();
-    _sessionService = SessionTrackingService(widget.db);
+    _sessionService = SessionTrackingService(
+      widget.db,
+      GamificationService(widget.db),
+    );
     _programGenerator = ProgramGeneratorService(widget.db);
     _startTime = DateTime.now();
     _initSession();
@@ -51,6 +55,7 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
 
       final exercises = await _sessionService.getSessionExercises(
         widget.programDayId,
+        sessionId: sessionId,
       );
 
       if (mounted) {

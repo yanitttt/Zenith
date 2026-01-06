@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:drift/drift.dart'
+    show innerJoin; // Add specific import or just drift
 import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_dao.dart';
 import '../../data/db/daos/user_goal_dao.dart';
@@ -7,6 +9,7 @@ import '../../data/db/daos/user_training_day_dao.dart';
 import '../../core/prefs/app_prefs.dart';
 import '../../services/notification_service.dart';
 import '../../services/ImcService.dart';
+import '../../services/gamification_service.dart';
 
 class AdminViewModel extends ChangeNotifier {
   final AppDb db;
@@ -28,6 +31,9 @@ class AdminViewModel extends ChangeNotifier {
 
     // Initialisation unique du stream
     usersStream = userDao.watchAllOrdered();
+
+    // Ensure badges exist (repair if migration failed)
+    GamificationService(db).ensureBadgesExist();
   }
 
   /// Stream des utilisateurs pour la mise à jour en temps réel
@@ -157,5 +163,65 @@ class AdminViewModel extends ChangeNotifier {
         .where((d) => d >= 1 && d <= 7)
         .map((d) => dayNames[d - 1])
         .join(', ');
+  }
+
+  // --- GAMIFICATION ---
+
+  final Map<int, List<GamificationBadgeData>> _badgesCache = {};
+
+  List<GamificationBadgeData>? getCachedUserBadges(int userId) =>
+      _badgesCache[userId];
+
+  Future<void> loadUserBadgesIfNeeded(int userId) async {
+    if (_badgesCache.containsKey(userId)) return;
+    try {
+      final query = db.select(db.userBadge).join([
+        innerJoin(
+          db.gamificationBadge,
+          db.gamificationBadge.id.equalsExp(db.userBadge.badgeId),
+        ),
+      ])..where(db.userBadge.userId.equals(userId));
+
+      final result = await query.get();
+      final badges =
+          result.map((row) => row.readTable(db.gamificationBadge)).toList();
+      _badgesCache[userId] = badges;
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Erreur lors du chargement des badges: $e");
+    }
+  }
+
+  Future<String> getDebugInfo(int userId) async {
+    try {
+      final ubCount = await (db.select(db.userBadge)
+        ..where((u) => u.userId.equals(userId))).get().then((l) => l.length);
+      final gbCount = await db
+          .select(db.gamificationBadge)
+          .get()
+          .then((l) => l.length);
+      final sessionCount = await (db.select(db.session)
+        ..where((s) => s.userId.equals(userId))).get().then((l) => l.length);
+      return "S:$sessionCount | UB:$ubCount | GB:$gbCount";
+    } catch (e) {
+      return "Err: $e";
+    }
+  }
+
+  Future<void> checkRetroactiveBadges(int userId) async {
+    await GamificationService(db).checkRetroactiveBadges(userId);
+  }
+
+  Stream<List<GamificationBadgeData>> watchUserBadges(int userId) {
+    final query = db.select(db.userBadge).join([
+      innerJoin(
+        db.gamificationBadge,
+        db.gamificationBadge.id.equalsExp(db.userBadge.badgeId),
+      ),
+    ])..where(db.userBadge.userId.equals(userId));
+
+    return query.watch().map((rows) {
+      return rows.map((row) => row.readTable(db.gamificationBadge)).toList();
+    });
   }
 }

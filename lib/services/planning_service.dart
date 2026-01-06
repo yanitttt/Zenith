@@ -26,23 +26,24 @@ class PlanningService {
 
   PlanningService(this.db);
 
-
   Future<List<PlanningItem>> getSessionsForDate(
     int userId,
     DateTime date,
   ) async {
-
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
 
     final startTs = startOfDay.millisecondsSinceEpoch ~/ 1000;
     final endTs = endOfDay.millisecondsSinceEpoch ~/ 1000;
 
-
     final queryDone = db.select(db.session).join([
       leftOuterJoin(
         db.programDay,
         db.programDay.id.equalsExp(db.session.programDayId),
+      ),
+      leftOuterJoin(
+        db.userProgram,
+        db.userProgram.programId.equalsExp(db.programDay.programId),
       ),
     ]);
 
@@ -55,18 +56,22 @@ class PlanningService {
 
     final List<PlanningItem> items = [];
 
-
     final Set<int> doneProgramDayIds = {};
     final Set<String> doneProgramNames = {};
 
     for (final row in rowsDone) {
       final session = row.readTable(db.session);
       final programDay = row.readTableOrNull(db.programDay);
+      final userProgram = row.readTableOrNull(db.userProgram);
 
       if (session.programDayId != null) {
         doneProgramDayIds.add(session.programDayId!);
         if (programDay != null) {
-          doneProgramNames.add(programDay.name);
+          // ONLY suppress if the done session belongs to an ACTIVE program
+          if (userProgram?.isActive == 1) {
+            // NORMALIZE: Trim name stored
+            doneProgramNames.add(programDay.name.trim());
+          }
         }
       }
 
@@ -83,8 +88,6 @@ class PlanningService {
       );
     }
 
-
-
     final queryScheduled = db.select(db.programDayExercise).join([
       innerJoin(
         db.programDay,
@@ -97,7 +100,6 @@ class PlanningService {
       ),
     ]);
 
-
     queryScheduled.where(
       db.programDayExercise.scheduledDate.isBetweenValues(
             startOfDay,
@@ -109,19 +111,18 @@ class PlanningService {
 
     final rowsScheduled = await queryScheduled.get();
 
-
     final Map<String, int> scheduledPrograms = {}; // Nom -> ID
 
     for (final row in rowsScheduled) {
       final pd = row.readTable(db.programDay);
-      scheduledPrograms[pd.name] = pd.id;
+      // NORMALIZE: Trim keys to avoid "Haut du corps " != "Haut du corps"
+      scheduledPrograms[pd.name.trim()] = pd.id;
     }
 
-
     for (final entry in scheduledPrograms.entries) {
-      final pName = entry.key;
+      final pName =
+          entry.key; // Note: this is now trimmed as it comes from keys
       final pId = entry.value;
-
 
       if (!doneProgramNames.contains(pName)) {
         items.add(
@@ -138,9 +139,17 @@ class PlanningService {
       }
     }
 
+    // DEBUG: Log all items
+    for (var item in items) {
+      print(
+        "[PLANNING_DEBUG] Item: ${item.title}, isDone: ${item.isDone}, SessionID: ${item.sessionId}",
+      );
+    }
+
+    // Sort: Done first, then by time? No, usually scheduled time.
+    // ...
     return items;
   }
-
 
   Future<Set<int>> getDaysWithActivity(int userId, DateTime startOfWeek) async {
     final endOfWeek = startOfWeek.add(const Duration(days: 7));
@@ -149,7 +158,6 @@ class PlanningService {
     final endTs = endOfWeek.millisecondsSinceEpoch ~/ 1000;
 
     final daysSet = <int>{};
-
 
     final sessions =
         await (db.select(db.session)..where(
@@ -162,7 +170,6 @@ class PlanningService {
       final date = DateTime.fromMillisecondsSinceEpoch(s.dateTs * 1000);
       daysSet.add(date.weekday);
     }
-
 
     final query = db.select(db.programDayExercise).join([
       innerJoin(

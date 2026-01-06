@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import '../data/db/app_db.dart';
 import 'program_generator_service.dart';
+import 'gamification_service.dart';
 
 class ActiveSessionExercise {
   final int exerciseId;
@@ -62,9 +64,9 @@ class ActiveSessionExercise {
 
 class SessionTrackingService {
   final AppDb db;
+  final GamificationService gamificationService;
 
-  SessionTrackingService(this.db);
-
+  SessionTrackingService(this.db, this.gamificationService);
 
   Future<int> startSession({
     required int userId,
@@ -72,7 +74,6 @@ class SessionTrackingService {
   }) async {
     final now = DateTime.now();
     DateTime sessionDate = now;
-
 
     final scheduledExercise =
         await (db.select(db.programDayExercise)
@@ -97,6 +98,43 @@ class SessionTrackingService {
       );
     }
 
+    // FIX: Check for ANY existing session (incomplete preferred via logic, or just latest) to prevent duplicates
+    final startOfDayTs =
+        DateTime(
+          sessionDate.year,
+          sessionDate.month,
+          sessionDate.day,
+        ).millisecondsSinceEpoch ~/
+        1000;
+    final endOfDayTs =
+        DateTime(
+          sessionDate.year,
+          sessionDate.month,
+          sessionDate.day,
+          23,
+          59,
+          59,
+        ).millisecondsSinceEpoch ~/
+        1000;
+
+    final existingSession =
+        await (db.select(db.session)
+              ..where(
+                (t) =>
+                    t.userId.equals(userId) &
+                    t.programDayId.equals(programDayId) &
+                    t.dateTs.isBetweenValues(startOfDayTs, endOfDayTs),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.dateTs)])
+              ..limit(1))
+            .getSingleOrNull();
+
+    if (existingSession != null) {
+      debugPrint(
+        '[SESSION] Reusing existing session (ID: ${existingSession.id}, Completed: ${existingSession.durationMin != null})',
+      );
+      return existingSession.id;
+    }
 
     final sessionId = await db
         .into(db.session)
@@ -112,15 +150,27 @@ class SessionTrackingService {
     return sessionId;
   }
 
-
   Future<List<ActiveSessionExercise>> getSessionExercises(
-    int programDayId,
-  ) async {
+    int programDayId, {
+    int? sessionId,
+  }) async {
+    // 1. Load template from Program Structure
     final programExercises =
         await (db.select(db.programDayExercise)
               ..where((tbl) => tbl.programDayId.equals(programDayId))
               ..orderBy([(t) => OrderingTerm.asc(t.position)]))
             .get();
+
+    // 2. Load saved performance if sessionId is provided
+    Map<int, SessionExerciseData> savedPerformance = {};
+    if (sessionId != null) {
+      final savedRows =
+          await (db.select(db.sessionExercise)
+            ..where((tbl) => tbl.sessionId.equals(sessionId))).get();
+      for (final row in savedRows) {
+        savedPerformance[row.exerciseId] = row;
+      }
+    }
 
     final List<ActiveSessionExercise> exercises = [];
 
@@ -128,6 +178,9 @@ class SessionTrackingService {
       final exercise =
           await (db.select(db.exercise)
             ..where((tbl) => tbl.id.equals(programEx.exerciseId))).getSingle();
+
+      // Merge saved data
+      final saved = savedPerformance[exercise.id];
 
       exercises.add(
         ActiveSessionExercise(
@@ -139,13 +192,18 @@ class SessionTrackingService {
           setsSuggestion: programEx.setsSuggestion,
           repsSuggestion: programEx.repsSuggestion,
           restSuggestionSec: programEx.restSuggestionSec,
+          // Hydrate with saved data
+          actualSets: saved?.sets,
+          actualReps: saved?.reps,
+          actualLoad: saved?.load,
+          actualRpe: saved?.rpe,
+          isCompleted: saved != null, // Mark as completed if data exists
         ),
       );
     }
 
     return exercises;
   }
-
 
   Future<void> saveExercisePerformance({
     required int sessionId,
@@ -167,7 +225,6 @@ class SessionTrackingService {
         );
   }
 
-
   Future<void> completeSession({
     required int sessionId,
     required DateTime startTime,
@@ -178,8 +235,25 @@ class SessionTrackingService {
     await (db.update(db.session)..where(
       (tbl) => tbl.id.equals(sessionId),
     )).write(SessionCompanion(durationMin: Value(durationMin)));
-  }
 
+    // GAMIFICATION TRIGGER
+    try {
+      final session =
+          await (db.select(db.session)
+            ..where((s) => s.id.equals(sessionId))).getSingle();
+      final exercises =
+          await (db.select(db.sessionExercise)
+            ..where((e) => e.sessionId.equals(sessionId))).get();
+
+      await gamificationService.checkAndAwardBadges(
+        userId: session.userId,
+        session: session,
+        exercises: exercises,
+      );
+    } catch (e) {
+      debugPrint('[GAMIFICATION] Error in completeSession: $e');
+    }
+  }
 
   Future<List<SessionData>> getUserSessions(int userId) async {
     return await (db.select(db.session)
@@ -188,7 +262,6 @@ class SessionTrackingService {
         .get();
   }
 
-
   Future<List<SessionExerciseData>> getSessionDetails(int sessionId) async {
     return await (db.select(db.sessionExercise)
           ..where((tbl) => tbl.sessionId.equals(sessionId))
@@ -196,12 +269,10 @@ class SessionTrackingService {
         .get();
   }
 
-
   Future<Map<String, dynamic>> analyzePerformance({
     required int exerciseId,
     required int userId,
   }) async {
-
     final query = '''
       SELECT se.sets, se.reps, se.load, se.rpe, se.position, s.date_ts
       FROM session_exercise se
@@ -234,7 +305,6 @@ class SessionTrackingService {
       };
     }
 
-
     double totalSets = 0;
     double totalReps = 0;
     double totalLoad = 0;
@@ -261,7 +331,6 @@ class SessionTrackingService {
     final avgLoad = count > 0 ? totalLoad / count : 0;
     final avgRpe = count > 0 ? totalRpe / count : 0;
 
-
     String trend = 'neutral';
     if (results.length >= 3) {
       final firstLoad = results.last.read<double?>('load') ?? 0;
@@ -284,7 +353,6 @@ class SessionTrackingService {
     };
   }
 
-
   Future<Map<String, dynamic>> getSuggestedAdjustments({
     required int exerciseId,
     required int userId,
@@ -305,7 +373,6 @@ class SessionTrackingService {
     final avgRpe = performance['averageRpe'] as double;
     final trend = performance['trend'] as String;
 
-
     if (avgRpe > 8.5) {
       return {
         'shouldIncrease': false,
@@ -314,7 +381,6 @@ class SessionTrackingService {
         'loadAdjustment': -0.10,
       };
     }
-
 
     if (avgRpe < 6.5 && trend == 'improving') {
       return {
@@ -333,13 +399,10 @@ class SessionTrackingService {
     };
   }
 
-
   Future<void> deleteSession(int sessionId) async {
-
     await (db.delete(db.session)
       ..where((tbl) => tbl.id.equals(sessionId))).go();
   }
-
 
   Future<bool> isDayCompleted(int programDayId) async {
     final sessions =
@@ -355,7 +418,6 @@ class SessionTrackingService {
     return sessions.isNotEmpty;
   }
 
-
   Future<SessionData?> getLastCompletedSession(int programDayId) async {
     return await (db.select(db.session)
           ..where(
@@ -367,7 +429,6 @@ class SessionTrackingService {
           ..limit(1))
         .getSingleOrNull();
   }
-
 
   Future<Map<int, SessionData>> getCompletedSessionsForDays(
     List<int> programDayIds,
@@ -383,7 +444,6 @@ class SessionTrackingService {
               )
               ..orderBy([(t) => OrderingTerm.desc(t.dateTs)]))
             .get();
-
 
     final Map<int, SessionData> result = {};
     for (final session in sessions) {

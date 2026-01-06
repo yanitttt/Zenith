@@ -5,6 +5,7 @@ import 'package:recommandation_mobile/data/db/app_db.dart';
 import 'package:recommandation_mobile/services/program_generator_service.dart';
 
 import 'package:recommandation_mobile/services/session_tracking_service.dart';
+import 'package:recommandation_mobile/services/gamification_service.dart';
 
 void main() {
   late AppDb db;
@@ -14,7 +15,7 @@ void main() {
   setUp(() async {
     db = AppDb.forTesting(NativeDatabase.memory());
     programGenerator = ProgramGeneratorService(db);
-    sessionService = SessionTrackingService(db);
+    sessionService = SessionTrackingService(db, GamificationService(db));
   });
 
   tearDown(() async {

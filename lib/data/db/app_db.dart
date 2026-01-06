@@ -9,7 +9,6 @@ import 'package:path_provider/path_provider.dart';
 
 part 'app_db.g.dart';
 
-
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dir = await getApplicationDocumentsDirectory();
@@ -26,7 +25,6 @@ LazyDatabase _openConnection() {
     return NativeDatabase.createInBackground(file);
   });
 }
-
 
 class EnumTextConverter extends TypeConverter<String, String> {
   final List<String> allowed;
@@ -48,7 +46,6 @@ class EnumTextConverter extends TypeConverter<String, String> {
     return value;
   }
 }
-
 
 class GenderConverter extends TypeConverter<String, String> {
   const GenderConverter();
@@ -81,7 +78,6 @@ class GenderConverter extends TypeConverter<String, String> {
   String toSql(String value) => _normalize(value);
 }
 
-
 const _convType = EnumTextConverter(['poly', 'iso']);
 const _convLevel = EnumTextConverter(['debutant', 'intermediaire', 'avance']);
 
@@ -96,11 +92,8 @@ const _convRelationType = EnumTextConverter([
   'regression',
 ]);
 
-
 const _nullableLevel = NullAwareTypeConverter.wrap(_convLevel);
 const _nullableMetabolism = NullAwareTypeConverter.wrap(_convMetabolism);
-
-
 
 class Exercise extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -152,8 +145,6 @@ class TrainingModality extends Table {
   @override
   List<String> get customConstraints => ['UNIQUE(objective_id, level, name)'];
 }
-
-
 
 class ExerciseMuscle extends Table {
   IntColumn get exerciseId =>
@@ -216,34 +207,59 @@ class ExerciseRelation extends Table {
   Set<Column> get primaryKey => {srcExerciseId, dstExerciseId, relationType};
 }
 
-
-
 class AppUser extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get age => integer().named('age').nullable()();
   RealColumn get weight => real().named('weight').nullable()();
   RealColumn get height => real().named('height').nullable()();
 
-
   TextColumn get gender =>
       text().named('gender').map(_nullableGender).nullable()();
 
-
   DateTimeColumn get birthDate => dateTime().named('birth_date').nullable()();
-
 
   TextColumn get level =>
       text().named('level').map(_nullableLevel).nullable()();
   TextColumn get metabolism =>
       text().named('metabolism').map(_nullableMetabolism).nullable()();
 
-
   TextColumn get nom => text().named('nom').nullable()();
   TextColumn get prenom => text().named('prenom').nullable()();
 
-
   IntColumn get singleton =>
       integer().named('singleton').withDefault(const Constant(1))();
+
+  IntColumn get xp => integer().named('xp').withDefault(const Constant(0))();
+  IntColumn get userLevel =>
+      integer().named('user_level').withDefault(const Constant(1))();
+  TextColumn get title => text().named('title').nullable()();
+}
+
+class GamificationBadge extends Table {
+  TextColumn get id => text().named('id')();
+  TextColumn get name => text().named('name')();
+  TextColumn get description => text().named('description')();
+  TextColumn get iconAsset => text().named('icon_asset').nullable()();
+  IntColumn get xpReward =>
+      integer().named('xp_reward').withDefault(const Constant(0))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+class UserBadge extends Table {
+  IntColumn get userId =>
+      integer()
+          .named('user_id')
+          .references(AppUser, #id, onDelete: KeyAction.cascade)();
+  TextColumn get badgeId =>
+      text()
+          .named('badge_id')
+          .references(GamificationBadge, #id, onDelete: KeyAction.cascade)();
+  IntColumn get earnedDateTs => integer().named('earned_date_ts')();
+
+  @override
+  Set<Column> get primaryKey => {userId, badgeId};
 }
 
 class UserEquipment extends Table {
@@ -310,8 +326,6 @@ class UserFeedback extends Table {
   Set<Column> get primaryKey => {userId, exerciseId, ts};
 }
 
-
-
 class Session extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get userId =>
@@ -345,8 +359,6 @@ class SessionExercise extends Table {
   @override
   Set<Column> get primaryKey => {sessionId, exerciseId, position};
 }
-
-
 
 class WorkoutProgram extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -393,7 +405,6 @@ class ProgramDayExercise extends Table {
   IntColumn get restSuggestionSec =>
       integer().named('rest_suggestion_sec').nullable()();
 
-
   TextColumn get previousSetsSuggestion =>
       text().named('previous_sets_suggestion').nullable()();
   TextColumn get previousRepsSuggestion =>
@@ -421,8 +432,6 @@ class UserProgram extends Table {
       integer().named('is_active').withDefault(const Constant(1))();
 }
 
-
-
 @DriftDatabase(
   tables: [
     Exercise,
@@ -444,7 +453,10 @@ class UserProgram extends Table {
     WorkoutProgram,
     ProgramDay,
     ProgramDayExercise,
+    ProgramDayExercise,
     UserProgram,
+    GamificationBadge,
+    UserBadge,
   ],
 )
 class AppDb extends _$AppDb {
@@ -452,12 +464,10 @@ class AppDb extends _$AppDb {
 
   AppDb() : _isTest = false, super(_openConnection());
 
-
   AppDb.forTesting(super.executor) : _isTest = true;
 
-
   @override
-  int get schemaVersion => 40;
+  int get schemaVersion => 42;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -484,11 +494,7 @@ class AppDb extends _$AppDb {
           'INTEGER REFERENCES program_day(id) ON DELETE SET NULL',
         );
 
-        await _addColumnIfMissing(
-          'session',
-          'name',
-          'TEXT',
-        );
+        await _addColumnIfMissing('session', 'name', 'TEXT');
       }
 
       if (await _tableExists('program_day_exercise')) {
@@ -497,7 +503,6 @@ class AppDb extends _$AppDb {
           'scheduled_date',
           'INTEGER',
         );
-
 
         await _addColumnIfMissing(
           'program_day_exercise',
@@ -557,9 +562,10 @@ class AppDb extends _$AppDb {
         'INTEGER NOT NULL DEFAULT 1',
       );
 
-
       if (await _tableExists('session')) {
-        debugPrint('[MIGRATION V40] Table session existe, ajout des colonnes...');
+        debugPrint(
+          '[MIGRATION V40] Table session existe, ajout des colonnes...',
+        );
         await _addColumnIfMissing(
           'session',
           'program_day_id',
@@ -567,14 +573,9 @@ class AppDb extends _$AppDb {
         );
 
         debugPrint('[MIGRATION V40] Ajout de la colonne name à session...');
-        await _addColumnIfMissing(
-          'session',
-          'name',
-          'TEXT',
-        );
+        await _addColumnIfMissing('session', 'name', 'TEXT');
         debugPrint('[MIGRATION V40] Colonne name ajoutée avec succès');
       }
-
 
       if (await _tableExists('program_day_exercise')) {
         await _addColumnIfMissing(
@@ -582,7 +583,6 @@ class AppDb extends _$AppDb {
           'scheduled_date',
           'INTEGER',
         );
-
 
         await _addColumnIfMissing(
           'program_day_exercise',
@@ -604,6 +604,26 @@ class AppDb extends _$AppDb {
       await _ensureExerciseRelationTable();
       await _ensureUserTrainingDayTable();
 
+      // MIGRATION V41
+      await _ensureGamificationTables();
+      if (await _tableExists('app_user')) {
+        await _addColumnIfMissing(
+          'app_user',
+          'xp',
+          'INTEGER NOT NULL DEFAULT 0',
+        );
+        await _addColumnIfMissing(
+          'app_user',
+          'user_level',
+          'INTEGER NOT NULL DEFAULT 1',
+        );
+        await _addColumnIfMissing('app_user', 'title', 'TEXT');
+      }
+      await _populateDefaultBadges();
+
+      if (to >= 42) {
+        await _populateBadgesV42();
+      }
 
       if (await _tableExists('user_feedback')) {
         await _addColumnIfMissing(
@@ -612,7 +632,6 @@ class AppDb extends _$AppDb {
           'INTEGER REFERENCES session(id) ON DELETE CASCADE',
         );
       }
-
 
       await _createAllIndexes();
     },
@@ -681,7 +700,6 @@ class AppDb extends _$AppDb {
     );
   }
 
-
   Future<String> integrityCheck() async {
     final row = await customSelect('PRAGMA integrity_check;').getSingle();
     return (row.data.values.first ?? '').toString();
@@ -718,7 +736,6 @@ class AppDb extends _$AppDb {
   }
 
   Future<void> _ensureExerciseRelationTable() async {
-
     if (!await _tableExists('exercise_relation')) {
       await customStatement('''
       CREATE TABLE IF NOT EXISTS exercise_relation (
@@ -735,7 +752,6 @@ class AppDb extends _$AppDb {
   }
 
   Future<void> _ensureUserTrainingDayTable() async {
-
     if (!await _tableExists('user_training_day')) {
       await customStatement('''
       CREATE TABLE IF NOT EXISTS user_training_day (
@@ -759,6 +775,108 @@ class AppDb extends _$AppDb {
 
       await customStatement(
         'CREATE UNIQUE INDEX IF NOT EXISTS ux_app_user_singleton ON app_user(singleton);',
+      );
+    }
+  }
+
+  Future<void> _ensureGamificationTables() async {
+    if (!await _tableExists('gamification_badge')) {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS gamification_badge (
+          id TEXT NOT NULL PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          icon_asset TEXT,
+          xp_reward INTEGER NOT NULL DEFAULT 0
+        );
+      ''');
+    }
+    if (!await _tableExists('user_badge')) {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS user_badge (
+          user_id INTEGER NOT NULL,
+          badge_id TEXT NOT NULL,
+          earned_date_ts INTEGER NOT NULL,
+          FOREIGN KEY (user_id) REFERENCES app_user (id) ON DELETE CASCADE,
+          FOREIGN KEY (badge_id) REFERENCES gamification_badge (id) ON DELETE CASCADE,
+          PRIMARY KEY (user_id, badge_id)
+        );
+      ''');
+    }
+  }
+
+  Future<void> _populateDefaultBadges() async {
+    // Helper to insert ignore
+    Future<void> _addBadge(String id, String name, String desc, int xp) async {
+      final exists =
+          await (select(gamificationBadge)
+            ..where((b) => b.id.equals(id))).getSingleOrNull();
+      if (exists == null) {
+        await into(gamificationBadge).insert(
+          GamificationBadgeCompanion.insert(
+            id: id,
+            name: name,
+            description: desc,
+            xpReward: Value(xp),
+          ),
+        );
+      }
+    }
+
+    if (await _tableExists('gamification_badge')) {
+      await _addBadge(
+        'first_steps',
+        'Premier Pas',
+        'Terminer la première séance',
+        50,
+      );
+      await _addBadge('early_bird', 'Lève-tôt', 'S\'entraîner avant 8h', 100);
+      await _addBadge('night_owl', 'Nocturne', 'S\'entraîner après 22h', 100);
+      await _addBadge(
+        'spartan',
+        'Spartiate',
+        'Faire plus de 300 reps en une séance',
+        200,
+      );
+      await _addBadge('marathon', 'Marathonien', 'Séance de plus de 2h', 300);
+    }
+  }
+
+  Future<void> _populateBadgesV42() async {
+    Future<void> _addBadge(String id, String name, String desc, int xp) async {
+      final exists =
+          await (select(gamificationBadge)
+            ..where((b) => b.id.equals(id))).getSingleOrNull();
+      if (exists == null) {
+        await into(gamificationBadge).insert(
+          GamificationBadgeCompanion.insert(
+            id: id,
+            name: name,
+            description: desc,
+            xpReward: Value(xp),
+          ),
+        );
+      }
+    }
+
+    if (await _tableExists('gamification_badge')) {
+      await _addBadge(
+        'sunday_warrior',
+        'Guerrier du Dimanche',
+        'S\'entraîner le dimanche',
+        150,
+      );
+      await _addBadge(
+        'hulk',
+        'Hulk',
+        'Soulever plus de 5 tonnes (volume total)',
+        500,
+      );
+      await _addBadge(
+        'high_voltage',
+        'Survolté',
+        'Intensité moyenne > 8/10',
+        300,
       );
     }
   }

@@ -610,8 +610,7 @@ class ProgramGeneratorService {
       userId: userId,
       objectiveId: objectiveId,
       daysPerWeek: daysPerWeek,
-      startToday:
-          false, // Pas de startToday pour la régénération (contexte différent)
+      startToday: true, // Start immediately to show new session today
     );
   }
 

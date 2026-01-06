@@ -409,13 +409,20 @@ class _PlanningViewState extends State<_PlanningView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -459,27 +466,84 @@ class _PlanningViewState extends State<_PlanningView> {
                   ],
                 ),
               ),
-              // Option de modification/suppression uniquement pour les séances libres (sessionId != null)
-              if (item.sessionId != null)
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.white54, size: 20),
-                  onPressed:
-                      () => _showDurationPickerDialog(
-                        context,
-                        item.title,
-                        initialDuration: item.duration,
-                        sessionId: item.sessionId,
-                      ),
-                ),
-              if (item.sessionId != null)
-                IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.redAccent,
-                    size: 20,
+
+              // Colonne de droite : Actions + Badge Terminé
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Ligne des boutons (Edit / Delete)
+                  Row(
+                    mainAxisSize:
+                        MainAxisSize
+                            .min, // Important pour ne pas prendre toute la largeur
+                    children: [
+                      if (item.sessionId != null)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Colors.white54,
+                            size: 20,
+                          ),
+                          onPressed:
+                              () => _showDurationPickerDialog(
+                                context,
+                                item.title,
+                                initialDuration: item.duration,
+                                sessionId: item.sessionId,
+                              ),
+                          padding: EdgeInsets.zero, // Réduire padding
+                          constraints:
+                              const BoxConstraints(), // Réduire constraints
+                        ),
+                      if (item.sessionId != null) ...[
+                        const SizedBox(width: 12),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.redAccent,
+                            size: 20,
+                          ),
+                          onPressed:
+                              () => _confirmDelete(context, item.sessionId!),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ],
                   ),
-                  onPressed: () => _confirmDelete(context, item.sessionId!),
-                ),
+
+                  // Badge Terminé en dessous
+                  if (item.isDone) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey, // Filled grey
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 10,
+                            color: Colors.white, // White check for visibility
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          "Terminé",
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ],
@@ -650,7 +714,10 @@ class _PlanningViewState extends State<_PlanningView> {
     int? initialDuration,
     int? sessionId,
   }) async {
-    int selectedDuration = initialDuration ?? 45;
+    int selectedDuration = (initialDuration ?? 45).clamp(10, 180);
+    print(
+      "[DEBUG] Opening dialog with duration: $selectedDuration (Initial: $initialDuration)",
+    );
     String selectedType = type;
 
     await showDialog(

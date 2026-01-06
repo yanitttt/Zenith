@@ -8,6 +8,7 @@ import '../../widgets/training_days_dialog.dart';
 import '../../../core/theme/app_theme.dart';
 import 'stat_card.dart';
 import 'modern_button.dart';
+import 'gamification_profile_widget.dart';
 
 class UserCard extends StatelessWidget {
   final AppUserData u;
@@ -32,6 +33,8 @@ class UserCard extends StatelessWidget {
     // ou on utilise un FutureBuilder si on veut être puriste.
     // Ici, vm.loadTrainingDaysIfNeeded vérifie le cache avant de lancer l'async.
     vm.loadTrainingDaysIfNeeded(u.id);
+    // Vérification rétroactive des badges (si manqués à cause d'un bug)
+    vm.checkRetroactiveBadges(u.id);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -122,6 +125,20 @@ class UserCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // GAMIFICATION WIDGET
+                StreamBuilder<List<GamificationBadgeData>>(
+                  stream: vm.watchUserBadges(u.id),
+                  builder: (context, snapshot) {
+                    final badges = snapshot.data ?? [];
+                    return Column(
+                      children: [
+                        GamificationProfileWidget(user: u, badges: badges),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+
                 // Taille / Poids
                 Row(
                   children: [
