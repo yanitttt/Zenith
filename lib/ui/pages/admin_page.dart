@@ -385,12 +385,15 @@ class _AdminPageView extends StatelessWidget {
             ? _CompactStatRow(
               icon: Icons.local_fire_department,
               label: 'Métabolisme',
-              value: u.metabolism!.trim(),
+              value:
+                  u.metabolism!.trim().substring(0, 1).toUpperCase() +
+                  u.metabolism!.trim().substring(1),
               unit: '',
               // TAILLES AUGMENTEES POUR REMPLIR L'ESPACE
               iconSize: 40,
               labelFontSize: 16,
               valueFontSize: 32,
+              highlightValue: true,
             )
             : null;
 
@@ -443,6 +446,8 @@ class _AdminPageView extends StatelessWidget {
             final label =
                 days == null
                     ? "Chargement..."
+                    : days.isEmpty
+                    ? "Cliquez pour définir vos jours"
                     : "Jours : ${vm.getFormattedDays(days)}";
             return SizedBox(
               width: double.infinity,
@@ -584,6 +589,7 @@ class _CompactStatRow extends StatelessWidget {
   final double? valueFontSize;
   final double? iconSize;
   final double? labelFontSize;
+  final bool highlightValue;
 
   const _CompactStatRow({
     required this.icon,
@@ -594,6 +600,7 @@ class _CompactStatRow extends StatelessWidget {
     this.valueFontSize,
     this.iconSize,
     this.labelFontSize,
+    this.highlightValue = false,
   });
 
   @override
@@ -638,24 +645,55 @@ class _CompactStatRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4), // Espace légèrement augmenté
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Flexible(
-                      child: Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: valueFontSize ?? 20, // Plus gros (20 vs 16)
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    if (highlightValue)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD9BE77), // Gold
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFD9BE77).withOpacity(0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          value,
+                          style: TextStyle(
+                            fontSize:
+                                valueFontSize ?? 20, // Plus gros (20 vs 16)
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black, // Texte noir sur fond or
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: Text(
+                          value,
+                          style: TextStyle(
+                            fontSize:
+                                valueFontSize ?? 20, // Plus gros (20 vs 16)
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
                     if (unit.isNotEmpty) ...[
                       const SizedBox(width: 4),
                       Flexible(
