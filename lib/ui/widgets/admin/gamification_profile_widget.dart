@@ -7,14 +7,146 @@ class GamificationProfileWidget extends StatelessWidget {
   final AppUserData user;
   final List<GamificationBadgeData> badges;
 
+  final bool isCompact;
+
   const GamificationProfileWidget({
     super.key,
     required this.user,
     required this.badges,
+    this.isCompact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (isCompact) {
+      return _buildCompactView();
+    }
+    return _buildStandardView();
+  }
+
+  Widget _buildCompactView() {
+    final currentXp = user.xp ?? 0;
+    final progress = GamificationService.progressToNextLevel(currentXp);
+    final userLevelId = user.userLevel ?? 1;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F0F1E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFD9BE77).withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Header: Niveau (Circle) + XP
+          Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [AppTheme.gold, Color(0xFFF9E496)],
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    '$userLevelId',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      user.title ?? 'Novice',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      "$currentXp XP",
+                      style: const TextStyle(
+                        color: AppTheme.gold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Progress Bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: Colors.white10,
+              color: AppTheme.success,
+              minHeight: 6,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Badges List (Compact Horizontal)
+          Expanded(
+            child:
+                badges.isEmpty
+                    ? const Center(
+                      child: Text(
+                        "À vous de jouer !",
+                        style: TextStyle(fontSize: 10, color: Colors.white30),
+                      ),
+                    )
+                    : ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: badges.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 4),
+                      itemBuilder: (context, index) {
+                        return Tooltip(
+                          message: badges[index].description,
+                          triggerMode: TooltipTriggerMode.tap,
+                          child: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            child: const Icon(
+                              Icons.emoji_events,
+                              color: AppTheme.gold,
+                              size: 18,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStandardView() {
     final currentXp = user.xp ?? 0;
     final progress = GamificationService.progressToNextLevel(currentXp);
     final userLevel = user.userLevel ?? 1;

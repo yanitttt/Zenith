@@ -9,6 +9,7 @@ import '../widgets/admin/modern_button.dart';
 import '../widgets/training_days_dialog.dart';
 import 'edit_user_page.dart';
 import 'onboarding/onboarding_flow.dart';
+import '../widgets/admin/gamification_profile_widget.dart';
 
 class AdminPage extends StatelessWidget {
   final AppDb db;
@@ -83,6 +84,7 @@ class _AdminPageView extends StatelessWidget {
 
                     // Trigger logic updates (badges, days training)
                     vm.loadTrainingDaysIfNeeded(user.id);
+                    vm.loadUserBadgesIfNeeded(user.id);
                     vm.checkRetroactiveBadges(user.id);
 
                     return _buildUserProfile(context, vm, user);
@@ -389,15 +391,28 @@ class _AdminPageView extends StatelessWidget {
                   u.metabolism!.trim().substring(0, 1).toUpperCase() +
                   u.metabolism!.trim().substring(1),
               unit: '',
-              // TAILLES AUGMENTEES POUR REMPLIR L'ESPACE
-              iconSize: 40,
-              labelFontSize: 16,
-              valueFontSize: 32,
-              highlightValue: true,
+              // TAILLES RÉDUITEES POUR LE SPLIT 50/50
+              iconSize: 28,
+              valueFontSize: 20,
             )
             : null;
 
+    // Carte Gamification (Badges + XP)
+    final cardGamification =
+        Selector<AdminViewModel, List<GamificationBadgeData>?>(
+          selector: (_, vm) => vm.getCachedUserBadges(u.id),
+          builder: (context, badges, _) {
+            // Utilisation du widget partagé en mode compact
+            return GamificationProfileWidget(
+              user: u,
+              badges: badges ?? [],
+              isCompact: true,
+            );
+          },
+        );
+
     // Layout Flex: Column avec Expanded pour forcer le remplissage vertical
+    // Ligne 3 partagee : Metabolisme (Left) | Gamification (Right)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -423,9 +438,23 @@ class _AdminPageView extends StatelessWidget {
             ],
           ),
         ),
-        // Ligne 3 : Métabolisme (si présent, prend toute la largeur ou moitié ?)
-        // Pour un look dashboard, on peut lui laisser toute la largeur ou le combiner
-        if (hasMetabolism) ...[Expanded(child: cardMetab!)],
+        // Ligne 3 : Métabolisme ET Gamification
+        Expanded(
+          flex: 1,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Si métabolisme existe, il prend 50%, sinon, on laisse la place pour autre chose ou on met Gamification en full
+              if (hasMetabolism) ...[
+                Expanded(child: cardMetab!),
+                const SizedBox(width: 8),
+              ],
+
+              // La carte Gamification prend le reste
+              Expanded(child: cardGamification),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -588,8 +617,6 @@ class _CompactStatRow extends StatelessWidget {
   final bool isLargeValue;
   final double? valueFontSize;
   final double? iconSize;
-  final double? labelFontSize;
-  final bool highlightValue;
 
   const _CompactStatRow({
     required this.icon,
@@ -599,8 +626,6 @@ class _CompactStatRow extends StatelessWidget {
     this.isLargeValue = false,
     this.valueFontSize,
     this.iconSize,
-    this.labelFontSize,
-    this.highlightValue = false,
   });
 
   @override
@@ -638,7 +663,7 @@ class _CompactStatRow extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: labelFontSize ?? 12, // Taille dynamique ou défaut
+                    fontSize: 12,
                     color: Colors.white.withOpacity(0.7),
                     fontWeight: FontWeight.w500,
                   ),
@@ -651,56 +676,25 @@ class _CompactStatRow extends StatelessWidget {
                   textBaseline: TextBaseline.alphabetic,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (highlightValue)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 2,
+                    Flexible(
+                      child: Text(
+                        value,
+                        style: TextStyle(
+                          fontSize: valueFontSize ?? 20, // Plus gros (20 vs 16)
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD9BE77), // Gold
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFD9BE77).withOpacity(0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          value,
-                          style: TextStyle(
-                            fontSize:
-                                valueFontSize ?? 20, // Plus gros (20 vs 16)
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black, // Texte noir sur fond or
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      )
-                    else
-                      Flexible(
-                        child: Text(
-                          value,
-                          style: TextStyle(
-                            fontSize:
-                                valueFontSize ?? 20, // Plus gros (20 vs 16)
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                    ),
                     if (unit.isNotEmpty) ...[
                       const SizedBox(width: 4),
                       Flexible(
                         child: Text(
                           unit,
                           style: TextStyle(
-                            fontSize: labelFontSize ?? 12,
+                            fontSize: 12,
                             color: Colors.white.withOpacity(0.5),
                           ),
                           maxLines: 1,
