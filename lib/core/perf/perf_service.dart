@@ -62,7 +62,11 @@ class PerfService {
   }
 
   /// Mesure le temps d'exécution d'une action asynchrone.
-  Future<T> measure<T>(String actionName, Future<T> Function() action) async {
+  Future<T> measure<T>(
+    String actionName,
+    Future<T> Function() action, {
+    Map<String, dynamic>? tags,
+  }) async {
     if (!isPerfMode) return action();
 
     final stopwatch = Stopwatch()..start();
@@ -70,13 +74,23 @@ class PerfService {
       return await action();
     } finally {
       stopwatch.stop();
-      debugPrint('⏱️ Action "$actionName": ${stopwatch.elapsedMilliseconds}ms');
-      // TODO: Enregistrer la métrique dans le rapport
+      final ms = stopwatch.elapsedMilliseconds;
+      debugPrint('⏱️ Action "$actionName": ${ms}ms');
+      logAlgoMetric({
+        'name': actionName,
+        'duration_ms': ms,
+        'timestamp': DateTime.now().toIso8601String(),
+        if (tags != null) ...tags,
+      });
     }
   }
 
   /// Mesure le temps d'exécution d'une action synchrone.
-  T measureSync<T>(String actionName, T Function() action) {
+  T measureSync<T>(
+    String actionName,
+    T Function() action, {
+    Map<String, dynamic>? tags,
+  }) {
     if (!isPerfMode) return action();
 
     final stopwatch = Stopwatch()..start();
@@ -84,8 +98,14 @@ class PerfService {
       return action();
     } finally {
       stopwatch.stop();
-      debugPrint('⏱️ Action "$actionName": ${stopwatch.elapsedMilliseconds}ms');
-      // TODO: Enregistrer la métrique dans le rapport
+      final ms = stopwatch.elapsedMilliseconds;
+      debugPrint('⏱️ Action "$actionName": ${ms}ms');
+      logAlgoMetric({
+        'name': actionName,
+        'duration_ms': ms,
+        'timestamp': DateTime.now().toIso8601String(),
+        if (tags != null) ...tags,
+      });
     }
   }
 

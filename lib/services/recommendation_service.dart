@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
 import 'package:flutter/foundation.dart';
+import '../core/perf/perf_service.dart';
 
 class RecommendedExercise {
   final int id;
@@ -585,23 +586,40 @@ class RecommendationService {
     required int userId,
     required List<RecommendedExercise> exercises,
   }) async {
-    for (var exercise in exercises) {
-      final performanceAdj = await _calculatePerformanceAdjustment(
-        userId: userId,
-        exerciseId: exercise.id,
-      );
+    return await PerfService().measure('apply_adaptive_adjustments', () async {
+      int dbCalls = 0;
 
-      final feedbackAdj = await _calculateFeedbackAdjustment(
-        userId: userId,
-        exerciseId: exercise.id,
-      );
+      for (var exercise in exercises) {
+        // Mesure individuelle pour prouver le coût par item (facultatif mais parlant)
+        final performanceAdj = await _calculatePerformanceAdjustment(
+          userId: userId,
+          exerciseId: exercise.id,
+        );
+        dbCalls += 1; // Estimation min (en réalité c'est plus complexe)
 
-      exercise.performanceAdjustment = performanceAdj;
-      exercise.feedbackAdjustment = feedbackAdj;
-    }
+        final feedbackAdj = await _calculateFeedbackAdjustment(
+          userId: userId,
+          exerciseId: exercise.id,
+        );
+        dbCalls += 1;
 
-    exercises.sort((a, b) => b.score.compareTo(a.score));
+        exercise.performanceAdjustment = performanceAdj;
+        exercise.feedbackAdjustment = feedbackAdj;
+      }
 
-    return exercises;
+      // Log du nombre d'appels DB simulé pour le rapport "Complexité"
+      if (PerfService.isPerfMode) {
+        PerfService().logAlgoMetric({
+          'name': 'adaptive_scan_complexity',
+          'n_items': exercises.length,
+          'approx_db_calls': dbCalls, // Pour montrer le N*2
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+      }
+
+      exercises.sort((a, b) => b.score.compareTo(a.score));
+
+      return exercises;
+    }, tags: {'count': exercises.length});
   }
 }

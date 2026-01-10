@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import '../data/db/app_db.dart';
 import '../data/db/daos/user_training_day_dao.dart';
 import 'recommendation_service.dart';
+import '../core/perf/perf_service.dart';
 
 class ProgramDaySession {
   final int programDayId;
@@ -119,90 +120,92 @@ class ProgramGeneratorService {
     String? programName,
     bool startToday = false,
   }) async {
-    final user =
-        await (db.select(db.appUser)
-          ..where((tbl) => tbl.id.equals(userId))).getSingleOrNull();
+    return await PerfService().measure('generate_full_program', () async {
+      final user =
+          await (db.select(db.appUser)
+            ..where((tbl) => tbl.id.equals(userId))).getSingleOrNull();
 
-    if (user == null) {
-      throw Exception('Utilisateur non trouvé');
-    }
+      if (user == null) {
+        throw Exception('Utilisateur non trouvé');
+      }
 
-    int targetDaysPerWeek;
-    if (daysPerWeek != null) {
-      targetDaysPerWeek = daysPerWeek;
-    } else {
-      final userTrainingDays = await trainingDayDao.getDayNumbersForUser(
-        userId,
-      );
-      if (userTrainingDays.isEmpty) {
-        debugPrint(
-          '[PROGRAM_GEN] Aucun jour d\'entraînement défini, utilisation de 3 jours par défaut',
-        );
-        targetDaysPerWeek = 3;
+      int targetDaysPerWeek;
+      if (daysPerWeek != null) {
+        targetDaysPerWeek = daysPerWeek;
       } else {
-        targetDaysPerWeek = userTrainingDays.length;
-        debugPrint(
-          '[PROGRAM_GEN] $targetDaysPerWeek jours d\'entraînement récupérés depuis UserTrainingDay',
+        final userTrainingDays = await trainingDayDao.getDayNumbersForUser(
+          userId,
         );
+        if (userTrainingDays.isEmpty) {
+          debugPrint(
+            '[PROGRAM_GEN] Aucun jour d\'entraînement défini, utilisation de 3 jours par défaut',
+          );
+          targetDaysPerWeek = 3;
+        } else {
+          targetDaysPerWeek = userTrainingDays.length;
+          debugPrint(
+            '[PROGRAM_GEN] $targetDaysPerWeek jours d\'entraînement récupérés depuis UserTrainingDay',
+          );
+        }
       }
-    }
 
-    int targetObjectiveId;
-    if (objectiveId != null) {
-      targetObjectiveId = objectiveId;
-    } else {
-      final userGoals =
-          await (db.select(db.userGoal)
-                ..where((tbl) => tbl.userId.equals(userId))
-                ..orderBy([(t) => OrderingTerm.desc(t.weight)])
-                ..limit(1))
-              .get();
+      int targetObjectiveId;
+      if (objectiveId != null) {
+        targetObjectiveId = objectiveId;
+      } else {
+        final userGoals =
+            await (db.select(db.userGoal)
+                  ..where((tbl) => tbl.userId.equals(userId))
+                  ..orderBy([(t) => OrderingTerm.desc(t.weight)])
+                  ..limit(1))
+                .get();
 
-      if (userGoals.isEmpty) {
-        throw Exception('Aucun objectif défini pour cet utilisateur');
+        if (userGoals.isEmpty) {
+          throw Exception('Aucun objectif défini pour cet utilisateur');
+        }
+        targetObjectiveId = userGoals.first.objectiveId;
       }
-      targetObjectiveId = userGoals.first.objectiveId;
-    }
 
-    final objective =
-        await (db.select(db.objective)
-          ..where((tbl) => tbl.id.equals(targetObjectiveId))).getSingle();
+      final objective =
+          await (db.select(db.objective)
+            ..where((tbl) => tbl.id.equals(targetObjectiveId))).getSingle();
 
-    final programId = await db
-        .into(db.workoutProgram)
-        .insert(
-          WorkoutProgramCompanion(
-            name: Value(programName ?? 'Programme ${objective.name}'),
-            description: Value(
-              'Programme personnalisé pour ${objective.name.toLowerCase()}',
+      final programId = await db
+          .into(db.workoutProgram)
+          .insert(
+            WorkoutProgramCompanion(
+              name: Value(programName ?? 'Programme ${objective.name}'),
+              description: Value(
+                'Programme personnalisé pour ${objective.name.toLowerCase()}',
+              ),
+              objectiveId: Value(targetObjectiveId),
+              level: Value(user.level),
+              durationWeeks: const Value(4),
             ),
-            objectiveId: Value(targetObjectiveId),
-            level: Value(user.level),
-            durationWeeks: const Value(4),
-          ),
-        );
+          );
 
-    await _generateProgramDays(
-      programId: programId,
-      userId: userId,
-      objectiveId: targetObjectiveId,
-      userLevel: user.level ?? 'intermediaire',
-      daysPerWeek: targetDaysPerWeek,
-      startToday: startToday,
-    );
+      await _generateProgramDays(
+        programId: programId,
+        userId: userId,
+        objectiveId: targetObjectiveId,
+        userLevel: user.level ?? 'intermediaire',
+        daysPerWeek: targetDaysPerWeek,
+        startToday: startToday,
+      );
 
-    await db
-        .into(db.userProgram)
-        .insert(
-          UserProgramCompanion(
-            userId: Value(userId),
-            programId: Value(programId),
-            startDateTs: Value(DateTime.now().millisecondsSinceEpoch ~/ 1000),
-            isActive: const Value(1),
-          ),
-        );
+      await db
+          .into(db.userProgram)
+          .insert(
+            UserProgramCompanion(
+              userId: Value(userId),
+              programId: Value(programId),
+              startDateTs: Value(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+              isActive: const Value(1),
+            ),
+          );
 
-    return programId;
+      return programId;
+    });
   }
 
   Future<void> _generateProgramDays({
