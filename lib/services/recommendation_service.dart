@@ -364,51 +364,160 @@ class RecommendationService {
     return objectives;
   }
 
-  Future<double> _calculatePerformanceAdjustment({
+  Future<List<RecommendedExercise>> _applyAdaptiveAdjustments({
     required int userId,
-    required int exerciseId,
+    required List<RecommendedExercise> exercises,
   }) async {
+    return await PerfService().measure(
+      'apply_adaptive_adjustments_OPTIMIZED',
+      () async {
+        int dbCalls = 0;
+
+        // 1. EXTRACTION DES IDs
+        final exerciseIds = exercises.map((e) => e.id).toList();
+
+        // 2. BATCH FETCHING (2 requêtes seulement)
+        final perfDataMap = await _batchFetchPerformanceData(
+          userId,
+          exerciseIds,
+        );
+        dbCalls++;
+
+        final feedbackDataMap = await _batchFetchFeedbackData(
+          userId,
+          exerciseIds,
+        );
+        dbCalls++;
+
+        // 3. IN-MEMORY CALCULATION (Boucle CPU rapide)
+        for (var exercise in exercises) {
+          // Récupération instantanée depuis la Map
+          final perfRows = perfDataMap[exercise.id] ?? [];
+          final fdRows = feedbackDataMap[exercise.id] ?? [];
+
+          // Calcul pur (pas d'await SQL ici)
+          final performanceAdj = _calculatePerformanceAdjustmentPure(
+            exerciseId: exercise.id,
+            rows: perfRows,
+          );
+
+          final feedbackAdj = _calculateFeedbackAdjustmentPure(reviews: fdRows);
+
+          exercise.performanceAdjustment = performanceAdj;
+          exercise.feedbackAdjustment = feedbackAdj;
+        }
+
+        if (PerfService.isPerfMode) {
+          PerfService().logAlgoMetric({
+            'name': 'adaptive_scan_complexity',
+            'n_items': exercises.length,
+            'real_db_calls': dbCalls, // PREUVE: Sera 2 au lieu de 2*N
+            'optimization': 'BATCH_PROCESSING',
+            'timestamp': DateTime.now().toIso8601String(),
+          });
+        }
+
+        exercises.sort((a, b) => b.score.compareTo(a.score));
+
+        return exercises;
+      },
+      tags: {'count': exercises.length, 'mode': 'batch'},
+    );
+  }
+
+  // --- BATCH FETCHING METHODS (I/O) ---
+
+  Future<Map<int, List<QueryRow>>> _batchFetchPerformanceData(
+    int userId,
+    List<int> exerciseIds,
+  ) async {
+    if (exerciseIds.isEmpty) return {};
+
     final query = '''
-      SELECT se.sets, se.reps, se.load, se.rpe, s.date_ts,
-             pde.sets_suggestion, pde.reps_suggestion,
-             pd.id as program_day_id
+      SELECT se.exercise_id, se.sets, se.reps, se.load, se.rpe, s.date_ts,
+             pde.sets_suggestion, pde.reps_suggestion
       FROM session_exercise se
       JOIN session s ON s.id = se.session_id
       LEFT JOIN program_day_exercise pde ON pde.program_day_id = s.program_day_id
                                         AND pde.exercise_id = se.exercise_id
-      LEFT JOIN program_day pd ON pd.id = s.program_day_id
-      WHERE s.user_id = ? AND se.exercise_id = ?
+      WHERE s.user_id = ? AND se.exercise_id IN (${exerciseIds.join(',')})
       ORDER BY s.date_ts DESC
-      LIMIT 5
     ''';
+
+    // Note: Une vraie implémentation robuste utiliserait proper variable binding pour le IN clause
+    // ou plusieurs requêtes si la liste est trop longue (SQLite limit).
+    // Pour ce projet académique, injection directe des IDs est acceptable (si liste < 1000).
 
     final results =
         await db
             .customSelect(
               query,
-              variables: [
-                Variable.withInt(userId),
-                Variable.withInt(exerciseId),
-              ],
+              variables: [Variable.withInt(userId)],
               readsFrom: {
                 db.session,
                 db.sessionExercise,
                 db.programDayExercise,
-                db.programDay,
               },
             )
             .get();
 
-    if (results.isEmpty) {
-      return 0.0;
+    // Grouping manually
+    final Map<int, List<QueryRow>> grouped = {};
+    for (final row in results) {
+      final exId = row.read<int>('exercise_id');
+      if (!grouped.containsKey(exId)) {
+        grouped[exId] = [];
+      }
+      // On garde max 5 entrées par exercice (business logic de l'original)
+      if (grouped[exId]!.length < 5) {
+        grouped[exId]!.add(row);
+      }
     }
+    return grouped;
+  }
+
+  Future<Map<int, List<UserFeedbackData>>> _batchFetchFeedbackData(
+    int userId,
+    List<int> exerciseIds,
+  ) async {
+    if (exerciseIds.isEmpty) return {};
+
+    final now = DateTime.now();
+    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+    final thirtyDaysTs = thirtyDaysAgo.millisecondsSinceEpoch ~/ 1000;
+
+    final feedbacks =
+        await (db.select(db.userFeedback)..where(
+          (tbl) =>
+              tbl.userId.equals(userId) &
+              tbl.exerciseId.isIn(exerciseIds) &
+              tbl.ts.isBiggerOrEqualValue(thirtyDaysTs),
+        )).get();
+
+    final Map<int, List<UserFeedbackData>> grouped = {};
+    for (final fb in feedbacks) {
+      if (!grouped.containsKey(fb.exerciseId)) {
+        grouped[fb.exerciseId] = [];
+      }
+      grouped[fb.exerciseId]!.add(fb);
+    }
+    return grouped;
+  }
+
+  // --- PURE CALCULATION METHODS (CPU ONLY) ---
+
+  double _calculatePerformanceAdjustmentPure({
+    required int exerciseId,
+    required List<QueryRow> rows,
+  }) {
+    if (rows.isEmpty) return 0.0;
 
     double totalRpe = 0;
     int rpeCount = 0;
     double performanceRatio = 0.0;
     int performanceCount = 0;
 
-    for (final row in results) {
+    for (final row in rows) {
       final rpe = row.read<double?>('rpe');
       if (rpe != null) {
         totalRpe += rpe;
@@ -459,9 +568,9 @@ class RecommendationService {
         performanceCount > 0 ? performanceRatio / performanceCount : 1.0;
 
     double loadTrend = 0.0;
-    if (results.length >= 3) {
-      final firstLoad = results.last.read<double?>('load') ?? 0;
-      final lastLoad = results.first.read<double?>('load') ?? 0;
+    if (rows.length >= 3) {
+      final firstLoad = rows.last.read<double?>('load') ?? 0;
+      final lastLoad = rows.first.read<double?>('load') ?? 0;
 
       if (firstLoad > 0) {
         loadTrend = (lastLoad - firstLoad) / firstLoad;
@@ -527,38 +636,18 @@ class RecommendationService {
       );
     }
 
-    final finalAdjustment = adjustment.clamp(-1.0, 1.0);
-    debugPrint(
-      '[PERF_ADJ] Exercice $exerciseId: Ajustement final = $finalAdjustment',
-    );
-
-    return finalAdjustment;
+    return adjustment.clamp(-1.0, 1.0);
   }
 
-  Future<double> _calculateFeedbackAdjustment({
-    required int userId,
-    required int exerciseId,
-  }) async {
-    final now = DateTime.now();
-    final thirtyDaysAgo = now.subtract(const Duration(days: 30));
-    final thirtyDaysTs = thirtyDaysAgo.millisecondsSinceEpoch ~/ 1000;
-
-    final feedbacks =
-        await (db.select(db.userFeedback)..where(
-          (tbl) =>
-              tbl.userId.equals(userId) &
-              tbl.exerciseId.equals(exerciseId) &
-              tbl.ts.isBiggerOrEqualValue(thirtyDaysTs),
-        )).get();
-
-    if (feedbacks.isEmpty) {
-      return 0.0;
-    }
+  double _calculateFeedbackAdjustmentPure({
+    required List<UserFeedbackData> reviews,
+  }) {
+    if (reviews.isEmpty) return 0.0;
 
     double adjustment = 0.0;
-    int totalFeedbacks = feedbacks.length;
+    int totalFeedbacks = reviews.length;
 
-    for (final feedback in feedbacks) {
+    for (final feedback in reviews) {
       if (feedback.liked == 1) {
         adjustment += 0.3;
       } else if (feedback.liked == 0) {
@@ -580,46 +669,5 @@ class RecommendationService {
     adjustment /= totalFeedbacks;
 
     return adjustment.clamp(-1.0, 0.5);
-  }
-
-  Future<List<RecommendedExercise>> _applyAdaptiveAdjustments({
-    required int userId,
-    required List<RecommendedExercise> exercises,
-  }) async {
-    return await PerfService().measure('apply_adaptive_adjustments', () async {
-      int dbCalls = 0;
-
-      for (var exercise in exercises) {
-        // Mesure individuelle pour prouver le coût par item (facultatif mais parlant)
-        final performanceAdj = await _calculatePerformanceAdjustment(
-          userId: userId,
-          exerciseId: exercise.id,
-        );
-        dbCalls += 1; // Estimation min (en réalité c'est plus complexe)
-
-        final feedbackAdj = await _calculateFeedbackAdjustment(
-          userId: userId,
-          exerciseId: exercise.id,
-        );
-        dbCalls += 1;
-
-        exercise.performanceAdjustment = performanceAdj;
-        exercise.feedbackAdjustment = feedbackAdj;
-      }
-
-      // Log du nombre d'appels DB simulé pour le rapport "Complexité"
-      if (PerfService.isPerfMode) {
-        PerfService().logAlgoMetric({
-          'name': 'adaptive_scan_complexity',
-          'n_items': exercises.length,
-          'approx_db_calls': dbCalls, // Pour montrer le N*2
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      }
-
-      exercises.sort((a, b) => b.score.compareTo(a.score));
-
-      return exercises;
-    }, tags: {'count': exercises.length});
   }
 }
