@@ -103,6 +103,9 @@ class Exercise extends Table {
       integer().named('difficulty').check(difficulty.isBetweenValues(1, 5))();
   RealColumn get cardio =>
       real().named('cardio').withDefault(const Constant(0.0))();
+
+  TextColumn get description => text().named('description').nullable()();
+  TextColumn get etapes => text().named('etapes').nullable()();
 }
 
 class Muscle extends Table {
@@ -467,7 +470,30 @@ class AppDb extends _$AppDb {
   AppDb.forTesting(super.executor) : _isTest = true;
 
   @override
-  int get schemaVersion => 42;
+  int get schemaVersion => 43;
+
+Future<void> seedExerciseDetails() async {
+    // Exemple : Mise à jour du Développé Couché
+    // Tu devras faire ça pour chaque exercice où tu veux du texte
+    await customStatement('''
+      UPDATE exercise 
+      SET description = 'Un exercice fondamental pour les pectoraux, les épaules et les triceps.',
+          etapes = '1. Allongez-vous sur le banc.\n2. Saisissez la barre.\n3. Descendez la barre vers la poitrine.\n4. Poussez vers le haut.'
+      WHERE name LIKE '%Couché%' OR name LIKE '%Bench Press%'
+    ''');
+
+    // Exemple pour le Squat
+    await customStatement('''
+      UPDATE exercise 
+      SET description = 'Le roi des exercices pour les jambes. Sollicite quadriceps, ischio-jambiers et fessiers.',
+          etapes = '1. Barre sur les trapèzes.\n2. Pieds largeur épaules.\n3. Descendez les fesses en arrière.\n4. Remontez en poussant sur les talons.'
+      WHERE name LIKE '%Squat%'
+    ''');
+    
+    // Ajoute d'autres UPDATE ici...
+    
+    debugPrint('--- Mises à jour des descriptions terminées ---');
+  }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -520,6 +546,19 @@ class AppDb extends _$AppDb {
           'INTEGER',
         );
       }
+      
+      if (await _tableExists('exercise')) {
+        await _addColumnIfMissing(
+          'exercise',
+          'description',
+          'TEXT',
+        );
+        await _addColumnIfMissing(
+          'exercise',
+          'etapes',
+          'TEXT',
+        );
+      }
 
       await _ensureUserTrainingDayTable();
 
@@ -531,6 +570,7 @@ class AppDb extends _$AppDb {
         );
       }
       await customStatement('PRAGMA foreign_keys = ON;');
+      await seedExerciseDetails();
     },
 
     onCreate: (m) async {
