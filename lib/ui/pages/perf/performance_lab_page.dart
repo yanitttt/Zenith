@@ -3,6 +3,8 @@ import 'package:recommandation_mobile/core/perf/perf_service.dart';
 import 'package:recommandation_mobile/core/perf/perf_report.dart';
 import 'package:recommandation_mobile/core/perf/complexity_analyzer.dart';
 import 'package:recommandation_mobile/core/perf/perf_monitor_widget.dart';
+import 'package:recommandation_mobile/core/perf/simulation_benchmark.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:recommandation_mobile/data/db/app_db.dart';
 import 'package:recommandation_mobile/core/prefs/app_prefs.dart';
 import 'package:recommandation_mobile/services/recommendation_service.dart';
@@ -20,6 +22,8 @@ class PerformanceLabPage extends StatefulWidget {
 class _PerformanceLabPageState extends State<PerformanceLabPage> {
   bool _isRecording = false;
   String _status = 'Prêt';
+  List<BenchmarkDataPoint>? _benchmarkData;
+  bool _showGraph = true;
 
   Future<void> _runRecommendationTest() async {
     final userId = widget.prefs.currentUserId;
@@ -92,6 +96,22 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
       _status =
           'Résultat: ${result.estimatedComplexity.toString().split('.').last}\n'
           '${result.timingsMicroseconds}';
+      _isRecording = false;
+    });
+  }
+
+  Future<void> _runSimulationBenchmark() async {
+    setState(() {
+      _status = 'Simulation Benchmark en cours...';
+      _benchmarkData = null;
+      _isRecording = true;
+    });
+
+    final data = await SimulationBenchmark.runFullSuiteData();
+
+    setState(() {
+      _status = 'Simulation terminée. Voir Graphique ci-dessous.';
+      _benchmarkData = data;
       _isRecording = false;
     });
   }
@@ -181,6 +201,161 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
               icon: const Icon(Icons.fitness_center),
               label: const Text('Analyse RecService (SQL)'),
             ),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: _isRecording ? null : _runSimulationBenchmark,
+              icon: const Icon(Icons.speed),
+              label: const Text('Simuler Graphique (N=10..50)'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            ),
+            if (_benchmarkData != null) ...[
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Vue : '),
+                  Switch(
+                    value: _showGraph,
+                    onChanged: (v) => setState(() => _showGraph = v),
+                    activeColor: Colors.orange,
+                  ),
+                  Text(_showGraph ? 'Graphique' : 'Tableau'),
+                ],
+              ),
+              const SizedBox(height: 10),
+              if (_showGraph)
+                Container(
+                  height: 300,
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black12,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: LineChart(
+                    LineChartData(
+                      gridData: const FlGridData(show: true),
+                      titlesData: FlTitlesData(
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                'N=${value.toInt()}',
+                                style: const TextStyle(fontSize: 10),
+                              );
+                            },
+                            interval: 10,
+                          ),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 40,
+                            getTitlesWidget: (value, meta) {
+                              return Text('${value.toInt()}ms');
+                            },
+                          ),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                      ),
+                      borderData: FlBorderData(show: true),
+                      lineBarsData: [
+                        // Legacy (Red)
+                        LineChartBarData(
+                          spots:
+                              _benchmarkData!
+                                  .map(
+                                    (e) => FlSpot(
+                                      e.n.toDouble(),
+                                      e.legacyMs.toDouble(),
+                                    ),
+                                  )
+                                  .toList(),
+                          isCurved: true,
+                          color: Colors.redAccent,
+                          barWidth: 3,
+                          dotData: const FlDotData(show: true),
+                        ),
+                        // Optimized (Green)
+                        LineChartBarData(
+                          spots:
+                              _benchmarkData!
+                                  .map(
+                                    (e) => FlSpot(
+                                      e.n.toDouble(),
+                                      e.optimizedMs.toDouble(),
+                                    ),
+                                  )
+                                  .toList(),
+                          isCurved: true,
+                          color: Colors.greenAccent,
+                          barWidth: 3,
+                          dotData: const FlDotData(show: true),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text('N (Exercices)')),
+                      DataColumn(label: Text('Legacy (ms)')),
+                      DataColumn(label: Text('Optimisé (ms)')),
+                      DataColumn(label: Text('Gain')),
+                    ],
+                    rows:
+                        _benchmarkData!.map((e) {
+                          final gain =
+                              e.legacyMs /
+                              (e.optimizedMs == 0 ? 1 : e.optimizedMs);
+                          return DataRow(
+                            cells: [
+                              DataCell(Text(e.n.toString())),
+                              DataCell(
+                                Text(
+                                  e.legacyMs.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  e.optimizedMs.toString(),
+                                  style: const TextStyle(
+                                    color: Colors.greenAccent,
+                                  ),
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  'x${gain.toStringAsFixed(1)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                  ),
+                ),
+              const Center(
+                child: Text(
+                  'Rouge: Naïf O(N) vs Vert: Optimisé O(1)',
+                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
             const SizedBox(height: 10),
             // TODO: Autres scénarios
             const Divider(),
