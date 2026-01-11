@@ -88,6 +88,7 @@ flutter:
     - assets/db/BDD_V3.db
     - assets/images/exercises/default.jpg
     - assets/images/exercises/image.jpg
+    - assets/images/exercises/acceuil1.png
     - assets/icons/app_icon.png
     - assets/images/splash_logo.png
 
