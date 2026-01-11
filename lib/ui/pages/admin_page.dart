@@ -131,8 +131,8 @@ class _AdminPageView extends StatelessWidget {
     // Utilisation de Builder pour accéder au context avec Provider/Prefs
     return Builder(
       builder: (context) {
-        final prefs = context.watch<AdminViewModel>().prefs;
-        final enabled = prefs.reminderEnabled;
+        final vm = context.watch<AdminViewModel>();
+        final enabled = vm.prefs.reminderEnabled;
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -164,9 +164,8 @@ class _AdminPageView extends StatelessWidget {
                 child: Switch(
                   value: enabled,
                   activeColor: AppTheme.success,
-                  onChanged: (v) async {
-                    await prefs.setReminderEnabled(v);
-                    // Force rebuild via notifyListeners handled by watch
+                  onChanged: (v) {
+                    vm.toggleReminder(v);
                   },
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
@@ -184,7 +183,7 @@ class _AdminPageView extends StatelessWidget {
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<int>(
-                      value: prefs.reminderDays,
+                      value: vm.prefs.reminderDays,
                       dropdownColor: AppTheme.scaffold,
                       icon: const Icon(
                         Icons.arrow_drop_down,
@@ -198,8 +197,8 @@ class _AdminPageView extends StatelessWidget {
                         DropdownMenuItem(value: 7, child: Text("7j")),
                         DropdownMenuItem(value: 10, child: Text("10j")),
                       ],
-                      onChanged: (v) async {
-                        if (v != null) await prefs.setReminderDays(v);
+                      onChanged: (v) {
+                        if (v != null) vm.updateReminderDays(v);
                       },
                     ),
                   ),

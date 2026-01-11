@@ -69,6 +69,18 @@ class AdminViewModel extends ChangeNotifier {
     }
   }
 
+  /// Active ou désactive le rappel d'inactivité
+  Future<void> toggleReminder(bool enabled) async {
+    await prefs.setReminderEnabled(enabled);
+    notifyListeners();
+  }
+
+  /// Change le nombre de jours pour le rappel d'inactivité
+  Future<void> updateReminderDays(int days) async {
+    await prefs.setReminderDays(days);
+    notifyListeners();
+  }
+
   /// Supprime un utilisateur et ses données associées
   /// Retourne [true] si l'utilisateur supprimé était l'utilisateur courant
   Future<bool> deleteUser(int userId) async {
