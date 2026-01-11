@@ -206,7 +206,22 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
               ElevatedButton.icon(
                 onPressed: _isRecording ? null : _runSimulationBenchmark,
                 icon: const Icon(Icons.speed),
-                label: const Text('Simuler Graphique (N=10..50)'),
+                label: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'Comparaison ancien algo de recommandation du "9 décembre" vs algo de recommandation optimisé',
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      "STRESS TEST",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
               ),
               if (_benchmarkData != null) ...[

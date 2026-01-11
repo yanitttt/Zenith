@@ -400,43 +400,44 @@ class _WorkoutProgramContent extends StatelessWidget {
                 ),
               ),
               // Bouton d'action "Mettre à jour"
-              Container(
-                margin: EdgeInsets.only(
-                  top: responsive.rh(8),
-                ), // Alignement visuel
-                child: OutlinedButton(
-                  onPressed:
-                      vm.isGenerating
-                          ? null
-                          : () => _regenerateProgram(context, vm),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.gold,
-                    side: const BorderSide(color: AppTheme.gold, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: responsive.rw(16),
-                      vertical: responsive.rh(8),
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.refresh, size: responsive.rsp(16)),
-                      SizedBox(width: responsive.rw(6)),
-                      Text(
-                        'Mettre à jour',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: responsive.rsp(12),
-                        ),
+              if (vm.programDays.isNotEmpty)
+                Container(
+                  margin: EdgeInsets.only(
+                    top: responsive.rh(8),
+                  ), // Alignement visuel
+                  child: OutlinedButton(
+                    onPressed:
+                        vm.isGenerating
+                            ? null
+                            : () => _regenerateProgram(context, vm),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.gold,
+                      side: const BorderSide(color: AppTheme.gold, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                    ],
+                      padding: EdgeInsets.symmetric(
+                        horizontal: responsive.rw(16),
+                        vertical: responsive.rh(8),
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.refresh, size: responsive.rsp(16)),
+                        SizedBox(width: responsive.rw(6)),
+                        Text(
+                          'Mettre à jour',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: responsive.rsp(12),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
