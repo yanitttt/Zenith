@@ -171,205 +171,247 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
         title: const Text('Performance Lab'),
         backgroundColor: Colors.deepPurple,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Status: $_status',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            PerfMonitorWidget(
-              label: 'Btn_ScenarioA',
-              child: ElevatedButton.icon(
-                onPressed: _isRecording ? null : _runScenarioA,
-                icon: const Icon(Icons.timer),
-                label: const Text('Lancer Scénario A (Test CPU/Res)'),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Status: $_status',
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _isRecording ? null : _runComplexityDemo,
-              icon: const Icon(Icons.analytics),
-              label: const Text('Démo Analyse O(n) (Liste)'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _isRecording ? null : _runRecommendationTest,
-              icon: const Icon(Icons.fitness_center),
-              label: const Text('Analyse RecService (SQL)'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _isRecording ? null : _runSimulationBenchmark,
-              icon: const Icon(Icons.speed),
-              label: const Text('Simuler Graphique (N=10..50)'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            ),
-            if (_benchmarkData != null) ...[
               const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Vue : '),
-                  Switch(
-                    value: _showGraph,
-                    onChanged: (v) => setState(() => _showGraph = v),
-                    activeColor: Colors.orange,
-                  ),
-                  Text(_showGraph ? 'Graphique' : 'Tableau'),
-                ],
+              PerfMonitorWidget(
+                label: 'Btn_ScenarioA',
+                child: ElevatedButton.icon(
+                  onPressed: _isRecording ? null : _runScenarioA,
+                  icon: const Icon(Icons.timer),
+                  label: const Text('Lancer Scénario A (Test CPU/Res)'),
+                ),
               ),
               const SizedBox(height: 10),
-              if (_showGraph)
-                Container(
-                  height: 300,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.black12,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: LineChart(
-                    LineChartData(
-                      gridData: const FlGridData(show: true),
-                      titlesData: FlTitlesData(
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) {
-                              return Text(
-                                'N=${value.toInt()}',
-                                style: const TextStyle(fontSize: 10),
-                              );
-                            },
-                            interval: 10,
+              ElevatedButton.icon(
+                onPressed: _isRecording ? null : _runComplexityDemo,
+                icon: const Icon(Icons.analytics),
+                label: const Text('Démo Analyse O(n) (Liste)'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: _isRecording ? null : _runRecommendationTest,
+                icon: const Icon(Icons.fitness_center),
+                label: const Text('Analyse RecService (SQL)'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                onPressed: _isRecording ? null : _runSimulationBenchmark,
+                icon: const Icon(Icons.speed),
+                label: const Text('Simuler Graphique (N=10..50)'),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+              ),
+              if (_benchmarkData != null) ...[
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Vue : '),
+                    Switch(
+                      value: _showGraph,
+                      onChanged: (v) => setState(() => _showGraph = v),
+                      activeColor: Colors.orange,
+                    ),
+                    Text(_showGraph ? 'Graphique' : 'Tableau'),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (_showGraph)
+                  Container(
+                    height: 300,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: LineChart(
+                      LineChartData(
+                        gridData: const FlGridData(show: true),
+                        titlesData: FlTitlesData(
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                return Text(
+                                  'N=${value.toInt()}',
+                                  style: const TextStyle(fontSize: 10),
+                                );
+                              },
+                              interval: 10,
+                            ),
+                          ),
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 40,
+                              getTitlesWidget: (value, meta) {
+                                return Text('${value.toInt()}ms');
+                              },
+                            ),
+                          ),
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
                           ),
                         ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 40,
-                            getTitlesWidget: (value, meta) {
-                              return Text('${value.toInt()}ms');
-                            },
+                        borderData: FlBorderData(show: true),
+                        lineBarsData: [
+                          // Legacy (Red)
+                          LineChartBarData(
+                            spots:
+                                _benchmarkData!
+                                    .map(
+                                      (e) => FlSpot(
+                                        e.n.toDouble(),
+                                        e.legacyMs.toDouble(),
+                                      ),
+                                    )
+                                    .toList(),
+                            isCurved: true,
+                            color: Colors.redAccent,
+                            barWidth: 3,
+                            dotData: const FlDotData(show: true),
                           ),
-                        ),
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
+                          // Optimized (Green)
+                          LineChartBarData(
+                            spots:
+                                _benchmarkData!
+                                    .map(
+                                      (e) => FlSpot(
+                                        e.n.toDouble(),
+                                        e.optimizedMs.toDouble(),
+                                      ),
+                                    )
+                                    .toList(),
+                            isCurved: true,
+                            color: Colors.greenAccent,
+                            barWidth: 3,
+                            dotData: const FlDotData(show: true),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: const [
+                            Expanded(
+                              child: Text(
+                                'N (Ex.)',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Naïf (ms)',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Opt. (ms)',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Gain',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      borderData: FlBorderData(show: true),
-                      lineBarsData: [
-                        // Legacy (Red)
-                        LineChartBarData(
-                          spots:
-                              _benchmarkData!
-                                  .map(
-                                    (e) => FlSpot(
-                                      e.n.toDouble(),
-                                      e.legacyMs.toDouble(),
-                                    ),
-                                  )
-                                  .toList(),
-                          isCurved: true,
-                          color: Colors.redAccent,
-                          barWidth: 3,
-                          dotData: const FlDotData(show: true),
-                        ),
-                        // Optimized (Green)
-                        LineChartBarData(
-                          spots:
-                              _benchmarkData!
-                                  .map(
-                                    (e) => FlSpot(
-                                      e.n.toDouble(),
-                                      e.optimizedMs.toDouble(),
-                                    ),
-                                  )
-                                  .toList(),
-                          isCurved: true,
-                          color: Colors.greenAccent,
-                          barWidth: 3,
-                          dotData: const FlDotData(show: true),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('N (Exercices)')),
-                      DataColumn(label: Text('Legacy (ms)')),
-                      DataColumn(label: Text('Optimisé (ms)')),
-                      DataColumn(label: Text('Gain')),
-                    ],
-                    rows:
-                        _benchmarkData!.map((e) {
-                          final gain =
-                              e.legacyMs /
-                              (e.optimizedMs == 0 ? 1 : e.optimizedMs);
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(e.n.toString())),
-                              DataCell(
-                                Text(
-                                  e.legacyMs.toString(),
+                      const Divider(),
+                      ..._benchmarkData!.map((e) {
+                        final gain =
+                            e.legacyMs /
+                            (e.optimizedMs == 0 ? 1 : e.optimizedMs);
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${e.n}',
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  '${e.legacyMs}',
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Colors.redAccent,
                                   ),
                                 ),
                               ),
-                              DataCell(
-                                Text(
-                                  e.optimizedMs.toString(),
+                              Expanded(
+                                child: Text(
+                                  '${e.optimizedMs}',
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: Colors.greenAccent,
                                   ),
                                 ),
                               ),
-                              DataCell(
-                                Text(
+                              Expanded(
+                                child: Text(
                                   'x${gain.toStringAsFixed(1)}',
+                                  textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                             ],
-                          );
-                        }).toList(),
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                const Center(
+                  child: Text(
+                    'Rouge: Naïf O(N) vs Vert: Optimisé O(1)',
+                    style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
                   ),
                 ),
-              const Center(
-                child: Text(
-                  'Rouge: Naïf O(N) vs Vert: Optimisé O(1)',
-                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                ),
-              ),
+                const SizedBox(height: 10),
+              ],
               const SizedBox(height: 10),
-            ],
-            const SizedBox(height: 10),
-            // TODO: Autres scénarios
-            const Divider(),
-            ElevatedButton.icon(
-              onPressed: () async {
-                await PerfReport.generateAndShare('Manual_Export');
-              },
-              icon: const Icon(Icons.share),
-              label: const Text('Exporter métriques actuelles'),
-            ),
-            const SizedBox(height: 20),
-            const Text('Métriques en direct:', style: TextStyle(fontSize: 18)),
-            Expanded(
-              child: StreamBuilder(
+              // TODO: Autres scénarios
+              const Divider(),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await PerfReport.generateAndShare('Manual_Export');
+                },
+                icon: const Icon(Icons.share),
+                label: const Text('Exporter métriques actuelles'),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Métriques en direct:',
+                style: TextStyle(fontSize: 18),
+              ),
+              StreamBuilder(
                 stream: Stream.periodic(const Duration(seconds: 1)),
                 builder: (context, snapshot) {
                   final stats = PerfService().getStats();
@@ -377,18 +419,16 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
                       (stats['battery_samples'] as List?)?.lastOrNull;
                   final frames = stats['frames'] as Map?;
 
-                  return SingleChildScrollView(
-                    child: Text(
-                      'Battery: ${battery?['level']}% (${battery?['current_uA']} uA)\n'
-                      'Frames: ${frames?['global']?['count']} (Jank: ${frames?['global']?['jank_ratio']?.toStringAsFixed(2)})\n'
-                      'Memory (Java): ${(stats['resource_samples'] as List?)?.lastOrNull?['java_heap_mb']} MB',
-                      style: const TextStyle(fontFamily: 'Courier'),
-                    ),
+                  return Text(
+                    'Battery: ${battery?['level']}% (${battery?['current_uA']} uA)\n'
+                    'Frames: ${frames?['global']?['count']} (Jank: ${frames?['global']?['jank_ratio']?.toStringAsFixed(2)})\n'
+                    'Memory (Java): ${(stats['resource_samples'] as List?)?.lastOrNull?['java_heap_mb']} MB',
+                    style: const TextStyle(fontFamily: 'Courier'),
                   );
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
