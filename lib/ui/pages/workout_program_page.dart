@@ -570,85 +570,120 @@ class _WorkoutProgramContent extends StatelessWidget {
     Responsive responsive,
     WorkoutProgramViewModel vm,
   ) {
+    // Hauteur réduite pour le style "Strip" (~-30%)
     return Container(
-      height: responsive.rh(90),
+      height: responsive.rh(65),
       margin: EdgeInsets.symmetric(horizontal: responsive.rw(24)),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: vm.programDays.length,
-        itemBuilder: (context, index) {
-          final day = vm.programDays[index];
-          final isSelected = vm.selectedDayIndex == index;
-          final isCompleted = vm.completedSessions.containsKey(
-            day.programDayId,
-          );
-          return Padding(
-            padding: EdgeInsets.only(right: responsive.rw(12)),
-            child: GestureDetector(
-              onTap: () => vm.selectDay(index),
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: responsive.rw(20),
-                  vertical: responsive.rh(12),
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      isSelected
-                          ? AppTheme.gold
-                          : (isCompleted
-                              ? Colors.green.shade900
-                              : Colors.black),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color:
-                        isSelected
-                            ? AppTheme.gold
-                            : (isCompleted
-                                ? Colors.green
-                                : Colors.grey.shade800),
-                    width: 2,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Jour ${day.dayOrder}',
-                          style: TextStyle(
-                            color: isSelected ? Colors.black : Colors.white,
-                            fontSize: responsive.rsp(14),
-                            fontWeight: FontWeight.w700,
-                          ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (int index = 0; index < vm.programDays.length; index++) ...[
+            if (index > 0) SizedBox(width: responsive.rw(8)),
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  final day = vm.programDays[index];
+                  final isSelected = vm.selectedDayIndex == index;
+                  final isCompleted = vm.completedSessions.containsKey(
+                    day.programDayId,
+                  );
+
+                  String dateLabel = "";
+                  if (day.scheduledDate != null) {
+                    final now = DateTime.now();
+                    final today = DateTime(now.year, now.month, now.day);
+                    final tomorrow = today.add(const Duration(days: 1));
+                    final d = DateTime(
+                      day.scheduledDate!.year,
+                      day.scheduledDate!.month,
+                      day.scheduledDate!.day,
+                    );
+
+                    if (d == today) {
+                      dateLabel = "Auj.";
+                    } else if (d == tomorrow) {
+                      dateLabel = "Demain";
+                    } else {
+                      dateLabel = DateFormat(
+                        'dd MMM',
+                        'fr_FR',
+                      ).format(day.scheduledDate!);
+                    }
+                  }
+
+                  return GestureDetector(
+                    onTap: () => vm.selectDay(index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        color:
+                            isSelected
+                                ? AppTheme.gold
+                                : (isCompleted
+                                    ? const Color(0xFF1B3A2D)
+                                    : Colors.black),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(
+                          color:
+                              isSelected
+                                  ? AppTheme.gold
+                                  : (isCompleted
+                                      ? Colors.green.withOpacity(0.5)
+                                      : Colors.grey.shade800),
+                          width: isSelected || isCompleted ? 1.5 : 1,
                         ),
-                        if (isCompleted) ...[
-                          SizedBox(width: responsive.rw(6)),
-                          Icon(
-                            Icons.check_circle,
-                            color: isSelected ? Colors.black : Colors.green,
-                            size: responsive.rsp(16),
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (day.scheduledDate != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatScheduledDate(day.scheduledDate!),
-                        style: TextStyle(
-                          color: isSelected ? Colors.black87 : Colors.white60,
-                          fontSize: responsive.rsp(11),
-                        ),
+                        boxShadow:
+                            isSelected
+                                ? [
+                                  BoxShadow(
+                                    color: AppTheme.gold.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    spreadRadius: 1,
+                                  ),
+                                ]
+                                : null,
                       ),
-                    ],
-                  ],
-                ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'J${day.dayOrder}',
+                            style: TextStyle(
+                              color:
+                                  isSelected
+                                      ? Colors.black
+                                      : (isCompleted
+                                          ? Colors.greenAccent
+                                          : Colors.white),
+                              fontSize: responsive.rsp(16),
+                              fontWeight: FontWeight.w800,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          if (dateLabel.isNotEmpty)
+                            Text(
+                              dateLabel,
+                              style: TextStyle(
+                                color:
+                                    isSelected
+                                        ? Colors.black87
+                                        : Colors.white54,
+                                fontSize: responsive.rsp(10),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-          );
-        },
+          ],
+        ],
       ),
     );
   }
