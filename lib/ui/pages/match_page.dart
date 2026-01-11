@@ -17,7 +17,7 @@ class _MatchPageState extends State<MatchPage> {
   late final ExerciseRepository repo;
   List<ExerciseData> _allExercises = [];
   List<ExerciseData> _cardStack = [];
-  List<ExerciseData> _history = [];
+  final List<ExerciseData> _history = [];
   final _random = Random();
   int _currentIndex = 0;
   bool _isLoading = true;

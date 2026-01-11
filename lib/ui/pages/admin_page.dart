@@ -163,7 +163,7 @@ class _AdminPageView extends StatelessWidget {
                 height: 30,
                 child: Switch(
                   value: enabled,
-                  activeColor: AppTheme.success,
+                  activeThumbColor: AppTheme.success,
                   onChanged: (v) {
                     vm.toggleReminder(v);
                   },

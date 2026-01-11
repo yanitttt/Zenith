@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:recommandation_mobile/core/perf/perf_service.dart';
 
 class SimulationBenchmark {
   /// Simulates a naive implementation:

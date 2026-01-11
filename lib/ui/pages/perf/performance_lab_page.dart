@@ -131,7 +131,9 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
         await Future.delayed(const Duration(milliseconds: 500));
         // Un peu de CPU
         int sum = 0;
-        for (int i = 0; i < 100000; i++) sum += i;
+        for (int i = 0; i < 100000; i++) {
+          sum += i;
+        }
         debugPrint('Sum: $sum');
       });
 
@@ -233,7 +235,7 @@ class _PerformanceLabPageState extends State<PerformanceLabPage> {
                     Switch(
                       value: _showGraph,
                       onChanged: (v) => setState(() => _showGraph = v),
-                      activeColor: Colors.orange,
+                      activeThumbColor: Colors.orange,
                     ),
                     Text(_showGraph ? 'Graphique' : 'Tableau'),
                   ],

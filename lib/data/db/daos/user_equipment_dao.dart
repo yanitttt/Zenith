@@ -6,7 +6,7 @@ part 'user_equipment_dao.g.dart';
 @DriftAccessor(tables: [UserEquipment, Equipment])
 class UserEquipmentDao extends DatabaseAccessor<AppDb>
     with _$UserEquipmentDaoMixin {
-  UserEquipmentDao(AppDb db) : super(db);
+  UserEquipmentDao(super.db);
 
   Future<List<UserEquipmentData>> equipmentOf(int userId) {
     return (select(userEquipment)..where((g) => g.userId.equals(userId))).get();

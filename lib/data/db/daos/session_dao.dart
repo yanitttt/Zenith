@@ -6,35 +6,38 @@ part 'session_dao.g.dart';
 
 @DriftAccessor(tables: [Session, SessionExercise, Exercise])
 class SessionDao extends DatabaseAccessor<AppDb> with _$SessionDaoMixin {
-  SessionDao(AppDb db) : super(db);
+  SessionDao(super.db);
 
   Future<List<SessionData>> sessionsForUser(int userId, {int? limit}) {
-    final q = (select(session)
-      ..where((s) => s.userId.equals(userId))
-      ..orderBy([(s) => OrderingTerm.desc(s.dateTs)]));
+    final q =
+        (select(session)
+          ..where((s) => s.userId.equals(userId))
+          ..orderBy([(s) => OrderingTerm.desc(s.dateTs)]));
     if (limit != null) q.limit(limit);
     return q.get();
   }
 
   Future<List<SessionData>> allForUser(int userId) {
     return (select(session)
-      ..where((s) => s.userId.equals(userId))
-      ..orderBy([(s) => OrderingTerm.desc(s.dateTs)])).get();
+          ..where((s) => s.userId.equals(userId))
+          ..orderBy([(s) => OrderingTerm.desc(s.dateTs)]))
+        .get();
   }
 
-  Future<List<(SessionExerciseData, ExerciseData)>> sessionDetails(int sessionId) {
+  Future<List<(SessionExerciseData, ExerciseData)>> sessionDetails(
+    int sessionId,
+  ) {
     final j = select(sessionExercise).join([
       innerJoin(exercise, exercise.id.equalsExp(sessionExercise.exerciseId)),
-    ])
-      ..where(sessionExercise.sessionId.equals(sessionId));
+    ])..where(sessionExercise.sessionId.equals(sessionId));
 
-    return j.map((row) => (
-    row.readTable(sessionExercise),
-    row.readTable(exercise),
-    )).get();
+    return j
+        .map((row) => (row.readTable(sessionExercise), row.readTable(exercise)))
+        .get();
   }
 
-  Future<int> createSession(SessionCompanion data) => into(session).insert(data);
+  Future<int> createSession(SessionCompanion data) =>
+      into(session).insert(data);
 
   Future<int> addExerciseToSession(SessionExerciseCompanion data) =>
       into(sessionExercise).insert(data, mode: InsertMode.insertOrReplace);

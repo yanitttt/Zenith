@@ -487,10 +487,11 @@ class ProgramGeneratorService {
     if (exercise.performanceAdjustment <= -0.5) {
       sets = max(1, sets - 1);
       reps = _adjustReps(reps, -2);
-      if (notes == null)
+      if (notes == null) {
         notes = "Réduire la charge si nécessaire";
-      else
+      } else {
         notes = "$notes - Réduire charge";
+      }
     } else if (exercise.performanceAdjustment <= -0.2) {
       reps = _adjustReps(reps, -1);
     } else if (exercise.performanceAdjustment >= 0.5) {
@@ -850,8 +851,9 @@ class ProgramGeneratorService {
 
           if (old.setsSuggestion != newSets) prevSets = old.setsSuggestion;
           if (old.repsSuggestion != newReps) prevReps = old.repsSuggestion;
-          if (old.restSuggestionSec != newRest)
+          if (old.restSuggestionSec != newRest) {
             prevRest = old.restSuggestionSec;
+          }
         }
 
         await db

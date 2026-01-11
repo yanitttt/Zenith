@@ -85,12 +85,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     allObjectives = await widget.goalDao.allObjectivesList();
     allEquipments = await widget.equipmentDao.allEquipmentList();
 
-    final userGoals = (await widget.goalDao.goalsOf(widget.user.id!));
+    final userGoals = (await widget.goalDao.goalsOf(widget.user.id));
     selectedGoalId = userGoals.isNotEmpty ? userGoals.first.objectiveId : null;
 
     selectedEquipmentIds =
         (await widget.equipmentDao.equipmentOf(
-          widget.user.id!,
+          widget.user.id,
         )).map((e) => e.equipmentId).toList();
 
     setState(() {});
@@ -127,7 +127,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         selectedGoalId = updatedGoals.isNotEmpty ? updatedGoals.first : null;
       });
-      await widget.goalDao.replace(widget.user.id!, updatedGoals);
+      await widget.goalDao.replace(widget.user.id, updatedGoals);
     }
   }
 
@@ -146,7 +146,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() {
         selectedEquipmentIds = updatedEquipment;
       });
-      await widget.equipmentDao.replace(widget.user.id!, updatedEquipment);
+      await widget.equipmentDao.replace(widget.user.id, updatedEquipment);
     }
   }
 
@@ -185,8 +185,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final List<int> goalsToSave =
         selectedGoalId != null ? [selectedGoalId!] : [];
 
-    await widget.goalDao.replace(widget.user.id!, goalsToSave);
-    await widget.equipmentDao.replace(widget.user.id!, selectedEquipmentIds);
+    await widget.goalDao.replace(widget.user.id, goalsToSave);
+    await widget.equipmentDao.replace(widget.user.id, selectedEquipmentIds);
 
     if (!mounted) return;
     Navigator.pop(context, true);
@@ -222,7 +222,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required ValueChanged<String?> onChanged,
   }) {
     return DropdownButtonFormField<String>(
-      value: items.contains(value) ? value : null,
+      initialValue: items.contains(value) ? value : null,
       onChanged: onChanged,
       dropdownColor: Colors.grey[900],
       style: const TextStyle(color: Colors.white),

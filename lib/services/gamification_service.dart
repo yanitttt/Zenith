@@ -75,7 +75,7 @@ class GamificationService {
   /// Ensures that all badges exist in the database.
   /// This is a safety mechanism in case migration didn't populate them for existing users.
   Future<void> ensureBadgesExist() async {
-    Future<void> _addBadge(String id, String name, String desc, int xp) async {
+    Future<void> addBadge(String id, String name, String desc, int xp) async {
       final exists =
           await (db.select(db.gamificationBadge)
             ..where((b) => b.id.equals(id))).getSingleOrNull();
@@ -95,41 +95,36 @@ class GamificationService {
     }
 
     // Default V41 Badges
-    await _addBadge(
+    await addBadge(
       'first_steps',
       'Premier Pas',
       'Terminer la première séance',
       50,
     );
-    await _addBadge('early_bird', 'Lève-tôt', 'S\'entraîner avant 8h', 100);
-    await _addBadge('night_owl', 'Nocturne', 'S\'entraîner après 22h', 100);
-    await _addBadge(
+    await addBadge('early_bird', 'Lève-tôt', 'S\'entraîner avant 8h', 100);
+    await addBadge('night_owl', 'Nocturne', 'S\'entraîner après 22h', 100);
+    await addBadge(
       'spartan',
       'Spartiate',
       'Faire plus de 300 reps en une séance',
       200,
     );
-    await _addBadge('marathon', 'Marathonien', 'Séance de plus de 2h', 300);
+    await addBadge('marathon', 'Marathonien', 'Séance de plus de 2h', 300);
 
     // V42 Badges
-    await _addBadge(
+    await addBadge(
       'sunday_warrior',
       'Guerrier du Dimanche',
       'S\'entraîner le dimanche',
       150,
     );
-    await _addBadge(
+    await addBadge(
       'hulk',
       'Hulk',
       'Soulever plus de 5 tonnes (volume total)',
       500,
     );
-    await _addBadge(
-      'high_voltage',
-      'Survolté',
-      'Intensité moyenne > 8/10',
-      300,
-    );
+    await addBadge('high_voltage', 'Survolté', 'Intensité moyenne > 8/10', 300);
   }
 
   /// Checks for badges that should have been awarded but weren't (e.g. due to missing definitions).

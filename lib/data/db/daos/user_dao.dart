@@ -6,26 +6,25 @@ part 'user_dao.g.dart';
 
 @DriftAccessor(tables: [AppUser, Session])
 class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
-  UserDao(AppDb db) : super(db);
+  UserDao(super.db);
 
   Future<AppUserData?> find(int id) =>
-      (select(appUser)
-        ..where((t) => t.id.equals(id))).getSingleOrNull();
+      (select(appUser)..where((t) => t.id.equals(id))).getSingleOrNull();
 
   Future<AppUserData?> firstUser() =>
-      (select(appUser)
-        ..limit(1)).getSingleOrNull();
+      (select(appUser)..limit(1)).getSingleOrNull();
 
   Future<int> countUsers() async {
-    final row = await customSelect('SELECT COUNT(*) AS c FROM app_user;')
-        .getSingle();
+    final row =
+        await customSelect('SELECT COUNT(*) AS c FROM app_user;').getSingle();
     return (row.data['c'] as int?) ?? 0;
   }
 
   Future<void> ensureSingleton() async {
     await transaction(() async {
       await customStatement(
-          'DELETE FROM app_user WHERE id NOT IN (SELECT MIN(id) FROM app_user);');
+        'DELETE FROM app_user WHERE id NOT IN (SELECT MIN(id) FROM app_user);',
+      );
     });
   }
 
@@ -34,41 +33,36 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
   Future<bool> updateOne(AppUserData u) => update(appUser).replace(u);
 
   Future<int> deleteById(int id) =>
-      (delete(appUser)
-        ..where((t) => t.id.equals(id))).go();
+      (delete(appUser)..where((t) => t.id.equals(id))).go();
 
   Future<SessionData?> lastSessionForUser(int userId) {
     return (select(session)
-      ..where((s) => s.userId.equals(userId))
-      ..orderBy([(s) => OrderingTerm.desc(s.dateTs)])
-      ..limit(1))
+          ..where((s) => s.userId.equals(userId))
+          ..orderBy([(s) => OrderingTerm.desc(s.dateTs)])
+          ..limit(1))
         .getSingleOrNull();
   }
 
   Stream<List<AppUserData>> watchAllOrdered() {
-    final q = select(appUser)
-      ..orderBy([
-            (t) => OrderingTerm.asc(t.nom),
-            (t) => OrderingTerm.asc(t.prenom),
-            (t) => OrderingTerm.asc(t.id),
-      ]);
+    final q = select(appUser)..orderBy([
+      (t) => OrderingTerm.asc(t.nom),
+      (t) => OrderingTerm.asc(t.prenom),
+      (t) => OrderingTerm.asc(t.id),
+    ]);
     return q.watch();
   }
-
 
   Future<void> deleteUserCascade(int userId) async {
     await transaction(() async {
       await customStatement('PRAGMA foreign_keys = ON;');
 
-
       await customUpdate(
         'DELETE FROM session_exercise '
-            'WHERE session_id IN (SELECT id FROM session WHERE user_id = ?)',
+        'WHERE session_id IN (SELECT id FROM session WHERE user_id = ?)',
         variables: [Variable.withInt(userId)],
         updates: {db.sessionExercise},
         updateKind: UpdateKind.delete,
       );
-
 
       await customUpdate(
         'DELETE FROM session WHERE user_id = ?',
@@ -77,14 +71,12 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-
       await customUpdate(
         'DELETE FROM user_feedback WHERE user_id = ?',
         variables: [Variable.withInt(userId)],
         updates: {db.userFeedback},
         updateKind: UpdateKind.delete,
       );
-
 
       await customUpdate(
         'DELETE FROM user_equipment WHERE user_id = ?',
@@ -93,14 +85,12 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-
       await customUpdate(
         'DELETE FROM user_goal WHERE user_id = ?',
         variables: [Variable.withInt(userId)],
         updates: {db.userGoal},
         updateKind: UpdateKind.delete,
       );
-
 
       await customUpdate(
         'DELETE FROM user_program WHERE user_id = ?',
@@ -109,17 +99,12 @@ class UserDao extends DatabaseAccessor<AppDb> with _$UserDaoMixin {
         updateKind: UpdateKind.delete,
       );
 
-
-      await (delete(db.appUser)
-        ..where((t) => t.id.equals(userId))).go();
+      await (delete(db.appUser)..where((t) => t.id.equals(userId))).go();
     });
   }
 }
 
-
-
 extension AppUserDataX on AppUserData {
-
   String get fullName {
     final p = (prenom ?? '').trim();
     final n = (nom ?? '').trim();
@@ -129,5 +114,3 @@ extension AppUserDataX on AppUserData {
     return (nom ?? '').trim(); // fallback legacy
   }
 }
-
-

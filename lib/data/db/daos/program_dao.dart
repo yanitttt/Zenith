@@ -140,9 +140,9 @@ class ProgramDao {
     String sessionType = "SÉANCE";
     // Essayer de déduire le type (PUSH, PULL, etc.) depuis le nom ou les exos
     final dayNameUpper = nextDay.name.toUpperCase();
-    if (dayNameUpper.contains("HAUT"))
+    if (dayNameUpper.contains("HAUT")) {
       sessionType = "UPPER";
-    else if (dayNameUpper.contains("BAS"))
+    } else if (dayNameUpper.contains("BAS"))
       sessionType = "LOWER";
     else if (dayNameUpper.contains("FULL"))
       sessionType = "FULL BODY";

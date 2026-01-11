@@ -27,12 +27,15 @@ class _PlanningView extends StatefulWidget {
   State<_PlanningView> createState() => _PlanningViewState();
 }
 
+enum PlanningViewMode { week, month }
+
 class _PlanningViewState extends State<_PlanningView> {
   final Color kBackground = const Color(0xFF020216);
   final Color kCardColor = const Color(0xFF0F112B);
   final Color kGold = const Color(0xFFE4C87F);
 
   ScrollController? _scrollController;
+  PlanningViewMode _viewMode = PlanningViewMode.week;
 
   @override
   void initState() {
@@ -82,10 +85,8 @@ class _PlanningViewState extends State<_PlanningView> {
 
   @override
   Widget build(BuildContext context) {
-    // On observe tout le VM ici car la page change beaucoup selon l'état
     final vm = context.watch<PlanningViewModel>();
 
-    // Sync du scroll controller si la semaine change radicalement (facultatif mais mieux)
     if (_scrollController == null) {
       _ensureScrollController(vm.startOfWeek);
     }
@@ -99,34 +100,13 @@ class _PlanningViewState extends State<_PlanningView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // En-tête (Mois + Titre + Calendrier)
               _buildHeader(context, vm),
               const SizedBox(height: 24),
-              // Barre des jours (Semaine)
-              _buildWeekSelector(context, vm),
-              const SizedBox(height: 30),
-              // Titre liste
-              _buildListTitle(vm),
-              const SizedBox(height: 16),
-              // Liste des séances
               Expanded(
                 child:
-                    vm.isLoading
-                        ? Center(child: CircularProgressIndicator(color: kGold))
-                        : vm.sessionsDuJour.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                          itemCount: vm.sessionsDuJour.length,
-                          itemBuilder: (context, index) {
-                            return _buildSessionCard(
-                              context,
-                              vm.sessionsDuJour[index],
-                              index + 1,
-                              kCardColor,
-                              kGold,
-                            );
-                          },
-                        ),
+                    _viewMode == PlanningViewMode.week
+                        ? _buildWeekView(context, vm)
+                        : _buildMonthView(context, vm),
               ),
             ],
           ),
@@ -154,6 +134,179 @@ class _PlanningViewState extends State<_PlanningView> {
     );
   }
 
+  Widget _buildWeekView(BuildContext context, PlanningViewModel vm) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildWeekSelector(context, vm),
+        const SizedBox(height: 30),
+        _buildListTitle(vm),
+        const SizedBox(height: 16),
+        Expanded(
+          child:
+              vm.isLoading
+                  ? Center(child: CircularProgressIndicator(color: kGold))
+                  : vm.sessionsDuJour.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                    itemCount: vm.sessionsDuJour.length,
+                    itemBuilder: (context, index) {
+                      return _buildSessionCard(
+                        context,
+                        vm.sessionsDuJour[index],
+                        index + 1,
+                        kCardColor,
+                        kGold,
+                      );
+                    },
+                  ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMonthView(BuildContext context, PlanningViewModel vm) {
+    // Jours de la semaine
+    final weekDays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
+
+    // Calculs pour le grid
+    // On veut afficher le mois de vm.selectedDate
+
+    // Premier jour du mois
+    final firstDayOfMonth = DateTime(
+      vm.selectedDate.year,
+      vm.selectedDate.month,
+      1,
+    );
+    // Dernier jour du mois (pour savoir combien de jours)
+    final lastDayOfMonth = DateTime(
+      vm.selectedDate.year,
+      vm.selectedDate.month + 1,
+      0,
+    );
+
+    final daysInMonth = lastDayOfMonth.day;
+    // Offset : le 1er du mois est quel jour ? (Lundi = 1, donc offset = weekday - 1)
+    final startOffset = firstDayOfMonth.weekday - 1;
+
+    // Total cells = offset + days
+    final totalCells = startOffset + daysInMonth;
+
+    return Column(
+      children: [
+        // En-têtes Jours
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children:
+              weekDays
+                  .map(
+                    (d) => SizedBox(
+                      width: 40,
+                      child: Text(
+                        d,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: kGold,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+        ),
+        const SizedBox(height: 16),
+        // Grille
+        Expanded(
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.85, // Un peu plus haut que large
+            ),
+            itemCount: totalCells,
+            itemBuilder: (context, index) {
+              if (index < startOffset) {
+                return const SizedBox();
+              }
+
+              final dayNum = index - startOffset + 1;
+              final currentDate = DateTime(
+                vm.selectedDate.year,
+                vm.selectedDate.month,
+                dayNum,
+              );
+
+              final isToday =
+                  DateTime.now().day == dayNum &&
+                  DateTime.now().month == vm.selectedDate.month &&
+                  DateTime.now().year == vm.selectedDate.year;
+
+              final isSelected = dayNum == vm.selectedDate.day;
+              final hasActivity = vm.daysWithActivityMonth.contains(dayNum);
+
+              return ScaleButton(
+                onTap: () {
+                  vm.selectDate(currentDate, updateWeek: true);
+                  // Si on veut revenir à la vue semaine auto :
+                  // setState(() => _viewMode = PlanningViewMode.week);
+                  // Mais le user veut peut-être rester sur le calendrier ?
+                  // Le user a dit "switcher", donc peut-être manuel.
+                  // Je laisse le user décider quand switch back, mais sélectionner un jour update le contexte.
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color:
+                        isSelected
+                            ? kGold
+                            : (isToday ? Colors.white10 : Colors.transparent),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color:
+                          isSelected
+                              ? kGold
+                              : (isToday
+                                  ? kGold.withOpacity(0.5)
+                                  : Colors.white12),
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "$dayNum",
+                        style: TextStyle(
+                          color: isSelected ? Colors.black : Colors.white,
+                          fontWeight:
+                              isToday || isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                          fontSize: 16,
+                        ),
+                      ),
+                      if (hasActivity) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.black : kGold,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildHeader(BuildContext context, PlanningViewModel vm) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -161,16 +314,36 @@ class _PlanningViewState extends State<_PlanningView> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              DateFormat(
-                'MMMM yyyy',
-                'fr_FR',
-              ).format(vm.selectedDate).toUpperCase(),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: kGold,
-              ),
+            Row(
+              children: [
+                if (_viewMode == PlanningViewMode.month)
+                  InkWell(
+                    onTap: () => vm.changeMonth(-1),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Icon(Icons.chevron_left, color: kGold, size: 20),
+                    ),
+                  ),
+                Text(
+                  DateFormat(
+                    'MMMM yyyy',
+                    'fr_FR',
+                  ).format(vm.selectedDate).toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: kGold,
+                  ),
+                ),
+                if (_viewMode == PlanningViewMode.month)
+                  InkWell(
+                    onTap: () => vm.changeMonth(1),
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: Icon(Icons.chevron_right, color: kGold, size: 20),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             const Text(
@@ -183,20 +356,56 @@ class _PlanningViewState extends State<_PlanningView> {
             ),
           ],
         ),
-        ScaleButton(
-          onTap: () => _selectDateFromCalendar(context, vm),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white24),
+        // Toggle Switch & DatePicker
+        Row(
+          children: [
+            if (_viewMode == PlanningViewMode.week) ...[
+              ScaleButton(
+                onTap: () => _selectDateFromCalendar(context, vm),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white24),
+                  ),
+                  child: const Icon(
+                    Icons.calendar_today,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+            ],
+            Text(
+              "Mois",
+              style: TextStyle(
+                color:
+                    _viewMode == PlanningViewMode.month
+                        ? Colors.white
+                        : Colors.white38,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            child: const Icon(
-              Icons.calendar_today,
-              size: 20,
-              color: Colors.white,
+            Switch(
+              value: _viewMode == PlanningViewMode.month,
+              activeColor: kGold,
+              activeTrackColor: kGold.withOpacity(0.3),
+              inactiveThumbColor: Colors.grey,
+              inactiveTrackColor: Colors.white10,
+              onChanged: (val) {
+                setState(() {
+                  _viewMode =
+                      val ? PlanningViewMode.month : PlanningViewMode.week;
+                });
+                // Si on passe en mode mois, on reload
+                if (_viewMode == PlanningViewMode.month) {
+                  vm.loadMonthData();
+                }
+              },
             ),
-          ),
+          ],
         ),
       ],
     );
@@ -616,7 +825,7 @@ class _PlanningViewState extends State<_PlanningView> {
               surface: kCardColor,
               onSurface: Colors.white,
             ),
-            dialogBackgroundColor: kBackground,
+            dialogTheme: DialogThemeData(backgroundColor: kBackground),
           ),
           child: child!,
         );
@@ -624,11 +833,8 @@ class _PlanningViewState extends State<_PlanningView> {
     );
 
     if (picked != null) {
-      // On met à jour la date ET la semaine car on peut sauter loin
       vm.selectDate(picked, updateWeek: true);
-
-      // Petit scroll UX
-      _scrollToIndex(picked.weekday - 1);
+      // On reste sur la vue semaine si on utilise le date picker
     }
   }
 

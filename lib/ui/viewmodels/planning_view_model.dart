@@ -72,6 +72,11 @@ class PlanningViewModel extends ChangeNotifier {
 
       _joursAvecActivite = results[0] as Set<int>;
       _sessionsDuJour = results[1] as List<PlanningItem>;
+
+      // On charge aussi les données du mois en parallèle "fire and forget" ou await
+      // Pour l'instant on await pour être sûr de l'UI
+      await loadMonthData();
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -84,6 +89,17 @@ class PlanningViewModel extends ChangeNotifier {
     _startOfWeek = _startOfWeek.add(Duration(days: 7 * offset));
     // On ne re-sélectionne pas forcément la date, mais on garde la semaine synchronisée
     loadData();
+  }
+
+  /// Change de mois de N mois (offset)
+  void changeMonth(int offset) {
+    // On se déplace au 1er jour du mois cible
+    final newDate = DateTime(
+      _selectedDate.year,
+      _selectedDate.month + offset,
+      1,
+    );
+    selectDate(newDate, updateWeek: true);
   }
 
   /// Sélectionne un jour précis (depuis la liste ou le calendrier)
@@ -159,6 +175,30 @@ class PlanningViewModel extends ChangeNotifier {
       await loadData();
     } catch (e) {
       print("Erreur suppression session: $e");
+    }
+  }
+
+  // --- Month Logic ---
+  Set<int> _daysWithActivityMonth = {};
+  Set<int> get daysWithActivityMonth => _daysWithActivityMonth;
+
+  Future<void> loadMonthData() async {
+    if (_currentUserId == null) return;
+
+    // On prend du 1er au dernier jour du mois de _selectedDate
+    final start = DateTime(_selectedDate.year, _selectedDate.month, 1);
+    final nextMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 1);
+    final end = nextMonth.subtract(const Duration(seconds: 1));
+
+    try {
+      _daysWithActivityMonth = await _service.getDaysWithActivityForRange(
+        _currentUserId!,
+        start,
+        end,
+      );
+      notifyListeners();
+    } catch (e) {
+      print("Erreur loadMonthData: $e");
     }
   }
 
