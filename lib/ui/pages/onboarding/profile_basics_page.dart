@@ -45,6 +45,11 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
   late double _weightVal;
   late double _heightVal;
 
+  bool _prenomError = false;
+  bool _nomError = false;
+  bool _dateError = false; // Nouvelle variable d'état
+  bool _genderError = false; // Nouvelle variable d'état
+
   DateTime? _dob;
   Gender? _gender;
   bool _loading = false;
@@ -68,18 +73,36 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
     super.dispose();
   }
 
-  InputDecoration _dec(String hint) => InputDecoration(
-    hintText: hint,
-    hintStyle: const TextStyle(color: Colors.white54, fontSize: 14),
+  InputDecoration _dec(String hint, {bool error = false}) => InputDecoration(
+    hintText: error ? '$hint requis !' : hint,
+    hintStyle: TextStyle(
+      color: error ? Colors.redAccent : Colors.white54,
+      fontSize: 14,
+      fontWeight: error ? FontWeight.bold : FontWeight.normal,
+    ),
     filled: true,
     fillColor: const Color(0xFF1E1E1E), // Fond sombre
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: 16,
-      vertical: 0,
-    ), // Compact
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide.none,
+      borderSide:
+          error
+              ? const BorderSide(color: Colors.redAccent, width: 1.5)
+              : BorderSide.none,
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide:
+          error
+              ? const BorderSide(color: Colors.redAccent, width: 1.5)
+              : BorderSide.none,
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: error ? Colors.redAccent : AppTheme.gold,
+        width: 1.5,
+      ),
     ),
   );
 
@@ -105,23 +128,24 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
         );
       },
     );
-    if (picked != null) setState(() => _dob = picked);
+    if (picked != null) {
+      setState(() {
+        _dob = picked;
+        _dateError = false; // Reset error
+      });
+    }
   }
 
   Future<void> _handle() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_dob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sélectionne ta date de naissance')),
-      );
-      return;
-    }
-    if (_gender == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Sélectionne ton genre')));
-      return;
-    }
+    // Validation complète
+    setState(() {
+      _prenomError = _prenom.text.trim().isEmpty;
+      _nomError = _nom.text.trim().isEmpty;
+      _dateError = _dob == null;
+      _genderError = _gender == null;
+    });
+
+    if (_prenomError || _nomError || _dateError || _genderError) return;
 
     setState(() => _loading = true);
     try {
@@ -148,10 +172,24 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final dobText =
-        _dob == null
-            ? 'JJ/MM/ANNÉE'
-            : '${_dob!.day.toString().padLeft(2, '0')}/${_dob!.month.toString().padLeft(2, '0')}/${_dob!.year}';
+    // Texte conditionnel pour la date
+    final String dobText;
+    if (_dateError) {
+      dobText = 'DATE REQUISE !';
+    } else {
+      dobText =
+          _dob == null
+              ? 'JJ/MM/ANNÉE'
+              : '${_dob!.day.toString().padLeft(2, '0')}/${_dob!.month.toString().padLeft(2, '0')}/${_dob!.year}';
+    }
+
+    final dateTextStyle = TextStyle(
+      color:
+          _dateError
+              ? Colors.redAccent
+              : (_dob == null ? Colors.white54 : Colors.white),
+      fontWeight: _dateError ? FontWeight.bold : FontWeight.w600,
+    );
 
     return Scaffold(
       backgroundColor: AppTheme.scaffold,
@@ -207,28 +245,28 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                           Expanded(
                             child: TextFormField(
                               controller: _prenom,
-                              decoration: _dec('Prénom'),
+                              decoration: _dec('Prénom', error: _prenomError),
                               style: const TextStyle(color: Colors.white),
                               textInputAction: TextInputAction.next,
-                              validator:
-                                  (v) =>
-                                      (v == null || v.trim().isEmpty)
-                                          ? '!'
-                                          : null,
+                              onChanged: (v) {
+                                if (_prenomError && v.isNotEmpty) {
+                                  setState(() => _prenomError = false);
+                                }
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: TextFormField(
                               controller: _nom,
-                              decoration: _dec('Nom'),
+                              decoration: _dec('Nom', error: _nomError),
                               style: const TextStyle(color: Colors.white),
                               textInputAction: TextInputAction.done,
-                              validator:
-                                  (v) =>
-                                      (v == null || v.trim().isEmpty)
-                                          ? '!'
-                                          : null,
+                              onChanged: (v) {
+                                if (_nomError && v.isNotEmpty) {
+                                  setState(() => _nomError = false);
+                                }
+                              },
                             ),
                           ),
                         ],
@@ -253,26 +291,27 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF1E1E1E),
                             borderRadius: BorderRadius.circular(12),
+                            border:
+                                _dateError
+                                    ? Border.all(
+                                      color: Colors.redAccent,
+                                      width: 1.5,
+                                    )
+                                    : null,
                           ),
                           alignment: Alignment.centerLeft,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                dobText,
-                                style: TextStyle(
-                                  color:
-                                      _dob == null
-                                          ? Colors.white54
-                                          : Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const Icon(
+                              Text(dobText, style: dateTextStyle),
+                              Icon(
                                 Icons.calendar_today,
                                 size: 16,
-                                color: Colors.white54,
+                                color:
+                                    _dateError
+                                        ? Colors.redAccent
+                                        : Colors.white54,
                               ),
                             ],
                           ),
@@ -339,8 +378,12 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                               label: 'Femme',
                               selected: _gender == Gender.femme,
                               icon: Icons.female,
+                              error: _genderError,
                               onTap:
-                                  () => setState(() => _gender = Gender.femme),
+                                  () => setState(() {
+                                    _gender = Gender.femme;
+                                    _genderError = false;
+                                  }),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -349,8 +392,12 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
                               label: 'Homme',
                               selected: _gender == Gender.homme,
                               icon: Icons.male,
+                              error: _genderError,
                               onTap:
-                                  () => setState(() => _gender = Gender.homme),
+                                  () => setState(() {
+                                    _gender = Gender.homme;
+                                    _genderError = false;
+                                  }),
                             ),
                           ),
                         ],
@@ -414,7 +461,12 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
     required bool selected,
     required IconData icon,
     required VoidCallback onTap,
+    bool error = false,
   }) {
+    // Si error est vrai et non sélectionné, bordure rouge
+    final borderColor =
+        selected ? AppTheme.gold : (error ? Colors.redAccent : Colors.white10);
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -424,8 +476,11 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
           color: selected ? AppTheme.gold : const Color(0xFF1E1E1E),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppTheme.gold : Colors.white10,
-            width: 2,
+            color: borderColor,
+            width:
+                (selected || error)
+                    ? 2
+                    : 1, // Bordure un peu plus épaisse si erreur ou sélection
           ),
         ),
         child: Row(
@@ -433,14 +488,20 @@ class _ProfileBasicsPageState extends State<ProfileBasicsPage> {
           children: [
             Icon(
               icon,
-              color: selected ? Colors.black : Colors.white60,
+              color:
+                  selected
+                      ? Colors.black
+                      : (error ? Colors.redAccent : Colors.white60),
               size: 20,
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: selected ? Colors.black : Colors.white,
+                color:
+                    selected
+                        ? Colors.black
+                        : (error ? Colors.redAccent : Colors.white),
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
               ),
