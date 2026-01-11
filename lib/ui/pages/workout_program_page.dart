@@ -287,44 +287,50 @@ class _WorkoutProgramContent extends StatelessWidget {
     WorkoutProgramViewModel vm,
   ) {
     // 1. Déterminer la date de référence pour l'affichage de la semaine
-    DateTime referenceDate = DateTime.now();
+    DateTime displayStart;
+    DateTime displayEnd;
 
-    // Si on a des jours programmés avec une date, on se base sur le premier jour
-    if (vm.programDays.isNotEmpty) {
-      final firstScheduledDate =
-          vm.programDays
-              .map((day) => day.scheduledDate)
-              .whereType<DateTime>() // Filtre les nulls
-              .firstOrNull;
+    final scheduledDates =
+        vm.programDays
+            .map((day) => day.scheduledDate)
+            .whereType<DateTime>()
+            .toList()
+          ..sort();
 
-      if (firstScheduledDate != null) {
-        referenceDate = firstScheduledDate;
-      }
+    if (scheduledDates.isNotEmpty) {
+      // Si on a un programme, on affiche la plage réelle (ex: 11 jan - 17 jan)
+      displayStart = scheduledDates.first;
+      displayEnd = scheduledDates.last;
+    } else {
+      // Sinon, on affiche la semaine civile courante (Lundi - Dimanche)
+      final now = DateTime.now();
+      displayStart = now.subtract(Duration(days: now.weekday - 1));
+      displayEnd = displayStart.add(const Duration(days: 6));
     }
-
-    // 2. Calculer le Lundi et Dimanche de cette semaine de référence
-    final monday = referenceDate.subtract(
-      Duration(days: referenceDate.weekday - 1),
-    );
-    final sunday = monday.add(const Duration(days: 6));
 
     final dateFormat = DateFormat('dd MMM', 'fr_FR');
     final dateRange =
-        '${dateFormat.format(monday)} - ${dateFormat.format(sunday)}';
+        '${dateFormat.format(displayStart)} - ${dateFormat.format(displayEnd)}';
 
     // 3. Déterminer le texte du badge
-    // "SEMAINE EN COURS" si la date actuelle est dans l'intervalle
-    // "SEMAINE À VENIR" si c'est dans le futur
-    // "PROGRAMME" sinon
     final now = DateTime.now();
     final nowClean = DateTime(now.year, now.month, now.day);
-    final mondayClean = DateTime(monday.year, monday.month, monday.day);
-    final sundayClean = DateTime(sunday.year, sunday.month, sunday.day);
+    final startClean = DateTime(
+      displayStart.year,
+      displayStart.month,
+      displayStart.day,
+    );
+    final endClean = DateTime(
+      displayEnd.year,
+      displayEnd.month,
+      displayEnd.day,
+    );
 
     String badgeText = 'PROGRAMME';
-    if (nowClean.isAfter(sundayClean)) {
+    // On ajoute une marge d'erreur pour "Semaine en cours" si on est pendant la période
+    if (nowClean.isAfter(endClean)) {
       badgeText = 'PROGRAMME TERMINÉ';
-    } else if (nowClean.isBefore(mondayClean)) {
+    } else if (nowClean.isBefore(startClean)) {
       badgeText = 'SEMAINE À VENIR';
     } else {
       badgeText = 'SEMAINE EN COURS';
