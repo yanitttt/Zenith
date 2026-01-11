@@ -182,6 +182,9 @@ class PlanningViewModel extends ChangeNotifier {
   Set<int> _daysWithActivityMonth = {};
   Set<int> get daysWithActivityMonth => _daysWithActivityMonth;
 
+  List<PlanningItem> _sessionsDuMois = [];
+  List<PlanningItem> get sessionsDuMois => _sessionsDuMois;
+
   Future<void> loadMonthData() async {
     if (_currentUserId == null) return;
 
@@ -191,11 +194,15 @@ class PlanningViewModel extends ChangeNotifier {
     final end = nextMonth.subtract(const Duration(seconds: 1));
 
     try {
-      _daysWithActivityMonth = await _service.getDaysWithActivityForRange(
-        _currentUserId!,
-        start,
-        end,
-      );
+      // Fetch parallèle : jours d'activité + liste complète des séances
+      final results = await Future.wait([
+        _service.getDaysWithActivityForRange(_currentUserId!, start, end),
+        _service.getSessionsForRange(_currentUserId!, start, end),
+      ]);
+
+      _daysWithActivityMonth = results[0] as Set<int>;
+      _sessionsDuMois = results[1] as List<PlanningItem>;
+
       notifyListeners();
     } catch (e) {
       print("Erreur loadMonthData: $e");

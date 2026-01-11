@@ -194,122 +194,245 @@ class _PlanningViewState extends State<_PlanningView> {
 
     return Column(
       children: [
-        // En-têtes Jours
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children:
-              weekDays
-                  .map(
-                    (d) => SizedBox(
-                      width: 40,
-                      child: Text(
-                        d,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: kGold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-        ),
-        const SizedBox(height: 16),
-        // Grille
         Expanded(
-          child: GridView.builder(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 8,
-              childAspectRatio: 0.85, // Un peu plus haut que large
-            ),
-            itemCount: totalCells,
-            itemBuilder: (context, index) {
-              if (index < startOffset) {
-                return const SizedBox();
-              }
-
-              final dayNum = index - startOffset + 1;
-              final currentDate = DateTime(
-                vm.selectedDate.year,
-                vm.selectedDate.month,
-                dayNum,
-              );
-
-              final isToday =
-                  DateTime.now().day == dayNum &&
-                  DateTime.now().month == vm.selectedDate.month &&
-                  DateTime.now().year == vm.selectedDate.year;
-
-              final isSelected = dayNum == vm.selectedDate.day;
-              final hasActivity = vm.daysWithActivityMonth.contains(dayNum);
-
-              return ScaleButton(
-                onTap: () {
-                  vm.selectDate(currentDate, updateWeek: true);
-                  // Si on veut revenir à la vue semaine auto :
-                  // setState(() => _viewMode = PlanningViewMode.week);
-                  // Mais le user veut peut-être rester sur le calendrier ?
-                  // Le user a dit "switcher", donc peut-être manuel.
-                  // Je laisse le user décider quand switch back, mais sélectionner un jour update le contexte.
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                    color:
-                        isSelected
-                            ? kGold
-                            : (isToday ? Colors.white10 : Colors.transparent),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color:
-                          isSelected
-                              ? kGold
-                              : (isToday
-                                  ? kGold.withOpacity(0.5)
-                                  : Colors.white12),
+          child: Center(
+            child: SingleChildScrollView(
+              // On utilise un scroll view pour éviter l'overflow sur petits écrans
+              // même si le grid n'est pas scrollable.
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // En-têtes Jours - Alignés avec la grille
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 0,
+                    ), // Match grid alignment
+                    child: Row(
+                      children:
+                          weekDays
+                              .map(
+                                (d) => Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      d,
+                                      style: TextStyle(
+                                        color: kGold,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                     ),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "$dayNum",
-                        style: TextStyle(
-                          color: isSelected ? Colors.black : Colors.white,
-                          fontWeight:
-                              isToday || isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
-                          fontSize: 16,
-                        ),
-                      ),
-                      if (hasActivity) ...[
-                        const SizedBox(height: 4),
-                        Container(
-                          width: 4,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.black : kGold,
-                            shape: BoxShape.circle,
+                  const SizedBox(height: 16),
+
+                  // Grille
+                  AspectRatio(
+                    aspectRatio: 0.85, // Un peu plus haut
+                    child: GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 7,
+                            mainAxisSpacing: 12, // Espacement vertical
+                            crossAxisSpacing: 8, // Espacement horizontal
+                            childAspectRatio: 0.85, // Ratio des cellules
                           ),
-                        ),
-                      ],
-                    ],
+                      itemCount: totalCells,
+                      itemBuilder: (context, index) {
+                        if (index < startOffset) {
+                          return const SizedBox();
+                        }
+
+                        final dayNum = index - startOffset + 1;
+                        final currentDate = DateTime(
+                          vm.selectedDate.year,
+                          vm.selectedDate.month,
+                          dayNum,
+                        );
+
+                        final isToday =
+                            DateTime.now().day == dayNum &&
+                            DateTime.now().month == vm.selectedDate.month &&
+                            DateTime.now().year == vm.selectedDate.year;
+
+                        final isSelected = dayNum == vm.selectedDate.day;
+                        final hasActivity = vm.daysWithActivityMonth.contains(
+                          dayNum,
+                        );
+
+                        return ScaleButton(
+                          onTap: () {
+                            vm.selectDate(currentDate, updateWeek: true);
+                            final sessionsForDay =
+                                vm.sessionsDuMois
+                                    .where(
+                                      (s) =>
+                                          s.date.day == dayNum &&
+                                          s.date.month ==
+                                              vm.selectedDate.month &&
+                                          s.date.year == vm.selectedDate.year,
+                                    )
+                                    .toList();
+
+                            if (sessionsForDay.isNotEmpty) {
+                              _showDayDetailsDialog(
+                                context,
+                                currentDate,
+                                sessionsForDay,
+                              );
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  isSelected
+                                      ? kGold
+                                      : (isToday
+                                          ? Colors.white10
+                                          : Colors.transparent),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color:
+                                    isSelected
+                                        ? kGold
+                                        : (isToday
+                                            ? kGold.withOpacity(0.5)
+                                            : Colors.white12),
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "$dayNum",
+                                  style: TextStyle(
+                                    color:
+                                        isSelected
+                                            ? Colors.black
+                                            : Colors.white,
+                                    fontWeight:
+                                        isToday || isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                if (hasActivity) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    width: 4,
+                                    height: 4,
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? Colors.black : kGold,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              );
-            },
+                ],
+              ),
+            ),
           ),
         ),
       ],
     );
   }
 
+  void _showDayDetailsDialog(
+    BuildContext context,
+    DateTime date,
+    List<PlanningItem> sessions,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: kCardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          DateFormat(
+                            'EEEE d',
+                            'fr_FR',
+                          ).format(date).toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          DateFormat(
+                            'MMMM yyyy',
+                            'fr_FR',
+                          ).format(date).toUpperCase(),
+                          style: TextStyle(
+                            color: kGold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.grey),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: sessions.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      return _buildCompactSessionCard(
+                        context,
+                        sessions[index],
+                        index + 1,
+                        Colors.black26,
+                        kGold,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildHeader(BuildContext context, PlanningViewModel vm) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1092,6 +1215,82 @@ class _PlanningViewState extends State<_PlanningView> {
               fontSize: 12,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactSessionCard(
+    BuildContext context,
+    PlanningItem item,
+    int index,
+    Color bg,
+    Color accent,
+  ) {
+    // Version plus compacte et épurée pour la liste mensuelle
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Status icon instead of big index
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: item.isDone ? accent.withOpacity(0.2) : Colors.white10,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              item.isDone ? Icons.check : Icons.fitness_center,
+              size: 16,
+              color: item.isDone ? accent : Colors.white54,
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (item.duration > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Text(
+                      "${item.duration} min • Muscu", // Mock category
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          // Edit button (small)
+          if (item.sessionId != null)
+            IconButton(
+              icon: const Icon(Icons.edit, size: 16, color: Colors.white30),
+              onPressed:
+                  () => _showDurationPickerDialog(
+                    context,
+                    item.title,
+                    initialDuration: item.duration,
+                    sessionId: item.sessionId,
+                  ),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
         ],
       ),
     );

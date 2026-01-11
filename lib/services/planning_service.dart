@@ -258,4 +258,123 @@ class PlanningService {
 
     return daysSet;
   }
+
+  Future<List<PlanningItem>> getSessionsForRange(
+    int userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final startTs = start.millisecondsSinceEpoch ~/ 1000;
+    final endTs = end.millisecondsSinceEpoch ~/ 1000;
+
+    final List<PlanningItem> items = [];
+
+    // 1. Sessions terminées
+    final queryDone = db.select(db.session).join([
+      leftOuterJoin(
+        db.programDay,
+        db.programDay.id.equalsExp(db.session.programDayId),
+      ),
+      leftOuterJoin(
+        db.userProgram,
+        db.userProgram.programId.equalsExp(db.programDay.programId),
+      ),
+    ]);
+
+    queryDone.where(
+      db.session.userId.equals(userId) &
+          db.session.dateTs.isBetweenValues(startTs, endTs),
+    );
+
+    final rowsDone = await queryDone.get();
+    final Set<String> doneKeys =
+        {}; // Clef unique jour+nom pour éviter doublons si besoin
+
+    for (final row in rowsDone) {
+      final session = row.readTable(db.session);
+      final programDay = row.readTableOrNull(db.programDay);
+
+      items.add(
+        PlanningItem(
+          sessionId: session.id,
+          programDayId: session.programDayId,
+          title: session.name ?? programDay?.name ?? "Séance Libre",
+          duration: session.durationMin ?? 0,
+          isDone: true,
+          isScheduled: false,
+          date: DateTime.fromMillisecondsSinceEpoch(session.dateTs * 1000),
+        ),
+      );
+      // On pourrait stocker des clefs ici pour filtrer les scheduled doublons exacts,
+      // mais la logique existante filtre surtout par Nom de programme.
+    }
+
+    // 2. Séances programmées
+    final queryScheduled = db.select(db.programDayExercise).join([
+      innerJoin(
+        db.programDay,
+        db.programDay.id.equalsExp(db.programDayExercise.programDayId),
+      ),
+      innerJoin(
+        db.userProgram,
+        db.userProgram.programId.equalsExp(db.programDay.programId),
+      ),
+    ]);
+
+    queryScheduled.where(
+      db.programDayExercise.scheduledDate.isBetweenValues(
+            start,
+            end.subtract(const Duration(seconds: 1)),
+          ) &
+          db.userProgram.userId.equals(userId) &
+          db.userProgram.isActive.equals(1),
+    );
+
+    final rowsScheduled = await queryScheduled.get();
+
+    // On doit grouper par jour et programme pour éviter X items pour X exercices
+    // Clef: "YYYY-MM-DD_ProgramName"
+    final Set<String> addedScheduledKeys = {};
+
+    for (final row in rowsScheduled) {
+      final e = row.readTable(db.programDayExercise);
+      final pd = row.readTable(db.programDay);
+
+      if (e.scheduledDate == null) continue;
+
+      final dateKey =
+          "${e.scheduledDate!.year}-${e.scheduledDate!.month}-${e.scheduledDate!.day}_${pd.name.trim()}";
+
+      // Est-ce que ce programme a déjà été fait ce jour là ?
+      // C'est complexe à vérifier parfaitement sans ID précis, mais on peut vérifier si on a déjà un item Done ce jour avec ce nom.
+      final alreadyDone = items.any(
+        (i) =>
+            i.isDone &&
+            i.date.year == e.scheduledDate!.year &&
+            i.date.month == e.scheduledDate!.month &&
+            i.date.day == e.scheduledDate!.day &&
+            i.title == pd.name.trim(),
+      );
+
+      if (!alreadyDone && !addedScheduledKeys.contains(dateKey)) {
+        items.add(
+          PlanningItem(
+            sessionId: null,
+            programDayId: pd.id,
+            title: pd.name,
+            duration: 0,
+            isDone: false,
+            isScheduled: true,
+            date: e.scheduledDate!,
+          ),
+        );
+        addedScheduledKeys.add(dateKey);
+      }
+    }
+
+    // Tri par date
+    items.sort((a, b) => a.date.compareTo(b.date));
+
+    return items;
+  }
 }
