@@ -307,7 +307,6 @@ class ProgramGeneratorService {
           {'name': 'Bas du corps 2', 'muscleGroup': MuscleGroup.lower},
         ];
       case 6:
-      default:
         return [
           {'name': 'Haut du corps 1', 'muscleGroup': MuscleGroup.upper},
           {'name': 'Bas du corps 1', 'muscleGroup': MuscleGroup.lower},
@@ -315,6 +314,27 @@ class ProgramGeneratorService {
           {'name': 'Haut du corps 2', 'muscleGroup': MuscleGroup.upper},
           {'name': 'Bas du corps 2', 'muscleGroup': MuscleGroup.lower},
           {'name': 'Full Body 2', 'muscleGroup': MuscleGroup.full},
+        ];
+      case 7:
+        return [
+          {'name': 'Haut du corps 1', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 1', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body 1', 'muscleGroup': MuscleGroup.full},
+          {'name': 'Haut du corps 2', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 2', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body 2', 'muscleGroup': MuscleGroup.full},
+          {'name': 'Challenge Full Body', 'muscleGroup': MuscleGroup.full},
+        ];
+      default:
+        // Sécurité si > 7 jours (on prend le max 7)
+        return [
+          {'name': 'Haut du corps 1', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 1', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body 1', 'muscleGroup': MuscleGroup.full},
+          {'name': 'Haut du corps 2', 'muscleGroup': MuscleGroup.upper},
+          {'name': 'Bas du corps 2', 'muscleGroup': MuscleGroup.lower},
+          {'name': 'Full Body 2', 'muscleGroup': MuscleGroup.full},
+          {'name': 'Challenge Full Body', 'muscleGroup': MuscleGroup.full},
         ];
     }
   }
