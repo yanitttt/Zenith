@@ -17,6 +17,7 @@ class DashboardData {
   final List<MuscleStat> muscleStats;
   final double moyennePlaisir;
   final bool hasProgram;
+  final double maxKg;
 
   DashboardData({
     required this.streakWeeks,
@@ -28,6 +29,7 @@ class DashboardData {
     required this.totalSeances,
     required this.moyennePlaisir,
     required this.hasProgram,
+    required this.maxKg,
   });
 }
 
@@ -283,6 +285,21 @@ class DashboardService {
     return result.read<double?>('avg_diff') ?? 0.0;
   }
 
+  Future<double> getMaxKg(int userId) async {
+    final result = await db.customSelect(
+      '''
+    SELECT MAX(se.load) AS max_kg
+    FROM session_exercise se
+    JOIN session s ON s.id = se.session_id
+    WHERE s.user_id = ?
+    ''',
+      variables: [Variable.withInt(userId)],
+      readsFrom: {db.session, db.sessionExercise},
+    ).getSingle();
+
+    return result.read<double?>('max_kg') ?? 0.0;
+  }
+
   Future<double> getPersonalRecord(int userId, int exerciseId) async {
     final result =
         await db
@@ -453,6 +470,7 @@ class DashboardService {
           final muscleStats = await getRepartitionMusculaire(userId);
           final totalHeures = await getTotalHeuresEntrainement(userId);
           final totalSeances = await getTotalSeances(userId);
+          final maxKg = await getMaxKg(userId);
 
           return DashboardData(
             streakWeeks: streak,
@@ -462,6 +480,7 @@ class DashboardService {
             muscleStats: muscleStats,
             totalHeures: totalHeures,
             totalSeances: totalSeances,
+            maxKg: maxKg,
             moyennePlaisir: await getMoyennePlaisir(userId),
             hasProgram: (await getNbProgrammesSuivis(userId)) > 0,
           );

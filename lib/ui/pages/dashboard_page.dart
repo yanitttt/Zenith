@@ -85,6 +85,7 @@ class DashboardPage extends StatelessWidget {
                     final muscleStats = data?.muscleStats ?? <MuscleStat>[];
                     final totalHeures = data?.totalHeures ?? 0.0;
                     final totalSeances = data?.totalSeances ?? 0;
+                    final maxKg = data?.maxKg ?? 0;
                     // final moyennePlaisir = data?.moyennePlaisir ?? 0.0; // Inutilisé dans code d'origine
 
                     final hasProgram = data?.hasProgram ?? false;
@@ -143,9 +144,9 @@ class DashboardPage extends StatelessWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: _buildCompactStatCard(
-                                    "Streak",
-                                    "$streakWeeks sem.",
-                                    Icons.local_fire_department,
+                                    "Max KG",
+                                    "${maxKg.toStringAsFixed(0)} kg",
+                                    Icons.fitness_center,
                                     Colors.redAccent,
                                     responsive,
                                   ),
