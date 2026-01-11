@@ -256,8 +256,9 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   void applySwap(int dayIndex, ExerciseData newExercise) {
     if (_exerciseToSwapId == null ||
         dayIndex < 0 ||
-        dayIndex >= _programDays.length)
+        dayIndex >= _programDays.length) {
       return;
+    }
 
     final day = _programDays[dayIndex];
     final exercises = day.exercises;

@@ -5,7 +5,7 @@ part 'user_goal_dao.g.dart';
 
 @DriftAccessor(tables: [UserGoal, Objective])
 class UserGoalDao extends DatabaseAccessor<AppDb> with _$UserGoalDaoMixin {
-  UserGoalDao(AppDb db) : super(db);
+  UserGoalDao(super.db);
 
   Future<List<UserGoalData>> goalsOf(int userId) {
     return (select(userGoal)..where((g) => g.userId.equals(userId))).get();

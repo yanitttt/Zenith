@@ -98,7 +98,7 @@ class _RenderTimingBox extends RenderProxyBox {
     final stopwatch = Stopwatch()..start();
     super.performLayout();
     stopwatch.stop();
-    debugPrint('📐 [${label}] Layout: ${stopwatch.elapsedMicroseconds} µs');
+    debugPrint('📐 [$label] Layout: ${stopwatch.elapsedMicroseconds} µs');
   }
 
   @override
@@ -111,6 +111,6 @@ class _RenderTimingBox extends RenderProxyBox {
     final stopwatch = Stopwatch()..start();
     super.paint(context, offset);
     stopwatch.stop();
-    debugPrint('🎨 [${label}] Paint: ${stopwatch.elapsedMicroseconds} µs');
+    debugPrint('🎨 [$label] Paint: ${stopwatch.elapsedMicroseconds} µs');
   }
 }

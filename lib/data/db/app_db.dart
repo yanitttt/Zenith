@@ -789,53 +789,53 @@ class AppDb extends _$AppDb {
 
   Future<void> _createAllIndexes() async {
     await _createSingletonIndexIfSafe();
-    Future<void> _idxIf(String table, String sql) async {
+    Future<void> idxIf(String table, String sql) async {
       if (await _tableExists(table)) {
         await customStatement(sql);
       }
     }
 
-    await _idxIf(
+    await idxIf(
       'exercise_muscle',
       'CREATE INDEX IF NOT EXISTS idx_ex_muscle  ON exercise_muscle(exercise_id);',
     );
-    await _idxIf(
+    await idxIf(
       'exercise_objective',
       'CREATE INDEX IF NOT EXISTS idx_ex_obj     ON exercise_objective(exercise_id);',
     );
-    await _idxIf(
+    await idxIf(
       'user_feedback',
       'CREATE INDEX IF NOT EXISTS idx_fb_user    ON user_feedback(user_id, ts);',
     );
-    await _idxIf(
+    await idxIf(
       'user_equipment',
       'CREATE INDEX IF NOT EXISTS idx_user_eq    ON user_equipment(user_id);',
     );
-    await _idxIf(
+    await idxIf(
       'user_goal',
       'CREATE INDEX IF NOT EXISTS idx_user_goal  ON user_goal(user_id);',
     );
-    await _idxIf(
+    await idxIf(
       'session',
       'CREATE INDEX IF NOT EXISTS idx_sess_user  ON session(user_id, date_ts);',
     );
-    await _idxIf(
+    await idxIf(
       'exercise_relation',
       'CREATE INDEX IF NOT EXISTS idx_rel_src    ON exercise_relation(src_exercise_id);',
     );
-    await _idxIf(
+    await idxIf(
       'training_modality',
       'CREATE INDEX IF NOT EXISTS idx_modality   ON training_modality(objective_id, level);',
     );
-    await _idxIf(
+    await idxIf(
       'program_day',
       'CREATE INDEX IF NOT EXISTS idx_prog_day   ON program_day(program_id);',
     );
-    await _idxIf(
+    await idxIf(
       'program_day_exercise',
       'CREATE INDEX IF NOT EXISTS idx_prog_ex  ON program_day_exercise(program_day_id);',
     );
-    await _idxIf(
+    await idxIf(
       'user_program',
       'CREATE INDEX IF NOT EXISTS idx_user_prog  ON user_program(user_id, is_active);',
     );
@@ -948,7 +948,7 @@ class AppDb extends _$AppDb {
 
   Future<void> _populateDefaultBadges() async {
     // Helper to insert ignore
-    Future<void> _addBadge(String id, String name, String desc, int xp) async {
+    Future<void> addBadge(String id, String name, String desc, int xp) async {
       final exists =
           await (select(gamificationBadge)
             ..where((b) => b.id.equals(id))).getSingleOrNull();
@@ -965,26 +965,26 @@ class AppDb extends _$AppDb {
     }
 
     if (await _tableExists('gamification_badge')) {
-      await _addBadge(
+      await addBadge(
         'first_steps',
         'Premier Pas',
         'Terminer la première séance',
         50,
       );
-      await _addBadge('early_bird', 'Lève-tôt', 'S\'entraîner avant 8h', 100);
-      await _addBadge('night_owl', 'Nocturne', 'S\'entraîner après 22h', 100);
-      await _addBadge(
+      await addBadge('early_bird', 'Lève-tôt', 'S\'entraîner avant 8h', 100);
+      await addBadge('night_owl', 'Nocturne', 'S\'entraîner après 22h', 100);
+      await addBadge(
         'spartan',
         'Spartiate',
         'Faire plus de 300 reps en une séance',
         200,
       );
-      await _addBadge('marathon', 'Marathonien', 'Séance de plus de 2h', 300);
+      await addBadge('marathon', 'Marathonien', 'Séance de plus de 2h', 300);
     }
   }
 
   Future<void> _populateBadgesV42() async {
-    Future<void> _addBadge(String id, String name, String desc, int xp) async {
+    Future<void> addBadge(String id, String name, String desc, int xp) async {
       final exists =
           await (select(gamificationBadge)
             ..where((b) => b.id.equals(id))).getSingleOrNull();
@@ -1001,19 +1001,19 @@ class AppDb extends _$AppDb {
     }
 
     if (await _tableExists('gamification_badge')) {
-      await _addBadge(
+      await addBadge(
         'sunday_warrior',
         'Guerrier du Dimanche',
         'S\'entraîner le dimanche',
         150,
       );
-      await _addBadge(
+      await addBadge(
         'hulk',
         'Hulk',
         'Soulever plus de 5 tonnes (volume total)',
         500,
       );
-      await _addBadge(
+      await addBadge(
         'high_voltage',
         'Survolté',
         'Intensité moyenne > 8/10',

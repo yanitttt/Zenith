@@ -49,8 +49,6 @@ class AppTheme {
         primary: gold,
         surface: surface,
         onSurface: textOnDark,
-        background: scaffold,
-        onBackground: textOnDark,
       ),
       textTheme: Typography.whiteCupertino.apply(
         bodyColor: textOnDark,
@@ -60,7 +58,6 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      useMaterial3: true,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: gold,

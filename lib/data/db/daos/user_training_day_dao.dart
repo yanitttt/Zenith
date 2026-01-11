@@ -6,7 +6,7 @@ part 'user_training_day_dao.g.dart';
 @DriftAccessor(tables: [UserTrainingDay])
 class UserTrainingDayDao extends DatabaseAccessor<AppDb>
     with _$UserTrainingDayDaoMixin {
-  UserTrainingDayDao(AppDb db) : super(db);
+  UserTrainingDayDao(super.db);
 
   Future<List<UserTrainingDayData>> getDaysForUser(int userId) {
     return (select(userTrainingDay)

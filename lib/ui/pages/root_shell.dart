@@ -9,7 +9,6 @@ import 'admin_page.dart';
 import 'workout_program_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'planning_page.dart';
-import '../../core/perf/perf_service.dart';
 import 'perf/performance_lab_page.dart';
 import '../../services/home_widget_service.dart'; // Added
 

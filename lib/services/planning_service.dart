@@ -202,4 +202,60 @@ class PlanningService {
 
     return daysSet;
   }
+
+  Future<Set<int>> getDaysWithActivityForRange(
+    int userId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    final startTs = start.millisecondsSinceEpoch ~/ 1000;
+    final endTs = end.millisecondsSinceEpoch ~/ 1000;
+
+    final daysSet = <int>{};
+
+    // 1. Sessions terminées
+    final sessions =
+        await (db.select(db.session)..where(
+          (s) =>
+              s.userId.equals(userId) &
+              s.dateTs.isBetweenValues(startTs, endTs),
+        )).get();
+
+    for (final s in sessions) {
+      final date = DateTime.fromMillisecondsSinceEpoch(s.dateTs * 1000);
+      daysSet.add(date.day); // On stocke le jour du mois (1-31)
+    }
+
+    // 2. Séances programmées
+    final query = db.select(db.programDayExercise).join([
+      innerJoin(
+        db.programDay,
+        db.programDay.id.equalsExp(db.programDayExercise.programDayId),
+      ),
+      innerJoin(
+        db.userProgram,
+        db.userProgram.programId.equalsExp(db.programDay.programId),
+      ),
+    ]);
+
+    query.where(
+      db.programDayExercise.scheduledDate.isBetweenValues(
+            start,
+            end.subtract(const Duration(seconds: 1)),
+          ) &
+          db.userProgram.userId.equals(userId) &
+          db.userProgram.isActive.equals(1),
+    );
+
+    final scheduledRows = await query.get();
+
+    for (final row in scheduledRows) {
+      final e = row.readTable(db.programDayExercise);
+      if (e.scheduledDate != null) {
+        daysSet.add(e.scheduledDate!.day);
+      }
+    }
+
+    return daysSet;
+  }
 }

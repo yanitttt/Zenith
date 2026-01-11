@@ -24,8 +24,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-
-
         const Padding(
           padding: EdgeInsets.only(bottom: 8),
           child: Text(
@@ -41,7 +39,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             Expanded(
               child: AspectRatio(
                 aspectRatio: 1.0,
@@ -58,8 +55,10 @@ class _MusclePieChartState extends State<MusclePieChart> {
                               touchedIndex = -1;
                               return;
                             }
-                            touchedIndex = pieTouchResponse
-                                .touchedSection!.touchedSectionIndex;
+                            touchedIndex =
+                                pieTouchResponse
+                                    .touchedSection!
+                                    .touchedSectionIndex;
                           });
                         },
                       ),
@@ -72,7 +71,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
                 ),
               ),
             ),
-
 
             Padding(
               padding: const EdgeInsets.only(top: 12, right: 4),
@@ -99,7 +97,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
     );
   }
 
-
   List<PieChartSectionData> _showingSections() {
     return List.generate(widget.muscleStats.length, (i) {
       final isTouched = i == touchedIndex;
@@ -108,7 +105,7 @@ class _MusclePieChartState extends State<MusclePieChart> {
       return PieChartSectionData(
         color: _getColor(i),
         value: stat.count.toDouble(),
-        title: "${stat.muscleName}",
+        title: stat.muscleName,
         radius: isTouched ? 60 : 50,
         titleStyle: TextStyle(
           fontSize: isTouched ? 14 : 10,
@@ -118,7 +115,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
       );
     });
   }
-
 
   void _showLegendPopup() {
     showDialog(
@@ -136,7 +132,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-
                 const Text(
                   "Légende",
                   style: TextStyle(
@@ -146,7 +141,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
 
                 ...widget.muscleStats.asMap().entries.map((entry) {
                   int i = entry.key;
@@ -168,18 +162,15 @@ class _MusclePieChartState extends State<MusclePieChart> {
                         Expanded(
                           child: Text(
                             "${stat.muscleName} — ${stat.count} répétitions",
-                            style: const TextStyle(
-                              color: Colors.white,
-                            ),
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                       ],
                     ),
                   );
-                }).toList(),
+                }),
 
                 const SizedBox(height: 16),
-
 
                 TextButton(
                   onPressed: () => Navigator.pop(context),
@@ -195,7 +186,6 @@ class _MusclePieChartState extends State<MusclePieChart> {
       },
     );
   }
-
 
   Color _getColor(int index) {
     const colors = [

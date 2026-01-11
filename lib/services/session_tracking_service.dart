@@ -1,7 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart';
 import '../data/db/app_db.dart';
-import 'program_generator_service.dart';
 import 'gamification_service.dart';
 
 class ActiveSessionExercise {
