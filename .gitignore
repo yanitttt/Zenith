@@ -21,10 +21,7 @@ DerivedData/
 # Logs
 *.log
 
-# Outils IA / Claude (optionnel)
-.claude/
-claude/
-img_claude/
+
 
 # Dossier de test
 ADAPTIVE_PROGRAM_GENERATION.md
