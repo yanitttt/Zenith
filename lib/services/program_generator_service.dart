@@ -388,6 +388,8 @@ class ProgramGeneratorService {
               setsSuggestion: Value(suggestions['sets']),
               repsSuggestion: Value(suggestions['reps']),
               restSuggestionSec: Value(suggestions['rest']),
+              previousSetsSuggestion: Value(suggestions['previousSets']), // New
+              previousRepsSuggestion: Value(suggestions['previousReps']), // New
               notes: Value(suggestions['notes']),
               scheduledDate: Value(scheduledDate),
             ),
@@ -455,6 +457,13 @@ class ProgramGeneratorService {
       notes = 'Exercice principal - charge maximale';
     }
 
+    String? previousSets;
+    String? previousReps;
+
+    // Capture initial values for comparison
+    final initialSets = sets;
+    final initialReps = reps;
+
     if (exercise.performanceAdjustment <= -0.5) {
       sets = max(1, sets - 1);
       reps = _adjustReps(reps, -2);
@@ -468,11 +477,21 @@ class ProgramGeneratorService {
       reps = _adjustReps(reps, 2);
     }
 
+    // Check for changes
+    if (sets != initialSets) {
+      previousSets = '$initialSets séries';
+    }
+    if (reps != initialReps) {
+      previousReps = '$initialReps reps';
+    }
+
     return {
       'sets': '$sets séries',
       'reps': '$reps reps',
       'rest': rest,
       'notes': notes,
+      'previousSets': previousSets,
+      'previousReps': previousReps,
     };
   }
 

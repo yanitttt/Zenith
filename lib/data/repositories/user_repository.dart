@@ -9,7 +9,6 @@ class UserRepository {
 
   Future<AppUserData?> current() => _dao.firstUser();
 
-
   Future<int> createProfileStrict({
     required String prenom,
     required String nom,
@@ -28,16 +27,23 @@ class UserRepository {
         return u!.id;
       }
 
-      final id = await _dao.insertOne(AppUserCompanion(
-        prenom: Value(prenom),
-        nom: Value(nom),
-        birthDate: Value(birthDate),
-        gender: Value(gender),
-        weight: Value(weight),
-        height: Value(height),
-        level: Value(level),
-        metabolism: Value(metabolism),
-      ));
+      final id = await _dao.insertOne(
+        AppUserCompanion(
+          prenom: Value(prenom),
+          nom: Value(nom),
+          birthDate: Value(birthDate),
+          gender: Value(gender),
+          weight: Value(weight),
+          height: Value(height),
+          level: Value(level),
+          metabolism: Value(metabolism),
+          // Fix: Explicitly set defaults to avoid NULLs if DB schema is desynchronized
+          xp: const Value(0),
+          userLevel: const Value(1),
+          singleton: const Value(1),
+          title: const Value('Novice'),
+        ),
+      );
 
       final after = await _dao.countUsers();
       if (after != before + 1) {

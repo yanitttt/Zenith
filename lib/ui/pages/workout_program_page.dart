@@ -773,12 +773,14 @@ class _WorkoutProgramContent extends StatelessWidget {
                 icon: Icons.repeat,
                 label: 'Séries',
                 value: exercise.setsSuggestion ?? '-',
+                previousValue: exercise.previousSetsSuggestion,
                 responsive: responsive,
               ),
               _buildInfoColumn(
                 icon: Icons.fitness_center,
                 label: 'Reps',
                 value: exercise.repsSuggestion ?? '-',
+                previousValue: exercise.previousRepsSuggestion,
                 responsive: responsive,
               ),
               _buildInfoColumn(

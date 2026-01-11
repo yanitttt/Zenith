@@ -470,105 +470,105 @@ class AppDb extends _$AppDb {
   AppDb.forTesting(super.executor) : _isTest = true;
 
   @override
-  int get schemaVersion => 43;
+  int get schemaVersion => 44;
 
-Future<void> seedExerciseDetails() async {
-      // 1. Back Squat
-      await customStatement('''
+  Future<void> seedExerciseDetails() async {
+    // 1. Back Squat
+    await customStatement('''
         UPDATE exercise 
         SET description = 'L''exercice roi pour le bas du corps. Il développe une force globale impressionnante et sollicite principalement les quadriceps, les fessiers et le bas du dos.',
             etapes = '\n 1. Placez la barre sur vos trapèzes (pas sur la nuque).\n2. Pieds écartés largeur d''épaules, pointes légèrement vers l''extérieur.\n3. Inspirez et gainez les abdos.\n4. Descendez les fesses en arrière comme pour vous asseoir, en gardant le dos droit.\n5. Descendez jusqu''à ce que les cuisses soient parallèles au sol.\n6. Remontez en poussant sur les talons et expirez.'
         WHERE id = 1;
       ''');
 
-      // 2. Développé couché
-      await customStatement('''
+    // 2. Développé couché
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Le mouvement de référence pour la force du haut du corps. Il cible massivement les pectoraux, avec une aide des triceps et des épaules.',
             etapes = '\n 1. Allongez-vous, les yeux sous la barre.\n2. Pieds bien à plat au sol pour la stabilité.\n3. Saisissez la barre avec une prise un peu plus large que les épaules.\n4. Décrochez la barre et descendez-la contrôlée vers le milieu de la poitrine.\n5. Poussez la barre vers le haut sans décoller les fesses du banc.'
         WHERE id = 2;
       ''');
 
-      // 3. Soulevé de terre (Deadlift)
-      await customStatement('''
+    // 3. Soulevé de terre (Deadlift)
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Un test de force pure qui travaille toute la chaîne postérieure : ischios, fessiers, lombaires et trapèzes. Idéal pour la posture.',
             etapes = '\n 1. Pieds sous la barre (la barre touche les tibias).\n2. Poussez les fesses en arrière et saisissez la barre bras tendus.\n3. Bombez le torse, gardez le dos PLAT (très important).\n4. Poussez le sol avec vos jambes pour lever la barre.\n5. Une fois debout, verrouillez les hanches sans vous pencher en arrière.\n6. Redescendez en contrôlant la charge.'
         WHERE id = 3;
       ''');
 
-      // 4. Pompes
-      await customStatement('''
+    // 4. Pompes
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Un classique au poids du corps pour renforcer le torse, les bras et le gainage. Aucun matériel nécessaire.',
             etapes = '\n 1. Placez les mains au sol, largeur d''épaules.\n2. Corps aligné des talons à la tête (ne cambrez pas le dos).\n3. Descendez la poitrine jusqu''à frôler le sol.\n4. Les coudes doivent former une flèche (45°) avec le corps, pas un T.\n5. Repoussez le sol jusqu''à l''extension des bras.'
         WHERE id = 4;
       ''');
 
-      // 5. Rowing haltère
-      await customStatement('''
+    // 5. Rowing haltère
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Exercice unilatéral excellent pour l''épaisseur du dos et pour corriger les déséquilibres musculaires.',
             etapes = '\n 1. Posez un genou et une main sur un banc plat.\n2. Le dos doit être plat et parallèle au sol.\n3. Saisissez l''haltère avec la main libre.\n4. Tirez le coude vers le plafond et vers la hanche (comme pour démarrer une tondeuse).\n5. Redescendez l''haltère lentement sans toucher le sol.'
         WHERE id = 5;
       ''');
 
-      // 6. Tractions
-      await customStatement('''
+    // 6. Tractions
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Le meilleur constructeur de dos au poids du corps. Il élargit le dos (forme en V) et renforce les biceps.',
             etapes = '\n 1. Suspendez-vous à la barre, mains plus larges que les épaules.\n2. Rétractez les omoplates (baissez les épaules).\n3. Tirez votre corps vers le haut jusqu''à ce que le menton dépasse la barre.\n4. Évitez de vous balancer (kipping).\n5. Redescendez en contrôlant le mouvement jusqu''à l''extension complète.'
         WHERE id = 6;
       ''');
 
-      // 7. Tirage vertical (Lat Pulldown)
-      await customStatement('''
+    // 7. Tirage vertical (Lat Pulldown)
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Alternative aux tractions sur machine. Permet de cibler le grand dorsal avec une charge ajustable.',
             etapes = '\n 1. Réglez le siège pour avoir les genoux bloqués sous les boudins.\n2. Saisissez la barre prise large.\n3. Penchez-vous très légèrement en arrière, torse bombé.\n4. Tirez la barre vers le haut de vos pectoraux.\n5. Relâchez doucement sans laisser les poids claquer.'
         WHERE id = 7;
       ''');
 
-      // 8. Presse à cuisses
-      await customStatement('''
+    // 8. Presse à cuisses
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Permet de charger lourd sur les jambes sans la contrainte d''équilibre du squat. Cible quadriceps et fessiers.',
             etapes = '\n 1. Installez-vous dos et fesses bien collés au siège.\n2. Placez les pieds au centre du plateau, largeur d''épaules.\n3. Déverrouillez la sécurité.\n4. Fléchissez les jambes jusqu''à 90°.\n5. Poussez le plateau MAIS ne verrouillez jamais totalement les genoux en haut (gardez une légère flexion pour protéger l''articulation).'
         WHERE id = 8;
       ''');
 
-      // 9. Corde à sauter
-      await customStatement('''
+    // 9. Corde à sauter
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Exercice cardio par excellence. Brûle énormément de calories, améliore la coordination et l''endurance.',
             etapes = '\n 1. Tenez les poignées fermement, coudes près du corps.\n2. Le mouvement de rotation vient des poignets, pas des épaules.\n3. Sautez sur la pointe des pieds, juste assez haut pour laisser passer la corde.\n4. Gardez les genoux souples à la réception.'
         WHERE id = 9;
       ''');
 
-      // 10. Course tapis
-      await customStatement('''
+    // 10. Course tapis
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Cardio fondamental pour l''endurance cardiovasculaire et l''échauffement.',
             etapes = '\n 1. Démarrez le tapis à vitesse lente.\n2. Courez au centre du tapis.\n3. Gardez le dos droit et regardez loin devant (pas vos pieds).\n4. Ayez une foulée naturelle et légère.\n5. Évitez de vous tenir aux poignées, balancez les bras naturellement.'
         WHERE id = 10;
       ''');
 
-      // 11. Gainage planche
-      await customStatement('''
+    // 11. Gainage planche
+    await customStatement('''
         UPDATE exercise 
         SET description = 'Exercice isométrique pour renforcer la sangle abdominale profonde (transverse) et protéger le dos.',
             etapes = '\n 1. En appui sur les avant-bras et les orteils.\n2. Coudes alignés sous les épaules.\n3. Contractez fort les fessiers et les abdominaux.\n4. Le corps doit former une ligne droite parfaite.\n5. Ne laissez pas le bassin tomber ni les fesses monter trop haut. Respirez calmement.'
         WHERE id = 11;
       ''');
 
-      // 12. Curl biceps
-      await customStatement('''
+    // 12. Curl biceps
+    await customStatement('''
         UPDATE exercise 
         SET description = 'L''exercice d''isolation le plus populaire pour développer le volume des bras (biceps).',
             etapes = '\n 1. Debout, haltères ou barre en mains, paumes vers l''avant.\n2. Gardez les coudes collés aux côtes (ils ne doivent pas avancer).\n3. Levez la charge en contractant les biceps.\n4. Marquez une pause en haut.\n5. Redescendez lentement. Évitez de balancer le buste pour tricher.'
         WHERE id = 12;
       ''');
-    
+
     debugPrint('--- Mises à jour des descriptions terminées ---');
   }
 
@@ -623,21 +623,31 @@ Future<void> seedExerciseDetails() async {
           'INTEGER',
         );
       }
-      
+
       if (await _tableExists('exercise')) {
-        await _addColumnIfMissing(
-          'exercise',
-          'description',
-          'TEXT',
-        );
-        await _addColumnIfMissing(
-          'exercise',
-          'etapes',
-          'TEXT',
-        );
+        await _addColumnIfMissing('exercise', 'description', 'TEXT');
+        await _addColumnIfMissing('exercise', 'etapes', 'TEXT');
       }
 
       await _ensureUserTrainingDayTable();
+
+      // Fix: Ensure core user columns exist even if migration was skipped (e.g. from asset DB)
+      if (await _tableExists('app_user')) {
+        await _addColumnIfMissing(
+          'app_user',
+          'xp',
+          'INTEGER NOT NULL DEFAULT 0',
+        );
+        await _addColumnIfMissing(
+          'app_user',
+          'user_level',
+          'INTEGER NOT NULL DEFAULT 1',
+        );
+        await _addColumnIfMissing('app_user', 'title', 'TEXT');
+
+        // Ensure gamification tables exist too, as they are coupled with user logic now
+        await _ensureGamificationTables();
+      }
 
       if (await _tableExists('user_feedback')) {
         await _addColumnIfMissing(
@@ -740,6 +750,20 @@ Future<void> seedExerciseDetails() async {
 
       if (to >= 42) {
         await _populateBadgesV42();
+      }
+
+      // MIGRATION V44 : Réparation des données corrompues (NULL dans colonnes non-nullables)
+      if (to >= 44) {
+        debugPrint('[MIGRATION V44] Réparation des valeurs NULL...');
+        if (await _tableExists('app_user')) {
+          await customStatement('UPDATE app_user SET xp = 0 WHERE xp IS NULL');
+          await customStatement(
+            'UPDATE app_user SET user_level = 1 WHERE user_level IS NULL',
+          );
+          await customStatement(
+            'UPDATE app_user SET singleton = 1 WHERE singleton IS NULL',
+          );
+        }
       }
 
       if (await _tableExists('user_feedback')) {
