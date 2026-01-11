@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:drift/drift.dart'
     show innerJoin; // Add specific import or just drift
@@ -22,6 +23,8 @@ class AdminViewModel extends ChangeNotifier {
 
   // Cache pour les jours d'entraînement (userId -> liste de jours)
   final Map<int, List<int>> _trainingDaysCache = {};
+  // Subscriptions pour les mises à jour en temps réel
+  final Map<int, StreamSubscription> _trainingDaysSubscriptions = {};
 
   AdminViewModel({required this.db, required this.prefs}) {
     userDao = UserDao(db);
@@ -39,22 +42,30 @@ class AdminViewModel extends ChangeNotifier {
   /// Stream des utilisateurs pour la mise à jour en temps réel
   late final Stream<List<AppUserData>> usersStream;
 
+  @override
+  void dispose() {
+    for (final sub in _trainingDaysSubscriptions.values) {
+      sub.cancel();
+    }
+    super.dispose();
+  }
+
   /// Récupère les jours d'entraînement mis en cache pour un utilisateur
   List<int>? getCachedTrainingDays(int userId) {
     return _trainingDaysCache[userId];
   }
 
-  /// Charge les jours d'entraînement d'un utilisateur si nécessaire
-  Future<void> loadTrainingDaysIfNeeded(int userId) async {
-    if (_trainingDaysCache.containsKey(userId)) return;
+  /// Charge les jours d'entraînement d'un utilisateur et écoute les changements
+  void loadTrainingDaysIfNeeded(int userId) {
+    if (_trainingDaysSubscriptions.containsKey(userId)) return;
 
-    try {
-      final days = await trainingDayDao.getDayNumbersForUser(userId);
+    // On s'abonne pour avoir les mises à jour en temps réel (ex: modif depuis WorkoutPage)
+    final sub = trainingDayDao.watchDayNumbersForUser(userId).listen((days) {
       _trainingDaysCache[userId] = days;
       notifyListeners();
-    } catch (e) {
-      debugPrint("Erreur lors du chargement des jours d'entraînement: $e");
-    }
+    });
+
+    _trainingDaysSubscriptions[userId] = sub;
   }
 
   /// Met à jour les jours d'entraînement pour un utilisateur
