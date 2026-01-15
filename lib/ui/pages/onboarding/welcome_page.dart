@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:recommandation_mobile/core/theme/app_theme.dart';
+import '../../utils/responsive.dart';
 
 class WelcomePage extends StatefulWidget {
   final VoidCallback onStart;
@@ -79,6 +80,7 @@ class _WelcomePageState extends State<WelcomePage>
 
   @override
   Widget build(BuildContext context) {
+    final responsive = Responsive(context);
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -179,7 +181,7 @@ class _WelcomePageState extends State<WelcomePage>
                               ).textTheme.displayLarge?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
-                                fontSize: 48,
+                                fontSize: responsive.rsp(48),
                                 letterSpacing: 2.0,
                               ),
                             ),
@@ -191,7 +193,7 @@ class _WelcomePageState extends State<WelcomePage>
                                 context,
                               ).textTheme.bodyLarge?.copyWith(
                                 color: Colors.white70,
-                                fontSize: 18,
+                                fontSize: responsive.rsp(18),
                                 height: 1.4,
                               ),
                             ),
@@ -214,7 +216,7 @@ class _WelcomePageState extends State<WelcomePage>
                             scale: _scaleAnimation,
                             child: SizedBox(
                               width: double.infinity,
-                              height: 56,
+                              height: responsive.rh(56),
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.gold,
@@ -228,11 +230,11 @@ class _WelcomePageState extends State<WelcomePage>
                                 onPressed: widget.onStart,
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
+                                  children: [
                                     Text(
                                       'COMMENCER',
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: responsive.rsp(18),
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 1.2,
                                       ),

@@ -129,7 +129,7 @@ class DashboardPage extends StatelessWidget {
 
                           /// TOP ROW - KEY METRICS (3 Cards)
                           SizedBox(
-                            height: 100,
+                            height: responsive.rh(100),
                             child: Row(
                               children: [
                                 Expanded(
@@ -213,7 +213,7 @@ class DashboardPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           /// HEADER COMPACT (Toujours visible)
-                          _buildHeader(vm.userName, vm.todayDate),
+                          _buildHeader(vm.userName, vm.todayDate, responsive),
 
                           const SizedBox(height: 16),
 
@@ -232,7 +232,12 @@ class DashboardPage extends StatelessWidget {
   }
 
   /// Extrait: Header
-  Widget _buildHeader(String userName, String todayDate) {
+  /// Extrait: Header
+  Widget _buildHeader(
+    String userName,
+    String todayDate,
+    Responsive responsive,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -241,15 +246,18 @@ class DashboardPage extends StatelessWidget {
           children: [
             Text(
               "Bonjour $userName",
-              style: const TextStyle(
-                fontSize: 22,
+              style: TextStyle(
+                fontSize: responsive.rsp(22),
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const Text(
+            Text(
               "Prêt à tout casser ?",
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: responsive.rsp(14),
+                color: Colors.grey,
+              ),
             ),
           ],
         ),

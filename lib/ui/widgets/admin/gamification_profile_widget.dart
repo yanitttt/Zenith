@@ -124,15 +124,20 @@ class GamificationProfileWidget extends StatelessWidget {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    badges.isEmpty ? "Aucun badge" : "${badges.length} Badges",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
+                  Flexible(
+                    child: Text(
+                      badges.isEmpty
+                          ? "Aucun badge"
+                          : "${badges.length} Badges",
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 4),
                   const Icon(
                     Icons.arrow_forward_ios,
                     color: Colors.white30,
@@ -346,37 +351,41 @@ class GamificationProfileWidget extends StatelessWidget {
                             ),
                         itemBuilder: (context, index) {
                           final badge = badges[index];
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.gold.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: AppTheme.gold.withOpacity(0.5),
+                          return Tooltip(
+                            message: badge.description,
+                            triggerMode: TooltipTriggerMode.tap,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.gold.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppTheme.gold.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.emoji_events,
+                                    color: AppTheme.gold,
+                                    size: 24,
                                   ),
                                 ),
-                                child: const Icon(
-                                  Icons.emoji_events,
-                                  color: AppTheme.gold,
-                                  size: 24,
+                                const SizedBox(height: 4),
+                                Text(
+                                  badge.name,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                badge.name,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           );
                         },
                       ),

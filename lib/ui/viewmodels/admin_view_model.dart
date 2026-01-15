@@ -25,6 +25,7 @@ class AdminViewModel extends ChangeNotifier {
   final Map<int, List<int>> _trainingDaysCache = {};
   // Subscriptions pour les mises à jour en temps réel
   final Map<int, StreamSubscription> _trainingDaysSubscriptions = {};
+  final Map<int, StreamSubscription> _badgesSubscriptions = {};
 
   AdminViewModel({required this.db, required this.prefs}) {
     userDao = UserDao(db);
@@ -45,6 +46,9 @@ class AdminViewModel extends ChangeNotifier {
   @override
   void dispose() {
     for (final sub in _trainingDaysSubscriptions.values) {
+      sub.cancel();
+    }
+    for (final sub in _badgesSubscriptions.values) {
       sub.cancel();
     }
     super.dispose();
@@ -196,23 +200,24 @@ class AdminViewModel extends ChangeNotifier {
       _badgesCache[userId];
 
   Future<void> loadUserBadgesIfNeeded(int userId) async {
-    if (_badgesCache.containsKey(userId)) return;
-    try {
-      final query = db.select(db.userBadge).join([
-        innerJoin(
-          db.gamificationBadge,
-          db.gamificationBadge.id.equalsExp(db.userBadge.badgeId),
-        ),
-      ])..where(db.userBadge.userId.equals(userId));
+    if (_badgesSubscriptions.containsKey(userId)) return;
 
-      final result = await query.get();
-      final badges =
-          result.map((row) => row.readTable(db.gamificationBadge)).toList();
+    // Subscribe to stream
+    final sub = watchUserBadges(userId).listen((badges) {
       _badgesCache[userId] = badges;
       notifyListeners();
-    } catch (e) {
-      debugPrint("Erreur lors du chargement des badges: $e");
-    }
+    });
+    _badgesSubscriptions[userId] = sub;
+  }
+
+  // Reload inutilisé mais gardé pour compatibilité ou force refresh manuel si besoin
+  Future<void> reloadUserBadges(int userId) async {
+    // Si on a déjà une souscription, elle devrait gérer l'update.
+    // Mais on peut forcer une lecture one-shot si vraiment nécessaire.
+    // Pour l'instant on laisse vide ou on log.
+    debugPrint(
+      "Reload demandé, mais le stream gère ça automatiquement maintenant.",
+    );
   }
 
   Future<String> getDebugInfo(int userId) async {

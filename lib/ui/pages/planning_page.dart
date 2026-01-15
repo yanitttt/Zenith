@@ -5,6 +5,7 @@ import '../../data/db/app_db.dart';
 import '../../services/planning_service.dart';
 import '../../ui/viewmodels/planning_view_model.dart';
 import '../widgets/planning/scale_button.dart';
+import '../utils/responsive.dart';
 
 class PlanningPage extends StatelessWidget {
   final AppDb db;
@@ -55,6 +56,10 @@ class _PlanningViewState extends State<_PlanningView> {
   void _ensureScrollController(DateTime startOfWeek) {
     if (_scrollController != null && _scrollController!.hasClients) return;
 
+    final responsive = Responsive(context);
+    final itemWidth = responsive.rw(77);
+    final margin = responsive.rw(50);
+
     final now = DateTime.now();
     // On veut centrer ou positionner sur le jour actuel si on est dans la semaine courante
     // Sinon on reste au début.
@@ -65,18 +70,21 @@ class _PlanningViewState extends State<_PlanningView> {
         now.difference(startOfWeek).inDays < 7;
 
     final dayIndex = isCurrentWeek ? (now.weekday - 1) : 0;
-    final double initialOffset = (dayIndex * 77.0);
+    final double initialOffset = (dayIndex * itemWidth);
 
     _scrollController = ScrollController(
-      initialScrollOffset: initialOffset > 50 ? initialOffset - 50 : 0,
+      initialScrollOffset: initialOffset > margin ? initialOffset - margin : 0,
     );
   }
 
   void _scrollToIndex(int index) {
     if (_scrollController != null && _scrollController!.hasClients) {
+      final responsive = Responsive(context);
+      final itemWidth = responsive.rw(77);
+      final margin = responsive.rw(50);
+
       _scrollController!.animateTo(
-        (index * 77.0) -
-            50, // 77 = largeur approx item + espace, 50 = marge gauche
+        (index * itemWidth) - margin,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
@@ -86,6 +94,7 @@ class _PlanningViewState extends State<_PlanningView> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<PlanningViewModel>();
+    final responsive = Responsive(context);
 
     if (_scrollController == null) {
       _ensureScrollController(vm.startOfWeek);
@@ -95,13 +104,13 @@ class _PlanningViewState extends State<_PlanningView> {
       backgroundColor: kBackground,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          padding: EdgeInsets.symmetric(horizontal: responsive.rw(16.0)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 20),
+              SizedBox(height: responsive.rh(20)),
               _buildHeader(context, vm),
-              const SizedBox(height: 24),
+              SizedBox(height: responsive.rh(24)),
               Expanded(
                 child:
                     _viewMode == PlanningViewMode.week
@@ -115,8 +124,8 @@ class _PlanningViewState extends State<_PlanningView> {
       floatingActionButton: ScaleButton(
         onTap: () => _showAddSessionSheet(context),
         child: Container(
-          height: 56,
-          width: 56,
+          height: responsive.rw(56),
+          width: responsive.rw(56),
           decoration: BoxDecoration(
             color: kGold,
             shape: BoxShape.circle,
@@ -166,6 +175,7 @@ class _PlanningViewState extends State<_PlanningView> {
   }
 
   Widget _buildMonthView(BuildContext context, PlanningViewModel vm) {
+    final responsive = Responsive(context);
     // Jours de la semaine
     final weekDays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 
@@ -234,13 +244,12 @@ class _PlanningViewState extends State<_PlanningView> {
                     aspectRatio: 0.85, // Un peu plus haut
                     child: GridView.builder(
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 7,
-                            mainAxisSpacing: 12, // Espacement vertical
-                            crossAxisSpacing: 8, // Espacement horizontal
-                            childAspectRatio: 0.85, // Ratio des cellules
-                          ),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 7,
+                        mainAxisSpacing: responsive.rh(12),
+                        crossAxisSpacing: responsive.rw(8),
+                        childAspectRatio: 0.85,
+                      ),
                       itemCount: totalCells,
                       itemBuilder: (context, index) {
                         if (index < startOffset) {
@@ -430,6 +439,7 @@ class _PlanningViewState extends State<_PlanningView> {
   }
 
   Widget _buildHeader(BuildContext context, PlanningViewModel vm) {
+    final responsive = Responsive(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -444,7 +454,11 @@ class _PlanningViewState extends State<_PlanningView> {
                     onTap: () => vm.changeMonth(-1),
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8.0),
-                      child: Icon(Icons.chevron_left, color: kGold, size: 20),
+                      child: Icon(
+                        Icons.chevron_left,
+                        color: kGold,
+                        size: responsive.rsp(20),
+                      ),
                     ),
                   ),
                 Text(
@@ -453,7 +467,7 @@ class _PlanningViewState extends State<_PlanningView> {
                     'fr_FR',
                   ).format(vm.selectedDate).toUpperCase(),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: responsive.rsp(14),
                     fontWeight: FontWeight.bold,
                     color: kGold,
                   ),
@@ -463,16 +477,20 @@ class _PlanningViewState extends State<_PlanningView> {
                     onTap: () => vm.changeMonth(1),
                     child: Padding(
                       padding: const EdgeInsets.only(left: 8.0),
-                      child: Icon(Icons.chevron_right, color: kGold, size: 20),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: kGold,
+                        size: responsive.rsp(20),
+                      ),
                     ),
                   ),
               ],
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               "Mon Planning",
               style: TextStyle(
-                fontSize: 28,
+                fontSize: responsive.rsp(28),
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
@@ -594,10 +612,11 @@ class _PlanningViewState extends State<_PlanningView> {
     bool isSelected,
     bool hasActivity,
   ) {
+    final responsive = Responsive(context);
     return ScaleButton(
       onTap: () => vm.selectDate(date),
       child: Container(
-        width: 65,
+        width: responsive.rw(65),
         decoration: BoxDecoration(
           color: isSelected ? kGold : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
@@ -610,7 +629,7 @@ class _PlanningViewState extends State<_PlanningView> {
             Text(
               DateFormat.E('fr_FR').format(date).substring(0, 3).toUpperCase(),
               style: TextStyle(
-                fontSize: 11,
+                fontSize: responsive.rsp(11),
                 fontWeight: FontWeight.w600,
                 color: isSelected ? Colors.black : Colors.grey,
               ),
@@ -622,7 +641,7 @@ class _PlanningViewState extends State<_PlanningView> {
                 Text(
                   "${date.day}",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: responsive.rsp(18),
                     fontWeight: FontWeight.bold,
                     color: isSelected ? Colors.black : Colors.white,
                   ),
@@ -706,6 +725,7 @@ class _PlanningViewState extends State<_PlanningView> {
     Color bg,
     Color accent,
   ) {
+    final responsive = Responsive(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -720,8 +740,8 @@ class _PlanningViewState extends State<_PlanningView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: responsive.rw(40),
+                height: responsive.rw(40),
                 decoration: BoxDecoration(
                   color: accent,
                   borderRadius: BorderRadius.circular(8),
@@ -729,9 +749,9 @@ class _PlanningViewState extends State<_PlanningView> {
                 alignment: Alignment.center,
                 child: Text(
                   "$index",
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: responsive.rsp(18),
                     color: Colors.black,
                   ),
                 ),

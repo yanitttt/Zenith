@@ -15,6 +15,9 @@ class Responsive {
     _screenHeight = size.height;
   }
 
+  double get width => _screenWidth;
+  double get height => _screenHeight;
+
   /// Relative Width: Scales based on screen width
   double rw(double val) {
     return val * (_screenWidth / _baselineWidth);

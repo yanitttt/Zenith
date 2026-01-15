@@ -116,8 +116,17 @@ class _AdminPageView extends StatelessWidget {
         IconButton(
           tooltip: 'Rafraîchir',
           icon: const Icon(Icons.refresh, color: AppTheme.gold, size: 20),
-          onPressed: () {
-            // No-op for stream, but UI feedback
+          onPressed: () async {
+            // Force verify badges for current user
+            final vm = context.read<AdminViewModel>();
+            final users = await vm.usersStream.first;
+            // Check for new badges (just in case)
+            await vm.checkRetroactiveBadges(users.first.id);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Profil mis à jour")),
+              );
+            }
           },
         ),
       ],
