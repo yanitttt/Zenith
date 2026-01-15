@@ -28,9 +28,9 @@ class GamificationProfileWidget extends StatelessWidget {
     final currentXp = user.xp ?? 0;
     final progress = GamificationService.progressToNextLevel(currentXp);
     final userLevelId = user.userLevel ?? 1;
+    final userTitle = user.title ?? 'Novice';
 
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF0F0F1E),
         borderRadius: BorderRadius.circular(16),
@@ -39,115 +39,110 @@ class GamificationProfileWidget extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Header: Niveau (Circle) + XP
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [AppTheme.gold, Color(0xFFF9E496)],
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    '$userLevelId',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAllBadgesDialog(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icone Cercle Niveau (Gauche)
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [AppTheme.gold, Color(0xFFF9E496)],
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.title ?? 'Novice',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      "$currentXp XP",
-                      style: const TextStyle(
-                        color: AppTheme.gold,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.white10,
-              color: AppTheme.success,
-              minHeight: 6,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Badges Summary Button
-          GestureDetector(
-            onTap: () => _showAllBadgesDialog(context),
-            child: Container(
-              margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white10),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.emoji_events,
-                    color: AppTheme.gold,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
+                  child: Center(
                     child: Text(
-                      badges.isEmpty
-                          ? "Aucun badge"
-                          : "${badges.length} Badges",
+                      '$userLevelId',
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        fontSize: 16,
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white30,
-                    size: 14,
+                ),
+                const SizedBox(width: 12),
+
+                // Contenu (Centre / Droite)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Titre principal + XP
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            "Titre",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            "$currentXp XP",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.gold,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      // Valeur: Niveau - Titre
+                      Text(
+                        userTitle,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      // Barre d'XP
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.white10,
+                          color: AppTheme.success,
+                          minHeight: 4,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Indication de clic
+                      const Text(
+                        "Cliquez pour voir les badges obtenus",
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
+import 'notification_service.dart';
 
 class GamificationService {
   final AppDb db;
@@ -153,6 +154,13 @@ class GamificationService {
               ),
             );
         debugPrint('[GAMIFICATION] Retroactively awarded: First Steps');
+
+        await NotificationService().showNotification(
+          id: Random().nextInt(100000),
+          title: 'Nouveau Badge !',
+          body: 'Bravo ! Succès "Premier Pas" débloqué !',
+          channelId: NotificationService.badgeChannelId,
+        );
       }
     }
   }
@@ -199,6 +207,13 @@ class GamificationService {
           await awardXp(userId, badgeDef.xpReward);
           newBadges.add(badgeDef.name);
           debugPrint('[GAMIFICATION] Badge awarded: ${badgeDef.name}');
+
+          await NotificationService().showNotification(
+            id: Random().nextInt(100000),
+            title: 'Nouveau Badge !',
+            body: 'Bravo ! Succès "${badgeDef.name}" débloqué !',
+            channelId: NotificationService.badgeChannelId,
+          );
         }
       }
     }
