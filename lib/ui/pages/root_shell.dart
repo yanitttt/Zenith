@@ -25,6 +25,7 @@ class _RootShellState extends State<RootShell> {
   int _index = 0;
   AppPrefs? _prefs;
   Key _planningKey = UniqueKey();
+  Key _adminKey = UniqueKey();
 
   @override
   void initState() {
@@ -61,7 +62,7 @@ class _RootShellState extends State<RootShell> {
         homeWidgetService: HomeWidgetService(widget.db), // Instantiate here
       ),
       ExercisesPage(db: widget.db),
-      AdminPage(db: widget.db, prefs: _prefs!),
+      AdminPage(key: _adminKey, db: widget.db, prefs: _prefs!),
     ];
 
     final items = const [
@@ -94,6 +95,9 @@ class _RootShellState extends State<RootShell> {
               if (i == 1) {
                 // Si c'est le planning
                 _planningKey = UniqueKey();
+              } else if (i == 4) {
+                // Si c'est le profil (index 4 dans la liste originale)
+                _adminKey = UniqueKey();
               }
             });
           },

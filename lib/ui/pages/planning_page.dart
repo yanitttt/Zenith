@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../data/db/app_db.dart';
@@ -161,12 +162,15 @@ class _PlanningViewState extends State<_PlanningView> {
                     itemCount: vm.sessionsDuJour.length,
                     itemBuilder: (context, index) {
                       return _buildSessionCard(
-                        context,
-                        vm.sessionsDuJour[index],
-                        index + 1,
-                        kCardColor,
-                        kGold,
-                      );
+                            context,
+                            vm.sessionsDuJour[index],
+                            index + 1,
+                            kCardColor,
+                            kGold,
+                          )
+                          .animate()
+                          .fade(delay: (index * 100).ms)
+                          .slideY(begin: 0.2, end: 0);
                     },
                   ),
         ),
@@ -549,7 +553,7 @@ class _PlanningViewState extends State<_PlanningView> {
           ],
         ),
       ],
-    );
+    ).animate().fade(duration: 500.ms).slideY(begin: -0.2, end: 0);
   }
 
   Widget _buildWeekSelector(BuildContext context, PlanningViewModel vm) {
@@ -581,12 +585,15 @@ class _PlanningViewState extends State<_PlanningView> {
                 final hasActivity = vm.joursAvecActivite.contains(date.weekday);
 
                 return _buildDayButton(
-                  context,
-                  vm,
-                  date,
-                  isSelected,
-                  hasActivity,
-                );
+                      context,
+                      vm,
+                      date,
+                      isSelected,
+                      hasActivity,
+                    )
+                    .animate()
+                    .fade(delay: (index * 50).ms)
+                    .slideX(begin: 0.2, end: 0);
               },
             ),
           ),

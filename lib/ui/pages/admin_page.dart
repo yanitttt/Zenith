@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/db/app_db.dart';
@@ -340,7 +341,7 @@ class _AdminPageView extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).animate().fade(duration: 500.ms).slideY(begin: -0.2, end: 0);
   }
 
   // --- 3.B Stats Grid (Flex Version pour remplir l'espace) ---
@@ -427,41 +428,48 @@ class _AdminPageView extends StatelessWidget {
         // Ligne 1 : Taille | Poids
         Expanded(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: cardTaille),
-              const SizedBox(width: 8),
-              Expanded(child: cardPoids),
-            ],
-          ),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: cardTaille),
+                  const SizedBox(width: 8),
+                  Expanded(child: cardPoids),
+                ],
+              )
+              .animate()
+              .fade(delay: 200.ms, duration: 500.ms)
+              .slideX(begin: -0.2, end: 0),
         ),
         // Ligne 2 : IMC | Niveau
         Expanded(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: cardImc),
-              const SizedBox(width: 8),
-              Expanded(child: cardNiveau),
-            ],
-          ),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: cardImc),
+                  const SizedBox(width: 8),
+                  Expanded(child: cardNiveau),
+                ],
+              )
+              .animate()
+              .fade(delay: 300.ms, duration: 500.ms)
+              .slideX(begin: -0.2, end: 0),
         ),
         // Ligne 3 : Métabolisme ET Gamification
         Expanded(
           flex: 1,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Si métabolisme existe, il prend 50%, sinon, on laisse la place pour autre chose ou on met Gamification en full
-              if (hasMetabolism) ...[
-                Expanded(child: cardMetab!),
-                const SizedBox(width: 8),
-              ],
+          child:
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Si métabolisme existe, il prend 50%, sinon, on laisse la place pour autre chose ou on met Gamification en full
+                  if (hasMetabolism) ...[
+                    Expanded(child: cardMetab!),
+                    const SizedBox(width: 8),
+                  ],
 
-              // La carte Gamification prend le reste
-              Expanded(child: cardGamification),
-            ],
-          ),
+                  // La carte Gamification prend le reste
+                  Expanded(child: cardGamification),
+                ],
+              ).animate().fade(delay: 400.ms, duration: 500.ms).scale(),
         ),
       ],
     );
