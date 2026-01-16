@@ -208,7 +208,7 @@ class _ExerciseTile extends StatelessWidget {
           ),
 
           const SizedBox(height: 12),
-          const Divider(color: Colors.white24),
+          /*const Divider(color: Colors.white24),
           
           Text(
             "DESC: ${e.description ?? 'VIDE (NULL)'}", 
@@ -220,10 +220,11 @@ class _ExerciseTile extends StatelessWidget {
           Text(
             "ETAPES: ${e.etapes ?? 'VIDE (NULL)'}", 
             style: const TextStyle(color: Colors.orangeAccent, fontSize: 13),
-          ),
+          ),*/
           // -------------------------------------
         ],
       ),
+    )
     );
   }
 }
