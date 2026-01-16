@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/exercise_repository.dart';
+import 'ExerciseDetailPage.dart';
 
 class ExercisesPage extends StatefulWidget {
   final AppDb db;
