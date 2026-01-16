@@ -224,7 +224,7 @@ class _ExerciseTile extends StatelessWidget {
           // -------------------------------------
         ],
       ),
-    )
+    
     );
   }
 }
