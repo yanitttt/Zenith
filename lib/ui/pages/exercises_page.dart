@@ -219,20 +219,6 @@ class _ExerciseTile extends StatelessWidget {
           ),
 
           const SizedBox(height: 12),
-          /*const Divider(color: Colors.white24),
-          
-          Text(
-            "DESC: ${e.description ?? 'VIDE (NULL)'}", 
-            style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
-          ),
-          
-          const SizedBox(height: 4),
-          
-          Text(
-            "ETAPES: ${e.etapes ?? 'VIDE (NULL)'}", 
-            style: const TextStyle(color: Colors.orangeAccent, fontSize: 13),
-          ),*/
-          // -------------------------------------
         ],
       ),
     )
