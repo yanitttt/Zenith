@@ -17,6 +17,23 @@ class ExerciseDetailPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Placement de la vidéo de l'exo (pas encore dispo dans la bdd)
+            Container(
+              width: double.infinity,
+              height: 200,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade900,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white12),
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.play_circle_outline,
+                  color: Colors.white38,
+                  size: 64,
+                ),
+              ),
+            ),
 
             const SizedBox(height: 20),
 
