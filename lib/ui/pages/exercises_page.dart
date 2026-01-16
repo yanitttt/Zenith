@@ -148,7 +148,17 @@ class _ExerciseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+    borderRadius: BorderRadius.circular(16),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ExerciseDetailPage(exercise: e),
+        ),
+      );
+    },
+    child:Container(
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(16),
@@ -224,7 +234,7 @@ class _ExerciseTile extends StatelessWidget {
           // -------------------------------------
         ],
       ),
-    
+    )
     );
   }
 }
