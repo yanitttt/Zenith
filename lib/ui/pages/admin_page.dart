@@ -644,7 +644,7 @@ class _CompactStatRow extends StatelessWidget {
     this.iconSize,
   });
 
-  @override
+@override
 Widget build(BuildContext context) {
   return LayoutBuilder(
     builder: (context, constraints) {
@@ -712,17 +712,13 @@ Widget build(BuildContext context) {
 
                       if (unit.isNotEmpty) ...[
                         const SizedBox(width: 4),
-                        FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
+                          Text(
                             unit,
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 8,
                               color: Colors.white.withOpacity(0.5),
                             ),
                           ),
-                        ),
                       ],
                     ],
                   ),
@@ -735,4 +731,5 @@ Widget build(BuildContext context) {
     },
   );
 }
+
 }
