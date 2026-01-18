@@ -573,6 +573,16 @@ class AppDb extends _$AppDb {
     debugPrint('--- Mises à jour des descriptions terminées ---');
   }
 
+  Future<void> seedExerciseVideos() async {
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/video/squat.mov' WHERE id = 1;
+  """);
+
+  
+
+  debugPrint('--- Vidéo de lexercice squat liée ---');
+}
+
   @override
   MigrationStrategy get migration => MigrationStrategy(
     beforeOpen: (details) async {
@@ -660,6 +670,7 @@ class AppDb extends _$AppDb {
       }
       await customStatement('PRAGMA foreign_keys = ON;');
       await seedExerciseDetails();
+      await seedExerciseVideos();
     },
 
     onCreate: (m) async {
