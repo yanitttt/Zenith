@@ -777,6 +777,10 @@ class AppDb extends _$AppDb {
       }
 
       await _createAllIndexes();
+
+      if (await _tableExists('exercise')) {
+        await _addColumnIfMissing('exercise', 'video_asset', 'TEXT');
+}
     },
   );
 
