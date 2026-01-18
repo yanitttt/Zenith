@@ -91,6 +91,7 @@ flutter:
     - assets/images/exercises/acceuil1.png
     - assets/icons/app_icon.png
     - assets/images/splash_logo.png
+    - assets/videos
 
   # To add assets to your application, add an assets section, like this:
   # assets:
