@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:recommandation_mobile/core/prefs/app_prefs.dart';
 import 'package:recommandation_mobile/services/inactivity_service.dart';
@@ -129,78 +130,87 @@ class DashboardPage extends StatelessWidget {
 
                           /// TOP ROW - KEY METRICS (3 Cards)
                           SizedBox(
-                            height: 100,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _buildCompactStatCard(
-                                    "Temps total",
-                                    vm.formatHeures(totalHeures),
-                                    Icons.timer,
-                                    Colors.purpleAccent,
-                                    responsive,
-                                  ),
+                                height: responsive.rh(100),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: _buildCompactStatCard(
+                                        "Temps total",
+                                        vm.formatHeures(totalHeures),
+                                        Icons.timer,
+                                        Colors.purpleAccent,
+                                        responsive,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildCompactStatCard(
+                                        "Max KG",
+                                        "${maxKg.toStringAsFixed(0)} kg",
+                                        Icons.fitness_center,
+                                        Colors.redAccent,
+                                        responsive,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: _buildCompactStatCard(
+                                        "Séances total",
+                                        "$totalSeances",
+                                        Icons.fitness_center,
+                                        Colors.orangeAccent,
+                                        responsive,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildCompactStatCard(
-                                    "Max KG",
-                                    "${maxKg.toStringAsFixed(0)} kg",
-                                    Icons.fitness_center,
-                                    Colors.redAccent,
-                                    responsive,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: _buildCompactStatCard(
-                                    "Séances total",
-                                    "$totalSeances",
-                                    Icons.fitness_center,
-                                    Colors.orangeAccent,
-                                    responsive,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                              )
+                              .animate()
+                              .fade(delay: 200.ms, duration: 500.ms)
+                              .slideX(begin: -0.2, end: 0),
 
                           const SizedBox(height: 16),
 
                           /// MIDDLE - WEEKLY CHART (Expanded)
                           Expanded(
-                            flex: 3,
-                            child: _buildWeeklyChartContainer(
-                              weeklyAttendance,
-                              responsive,
-                            ),
-                          ),
+                                flex: 3,
+                                child: _buildWeeklyChartContainer(
+                                  weeklyAttendance,
+                                  responsive,
+                                ),
+                              )
+                              .animate()
+                              .fade(delay: 400.ms, duration: 500.ms)
+                              .slideY(begin: 0.2, end: 0),
 
                           const SizedBox(height: 16),
 
                           /// BOTTOM - PIE CHART & SUMMARY (Expanded)
                           Expanded(
-                            flex: 2,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: _buildPieChartContainer(
-                                    muscleStats,
-                                    responsive,
-                                  ),
+                                flex: 2,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: _buildPieChartContainer(
+                                        muscleStats,
+                                        responsive,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      flex: 2,
+                                      child: _buildFocusCard(
+                                        muscleStats,
+                                        responsive,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  flex: 2,
-                                  child: _buildFocusCard(
-                                    muscleStats,
-                                    responsive,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                              )
+                              .animate()
+                              .fade(delay: 600.ms, duration: 500.ms)
+                              .scale(),
                         ],
                       );
                     }
@@ -213,7 +223,7 @@ class DashboardPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           /// HEADER COMPACT (Toujours visible)
-                          _buildHeader(vm.userName, vm.todayDate),
+                          _buildHeader(vm.userName, vm.todayDate, responsive),
 
                           const SizedBox(height: 16),
 
@@ -232,7 +242,12 @@ class DashboardPage extends StatelessWidget {
   }
 
   /// Extrait: Header
-  Widget _buildHeader(String userName, String todayDate) {
+  /// Extrait: Header
+  Widget _buildHeader(
+    String userName,
+    String todayDate,
+    Responsive responsive,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -241,15 +256,18 @@ class DashboardPage extends StatelessWidget {
           children: [
             Text(
               "Bonjour $userName",
-              style: const TextStyle(
-                fontSize: 22,
+              style: TextStyle(
+                fontSize: responsive.rsp(22),
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            const Text(
+            Text(
               "Prêt à tout casser ?",
-              style: TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: responsive.rsp(14),
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
@@ -269,7 +287,7 @@ class DashboardPage extends StatelessWidget {
           ),
         ),
       ],
-    );
+    ).animate().fade(duration: 500.ms).slideY(begin: -0.2, end: 0);
   }
 
   /// Extrait: Container Chart Semaine

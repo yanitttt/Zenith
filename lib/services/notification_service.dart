@@ -18,6 +18,11 @@ class NotificationService {
   static const String motivationSoundName =
       'alert_motivation'; // Sans extension pour Android
 
+  // Canal Badges
+  static const String badgeChannelId = 'zenith_badge_channel';
+  static const String badgeChannelName = 'Badges & Succès';
+  static const String badgeDescription = 'Notifications de déblocage de badges';
+
   Future<void> init({bool isBackground = false}) async {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -60,8 +65,20 @@ class NotificationService {
         ]), // Heartbeat pattern
       );
 
-      // Création du canal
+      // Configuration du canal badges (Heads-up garanti)
+      AndroidNotificationChannel badgeChannel =
+          const AndroidNotificationChannel(
+            badgeChannelId,
+            badgeChannelName,
+            description: badgeDescription,
+            importance: Importance.max,
+            playSound: true,
+            enableVibration: true,
+          );
+
+      // Création des canaux
       await androidImplementation.createNotificationChannel(motivationChannel);
+      await androidImplementation.createNotificationChannel(badgeChannel);
 
       if (!isBackground) {
         await androidImplementation.requestNotificationsPermission();
@@ -142,6 +159,16 @@ class NotificationService {
         sound: const RawResourceAndroidNotificationSound(motivationSoundName),
         enableVibration: true,
         vibrationPattern: Int64List.fromList([0, 200, 100, 200]),
+      );
+    } else if (channelId == badgeChannelId) {
+      androidPlatformChannelSpecifics = const AndroidNotificationDetails(
+        badgeChannelId,
+        badgeChannelName,
+        channelDescription: badgeDescription,
+        importance: Importance.max,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
       );
     } else if (!_soundEnabled) {
       androidPlatformChannelSpecifics = AndroidNotificationDetails(

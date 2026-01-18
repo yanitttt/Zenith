@@ -36,62 +36,66 @@ class _MusclePieChartState extends State<MusclePieChart> {
           ),
         ),
 
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: AspectRatio(
-                aspectRatio: 1.0,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  child: PieChart(
-                    PieChartData(
-                      pieTouchData: PieTouchData(
-                        touchCallback: (FlTouchEvent event, pieTouchResponse) {
-                          setState(() {
-                            if (!event.isInterestedForInteractions ||
-                                pieTouchResponse == null ||
-                                pieTouchResponse.touchedSection == null) {
-                              touchedIndex = -1;
-                              return;
-                            }
-                            touchedIndex =
-                                pieTouchResponse
-                                    .touchedSection!
-                                    .touchedSectionIndex;
-                          });
-                        },
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    child: PieChart(
+                      PieChartData(
+                        pieTouchData: PieTouchData(
+                          touchCallback: (
+                            FlTouchEvent event,
+                            pieTouchResponse,
+                          ) {
+                            setState(() {
+                              if (!event.isInterestedForInteractions ||
+                                  pieTouchResponse == null ||
+                                  pieTouchResponse.touchedSection == null) {
+                                touchedIndex = -1;
+                                return;
+                              }
+                              touchedIndex =
+                                  pieTouchResponse
+                                      .touchedSection!
+                                      .touchedSectionIndex;
+                            });
+                          },
+                        ),
+                        borderData: FlBorderData(show: false),
+                        sectionsSpace: 2,
+                        centerSpaceRadius: 30,
+                        sections: _showingSections(),
                       ),
-                      borderData: FlBorderData(show: false),
-                      sectionsSpace: 2,
-                      centerSpaceRadius: 30,
-                      sections: _showingSections(),
                     ),
                   ),
                 ),
               ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.only(top: 12, right: 4),
-              child: GestureDetector(
-                onTap: _showLegendPopup,
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white12,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: const Icon(
-                    Icons.info_outline,
-                    color: Colors.white,
-                    size: 22,
+              Padding(
+                padding: const EdgeInsets.only(top: 12, right: 4),
+                child: GestureDetector(
+                  onTap: _showLegendPopup,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white12,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );

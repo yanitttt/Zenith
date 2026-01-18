@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/exercise_repository.dart';
+import 'ExerciseDetailPage.dart';
 
 class ExercisesPage extends StatefulWidget {
   final AppDb db;
@@ -148,68 +149,79 @@ class _ExerciseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return InkWell(
+    borderRadius: BorderRadius.circular(16),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ExerciseDetailPage(exercise: e),
+        ),
+      );
+    },
+    child:Container(
       decoration: BoxDecoration(
         color: Colors.black,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
       ),
       padding: const EdgeInsets.all(12),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.fitness_center, color: Colors.black),
-          ),
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  e.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 4),
-                Wrap(
-                  spacing: 10,
-                  crossAxisAlignment: WrapCrossAlignment.center,
+                child: const Icon(Icons.fitness_center, color: Colors.black),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _ChipInfo(
-                      icon: Icons.category_outlined,
-                      label: e.type.toUpperCase(),
-                      color: _typeColor(e.type),
+                    Text(
+                      e.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
                     ),
-                    _ChipInfo(
-                      icon: Icons.speed,
-                      label: "Diff ${e.difficulty}",
-                      color: Colors.white70,
-                    ),
-                    _ChipInfo(
-                      icon: Icons.favorite_border,
-                      label: "Cardio ${e.cardio.toStringAsFixed(1)}",
-                      color: Colors.white70,
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 10,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _ChipInfo(
+                          icon: Icons.category_outlined,
+                          label: e.type.toUpperCase(),
+                          color: _typeColor(e.type),
+                        ),
+                        _ChipInfo(
+                          icon: Icons.speed,
+                          label: "Diff ${e.difficulty}",
+                          color: Colors.white70,
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const SizedBox(width: 6),
-          const Icon(Icons.chevron_right, color: Colors.white38),
+
+          const SizedBox(height: 12),
         ],
       ),
+    )
     );
   }
 }

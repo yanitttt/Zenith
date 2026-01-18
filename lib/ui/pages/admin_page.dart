@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/db/app_db.dart';
@@ -116,8 +117,17 @@ class _AdminPageView extends StatelessWidget {
         IconButton(
           tooltip: 'Rafraîchir',
           icon: const Icon(Icons.refresh, color: AppTheme.gold, size: 20),
-          onPressed: () {
-            // No-op for stream, but UI feedback
+          onPressed: () async {
+            // Force verify badges for current user
+            final vm = context.read<AdminViewModel>();
+            final users = await vm.usersStream.first;
+            // Check for new badges (just in case)
+            await vm.checkRetroactiveBadges(users.first.id);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Profil mis à jour")),
+              );
+            }
           },
         ),
       ],
@@ -331,7 +341,7 @@ class _AdminPageView extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ).animate().fade(duration: 500.ms).slideY(begin: -0.2, end: 0);
   }
 
   // --- 3.B Stats Grid (Flex Version pour remplir l'espace) ---
@@ -418,41 +428,48 @@ class _AdminPageView extends StatelessWidget {
         // Ligne 1 : Taille | Poids
         Expanded(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: cardTaille),
-              const SizedBox(width: 8),
-              Expanded(child: cardPoids),
-            ],
-          ),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: cardTaille),
+                  const SizedBox(width: 8),
+                  Expanded(child: cardPoids),
+                ],
+              )
+              .animate()
+              .fade(delay: 200.ms, duration: 500.ms)
+              .slideX(begin: -0.2, end: 0),
         ),
         // Ligne 2 : IMC | Niveau
         Expanded(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: cardImc),
-              const SizedBox(width: 8),
-              Expanded(child: cardNiveau),
-            ],
-          ),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: cardImc),
+                  const SizedBox(width: 8),
+                  Expanded(child: cardNiveau),
+                ],
+              )
+              .animate()
+              .fade(delay: 300.ms, duration: 500.ms)
+              .slideX(begin: -0.2, end: 0),
         ),
         // Ligne 3 : Métabolisme ET Gamification
         Expanded(
           flex: 1,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Si métabolisme existe, il prend 50%, sinon, on laisse la place pour autre chose ou on met Gamification en full
-              if (hasMetabolism) ...[
-                Expanded(child: cardMetab!),
-                const SizedBox(width: 8),
-              ],
+          child:
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Si métabolisme existe, il prend 50%, sinon, on laisse la place pour autre chose ou on met Gamification en full
+                  if (hasMetabolism) ...[
+                    Expanded(child: cardMetab!),
+                    const SizedBox(width: 8),
+                  ],
 
-              // La carte Gamification prend le reste
-              Expanded(child: cardGamification),
-            ],
-          ),
+                  // La carte Gamification prend le reste
+                  Expanded(child: cardGamification),
+                ],
+              ).animate().fade(delay: 400.ms, duration: 500.ms).scale(),
         ),
       ],
     );
@@ -627,87 +644,92 @@ class _CompactStatRow extends StatelessWidget {
     this.iconSize,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF0F0F1E),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFD9BE77).withOpacity(0.5),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        // Centrage horizontal du bloc (Icone + Texte) pour équilibrer l'espace
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Icone plus grande possible
-          Icon(
-            icon,
-            color: const Color(0xFFD9BE77),
-            size: iconSize ?? 24, // Taille dynamique ou défaut
+@override
+Widget build(BuildContext context) {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0F0F1E),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFD9BE77).withOpacity(0.5),
+            width: 1,
           ),
-          const SizedBox(width: 12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: const Color(0xFFD9BE77),
+              size: iconSize ?? 24,
+            ),
+            const SizedBox(width: 12),
 
-          // Texte
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize:
-                  MainAxisSize.min, // Important pour le centrage vertical
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.7),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4), // Espace légèrement augmenté
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: valueFontSize ?? 20, // Plus gros (20 vs 16)
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /// LABEL (Taille, Poids, IMC…)
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (unit.isNotEmpty) ...[
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          unit,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.white.withOpacity(0.5),
+                  ),
+
+                  const SizedBox(height: 4),
+
+                  /// VALEUR + UNITE
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Expanded(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            value,
+                            style: TextStyle(
+                              fontSize: valueFontSize ?? 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+
+                      if (unit.isNotEmpty) ...[
+                        const SizedBox(width: 4),
+                          Text(
+                            unit,
+                            style: TextStyle(
+                              fontSize: 8,
+                              color: Colors.white.withOpacity(0.5),
+                            ),
+                          ),
+                      ],
                     ],
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
+    },
+  );
+}
+
 }

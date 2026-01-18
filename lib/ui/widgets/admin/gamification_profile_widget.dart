@@ -19,18 +19,18 @@ class GamificationProfileWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isCompact) {
-      return _buildCompactView();
+      return _buildCompactView(context);
     }
     return _buildStandardView();
   }
 
-  Widget _buildCompactView() {
+  Widget _buildCompactView(BuildContext context) {
     final currentXp = user.xp ?? 0;
     final progress = GamificationService.progressToNextLevel(currentXp);
     final userLevelId = user.userLevel ?? 1;
+    final userTitle = user.title ?? 'Novice';
 
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: const Color(0xFF0F0F1E),
         borderRadius: BorderRadius.circular(16),
@@ -39,109 +39,110 @@ class GamificationProfileWidget extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Header: Niveau (Circle) + XP
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [AppTheme.gold, Color(0xFFF9E496)],
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    '$userLevelId',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showAllBadgesDialog(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Icone Cercle Niveau (Gauche)
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [AppTheme.gold, Color(0xFFF9E496)],
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.title ?? 'Novice',
+                  child: Center(
+                    child: Text(
+                      '$userLevelId',
                       style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      "$currentXp XP",
-                      style: const TextStyle(
-                        color: AppTheme.gold,
-                        fontSize: 14,
                         fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        fontSize: 16,
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
+                const SizedBox(width: 12),
 
-          // Progress Bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.white10,
-              color: AppTheme.success,
-              minHeight: 6,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
-          // Badges List (Compact Horizontal)
-          Expanded(
-            child:
-                badges.isEmpty
-                    ? const Center(
-                      child: Text(
-                        "À vous de jouer !",
-                        style: TextStyle(fontSize: 10, color: Colors.white30),
-                      ),
-                    )
-                    : ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: badges.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 4),
-                      itemBuilder: (context, index) {
-                        return Tooltip(
-                          message: badges[index].description,
-                          triggerMode: TooltipTriggerMode.tap,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.white10,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white24),
-                            ),
-                            child: const Icon(
-                              Icons.emoji_events,
-                              color: AppTheme.gold,
-                              size: 18,
+                // Contenu (Centre / Droite)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Titre principal + XP
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            "Titre",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                          Text(
+                            "$currentXp XP",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.gold,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      // Valeur: Niveau - Titre
+                      Text(
+                        userTitle,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      // Barre d'XP
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: Colors.white10,
+                          color: AppTheme.success,
+                          minHeight: 4,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      // Indication de clic
+                      const Text(
+                        "Cliquez pour voir les badges obtenus",
+                        style: TextStyle(
+                          color: Colors.white38,
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -305,6 +306,95 @@ class GamificationProfileWidget extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  void _showAllBadgesDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF151525),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: AppTheme.gold.withOpacity(0.3)),
+            ),
+            title: const Text(
+              'Badges obtenus',
+              style: TextStyle(
+                color: AppTheme.gold,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child:
+                  badges.isEmpty
+                      ? const Text(
+                        "Vous n'avez pas encore de badges.",
+                        style: TextStyle(color: Colors.white70),
+                      )
+                      : GridView.builder(
+                        shrinkWrap: true,
+                        itemCount: badges.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 0.8,
+                            ),
+                        itemBuilder: (context, index) {
+                          final badge = badges[index];
+                          return Tooltip(
+                            message: badge.description,
+                            triggerMode: TooltipTriggerMode.tap,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.gold.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppTheme.gold.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.emoji_events,
+                                    color: AppTheme.gold,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  badge.name,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Fermer',
+                  style: TextStyle(color: AppTheme.gold),
+                ),
+              ),
+            ],
+          ),
     );
   }
 }
