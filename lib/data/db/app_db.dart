@@ -573,14 +573,48 @@ class AppDb extends _$AppDb {
     debugPrint('--- Mises à jour des descriptions terminées ---');
   }
 
-  Future<void> seedExerciseVideos() async {
+Future<void> seedExerciseVideos() async {
   await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/squat.mov' WHERE id = 1;
+    UPDATE exercise SET video_asset = 'assets/videos/squat.mov'
+    WHERE name = 'Back Squat';
   """);
 
-  
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/corde_a_saute.mov'
+    WHERE name = 'Corde à sauter';
+  """);
 
-  debugPrint('--- Vidéo de lexercice squat liée ---');
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/tapis_course.mov'
+    WHERE name = 'Course tapis';
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/curl_biceps.mov'
+    WHERE name = 'Curl biceps';
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/developpe_couche.mov'
+    WHERE name = 'Développé couché';
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/gainage.mov'
+    WHERE name = 'Gainage planche';
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/pompe.mov'
+    WHERE name = 'Pompes';
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/presse_a_cuisse.mov'
+    WHERE name = 'Presse à cuisses';
+  """);
+
+  debugPrint('--- Vidéos des exercices correctement liées ---');
 }
 
   @override
