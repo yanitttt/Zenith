@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../core/theme/app_theme.dart';
+import '../widgets/exercice_video_player.dart';
 
 class ExerciseDetailPage extends StatelessWidget {
   final ExerciseData exercise;
@@ -22,32 +23,38 @@ class ExerciseDetailPage extends StatelessWidget {
           ),
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Placement de la vidéo de l'exo (pas encore dispo dans la bdd)
+            // 🎥 VIDÉO
             Container(
               width: double.infinity,
-              height: 200,
+              height: 220,
               decoration: BoxDecoration(
-                color: Colors.grey.shade900,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.white12),
+                color: Colors.black,
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.play_circle_outline,
-                  color: Colors.white38,
-                  size: 64,
-                ),
-              ),
+              child: exercise.videoAsset != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: ExerciseVideoPlayer(
+                        assetPath: exercise.videoAsset!,
+                      ),
+                    )
+                  : const Center(
+                      child: Text(
+                        "Vidéo bientôt disponible",
+                        style: TextStyle(color: Colors.white38),
+                      ),
+                    ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // Description de l’exercice
+            // 📝 DESCRIPTION
             if (exercise.description != null) ...[
               const Text(
                 "Description",
@@ -66,10 +73,10 @@ class ExerciseDetailPage extends StatelessWidget {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
             ],
 
-            // Étapes de l'exercice
+            // 📋 ÉTAPES
             if (exercise.etapes != null) ...[
               const Text(
                 "Étapes",

@@ -575,7 +575,7 @@ class AppDb extends _$AppDb {
 
   Future<void> seedExerciseVideos() async {
   await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/video/squat.mov' WHERE id = 1;
+    UPDATE exercise SET video_asset = 'assets/videos/squat.mov' WHERE id = 1;
   """);
 
   

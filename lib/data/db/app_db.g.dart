@@ -82,6 +82,17 @@ class $ExerciseTable extends Exercise
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _videoAssetMeta = const VerificationMeta(
+    'videoAsset',
+  );
+  @override
+  late final GeneratedColumn<String> videoAsset = GeneratedColumn<String>(
+    'video_asset',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -91,6 +102,7 @@ class $ExerciseTable extends Exercise
     cardio,
     description,
     etapes,
+    videoAsset,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -144,6 +156,12 @@ class $ExerciseTable extends Exercise
         etapes.isAcceptableOrUnknown(data['etapes']!, _etapesMeta),
       );
     }
+    if (data.containsKey('video_asset')) {
+      context.handle(
+        _videoAssetMeta,
+        videoAsset.isAcceptableOrUnknown(data['video_asset']!, _videoAssetMeta),
+      );
+    }
     return context;
   }
 
@@ -187,6 +205,10 @@ class $ExerciseTable extends Exercise
         DriftSqlType.string,
         data['${effectivePrefix}etapes'],
       ),
+      videoAsset: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}video_asset'],
+      ),
     );
   }
 
@@ -206,6 +228,7 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
   final double cardio;
   final String? description;
   final String? etapes;
+  final String? videoAsset;
   const ExerciseData({
     required this.id,
     required this.name,
@@ -214,6 +237,7 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
     required this.cardio,
     this.description,
     this.etapes,
+    this.videoAsset,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -231,6 +255,9 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
     if (!nullToAbsent || etapes != null) {
       map['etapes'] = Variable<String>(etapes);
     }
+    if (!nullToAbsent || videoAsset != null) {
+      map['video_asset'] = Variable<String>(videoAsset);
+    }
     return map;
   }
 
@@ -247,6 +274,10 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
               : Value(description),
       etapes:
           etapes == null && nullToAbsent ? const Value.absent() : Value(etapes),
+      videoAsset:
+          videoAsset == null && nullToAbsent
+              ? const Value.absent()
+              : Value(videoAsset),
     );
   }
 
@@ -263,6 +294,7 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
       cardio: serializer.fromJson<double>(json['cardio']),
       description: serializer.fromJson<String?>(json['description']),
       etapes: serializer.fromJson<String?>(json['etapes']),
+      videoAsset: serializer.fromJson<String?>(json['videoAsset']),
     );
   }
   @override
@@ -276,6 +308,7 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
       'cardio': serializer.toJson<double>(cardio),
       'description': serializer.toJson<String?>(description),
       'etapes': serializer.toJson<String?>(etapes),
+      'videoAsset': serializer.toJson<String?>(videoAsset),
     };
   }
 
@@ -287,6 +320,7 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
     double? cardio,
     Value<String?> description = const Value.absent(),
     Value<String?> etapes = const Value.absent(),
+    Value<String?> videoAsset = const Value.absent(),
   }) => ExerciseData(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -295,6 +329,7 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
     cardio: cardio ?? this.cardio,
     description: description.present ? description.value : this.description,
     etapes: etapes.present ? etapes.value : this.etapes,
+    videoAsset: videoAsset.present ? videoAsset.value : this.videoAsset,
   );
   ExerciseData copyWithCompanion(ExerciseCompanion data) {
     return ExerciseData(
@@ -307,6 +342,8 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
       description:
           data.description.present ? data.description.value : this.description,
       etapes: data.etapes.present ? data.etapes.value : this.etapes,
+      videoAsset:
+          data.videoAsset.present ? data.videoAsset.value : this.videoAsset,
     );
   }
 
@@ -319,14 +356,23 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
           ..write('difficulty: $difficulty, ')
           ..write('cardio: $cardio, ')
           ..write('description: $description, ')
-          ..write('etapes: $etapes')
+          ..write('etapes: $etapes, ')
+          ..write('videoAsset: $videoAsset')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, type, difficulty, cardio, description, etapes);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    type,
+    difficulty,
+    cardio,
+    description,
+    etapes,
+    videoAsset,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -337,7 +383,8 @@ class ExerciseData extends DataClass implements Insertable<ExerciseData> {
           other.difficulty == this.difficulty &&
           other.cardio == this.cardio &&
           other.description == this.description &&
-          other.etapes == this.etapes);
+          other.etapes == this.etapes &&
+          other.videoAsset == this.videoAsset);
 }
 
 class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
@@ -348,6 +395,7 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
   final Value<double> cardio;
   final Value<String?> description;
   final Value<String?> etapes;
+  final Value<String?> videoAsset;
   const ExerciseCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -356,6 +404,7 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
     this.cardio = const Value.absent(),
     this.description = const Value.absent(),
     this.etapes = const Value.absent(),
+    this.videoAsset = const Value.absent(),
   });
   ExerciseCompanion.insert({
     this.id = const Value.absent(),
@@ -365,6 +414,7 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
     this.cardio = const Value.absent(),
     this.description = const Value.absent(),
     this.etapes = const Value.absent(),
+    this.videoAsset = const Value.absent(),
   }) : name = Value(name),
        type = Value(type),
        difficulty = Value(difficulty);
@@ -376,6 +426,7 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
     Expression<double>? cardio,
     Expression<String>? description,
     Expression<String>? etapes,
+    Expression<String>? videoAsset,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -385,6 +436,7 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
       if (cardio != null) 'cardio': cardio,
       if (description != null) 'description': description,
       if (etapes != null) 'etapes': etapes,
+      if (videoAsset != null) 'video_asset': videoAsset,
     });
   }
 
@@ -396,6 +448,7 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
     Value<double>? cardio,
     Value<String?>? description,
     Value<String?>? etapes,
+    Value<String?>? videoAsset,
   }) {
     return ExerciseCompanion(
       id: id ?? this.id,
@@ -405,6 +458,7 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
       cardio: cardio ?? this.cardio,
       description: description ?? this.description,
       etapes: etapes ?? this.etapes,
+      videoAsset: videoAsset ?? this.videoAsset,
     );
   }
 
@@ -434,6 +488,9 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
     if (etapes.present) {
       map['etapes'] = Variable<String>(etapes.value);
     }
+    if (videoAsset.present) {
+      map['video_asset'] = Variable<String>(videoAsset.value);
+    }
     return map;
   }
 
@@ -446,7 +503,8 @@ class ExerciseCompanion extends UpdateCompanion<ExerciseData> {
           ..write('difficulty: $difficulty, ')
           ..write('cardio: $cardio, ')
           ..write('description: $description, ')
-          ..write('etapes: $etapes')
+          ..write('etapes: $etapes, ')
+          ..write('videoAsset: $videoAsset')
           ..write(')'))
         .toString();
   }
@@ -8722,6 +8780,7 @@ typedef $$ExerciseTableCreateCompanionBuilder =
       Value<double> cardio,
       Value<String?> description,
       Value<String?> etapes,
+      Value<String?> videoAsset,
     });
 typedef $$ExerciseTableUpdateCompanionBuilder =
     ExerciseCompanion Function({
@@ -8732,6 +8791,7 @@ typedef $$ExerciseTableUpdateCompanionBuilder =
       Value<double> cardio,
       Value<String?> description,
       Value<String?> etapes,
+      Value<String?> videoAsset,
     });
 
 final class $$ExerciseTableReferences
@@ -8962,6 +9022,11 @@ class $$ExerciseTableFilterComposer extends Composer<_$AppDb, $ExerciseTable> {
 
   ColumnFilters<String> get etapes => $composableBuilder(
     column: $table.etapes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get videoAsset => $composableBuilder(
+    column: $table.videoAsset,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9209,6 +9274,11 @@ class $$ExerciseTableOrderingComposer
     column: $table.etapes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get videoAsset => $composableBuilder(
+    column: $table.videoAsset,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ExerciseTableAnnotationComposer
@@ -9244,6 +9314,11 @@ class $$ExerciseTableAnnotationComposer
 
   GeneratedColumn<String> get etapes =>
       $composableBuilder(column: $table.etapes, builder: (column) => column);
+
+  GeneratedColumn<String> get videoAsset => $composableBuilder(
+    column: $table.videoAsset,
+    builder: (column) => column,
+  );
 
   Expression<T> exerciseMuscleRefs<T extends Object>(
     Expression<T> Function($$ExerciseMuscleTableAnnotationComposer a) f,
@@ -9493,6 +9568,7 @@ class $$ExerciseTableTableManager
                 Value<double> cardio = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<String?> etapes = const Value.absent(),
+                Value<String?> videoAsset = const Value.absent(),
               }) => ExerciseCompanion(
                 id: id,
                 name: name,
@@ -9501,6 +9577,7 @@ class $$ExerciseTableTableManager
                 cardio: cardio,
                 description: description,
                 etapes: etapes,
+                videoAsset: videoAsset,
               ),
           createCompanionCallback:
               ({
@@ -9511,6 +9588,7 @@ class $$ExerciseTableTableManager
                 Value<double> cardio = const Value.absent(),
                 Value<String?> description = const Value.absent(),
                 Value<String?> etapes = const Value.absent(),
+                Value<String?> videoAsset = const Value.absent(),
               }) => ExerciseCompanion.insert(
                 id: id,
                 name: name,
@@ -9519,6 +9597,7 @@ class $$ExerciseTableTableManager
                 cardio: cardio,
                 description: description,
                 etapes: etapes,
+                videoAsset: videoAsset,
               ),
           withReferenceMapper:
               (p0) =>
