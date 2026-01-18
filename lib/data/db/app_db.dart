@@ -106,6 +106,7 @@ class Exercise extends Table {
 
   TextColumn get description => text().named('description').nullable()();
   TextColumn get etapes => text().named('etapes').nullable()();
+  TextColumn get videoAsset => text().named('video_asset').nullable()();
 }
 
 class Muscle extends Table {
@@ -470,7 +471,7 @@ class AppDb extends _$AppDb {
   AppDb.forTesting(super.executor) : _isTest = true;
 
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 45;
 
   Future<void> seedExerciseDetails() async {
     // 1. Back Squat
@@ -572,6 +573,16 @@ class AppDb extends _$AppDb {
     debugPrint('--- Mises à jour des descriptions terminées ---');
   }
 
+  Future<void> seedExerciseVideos() async {
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/video/squat.mov' WHERE id = 1;
+  """);
+
+  
+
+  debugPrint('--- Vidéo de lexercice squat liée ---');
+}
+
   @override
   MigrationStrategy get migration => MigrationStrategy(
     beforeOpen: (details) async {
@@ -627,6 +638,7 @@ class AppDb extends _$AppDb {
       if (await _tableExists('exercise')) {
         await _addColumnIfMissing('exercise', 'description', 'TEXT');
         await _addColumnIfMissing('exercise', 'etapes', 'TEXT');
+        await _addColumnIfMissing('exercise', 'video_asset', 'TEXT');
       }
 
       await _ensureUserTrainingDayTable();
@@ -658,6 +670,7 @@ class AppDb extends _$AppDb {
       }
       await customStatement('PRAGMA foreign_keys = ON;');
       await seedExerciseDetails();
+      await seedExerciseVideos();
     },
 
     onCreate: (m) async {
@@ -775,6 +788,10 @@ class AppDb extends _$AppDb {
       }
 
       await _createAllIndexes();
+
+      if (await _tableExists('exercise')) {
+        await _addColumnIfMissing('exercise', 'video_asset', 'TEXT');
+}
     },
   );
 
