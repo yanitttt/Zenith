@@ -106,6 +106,7 @@ class Exercise extends Table {
 
   TextColumn get description => text().named('description').nullable()();
   TextColumn get etapes => text().named('etapes').nullable()();
+  TextColumn get videoAsset => text().named('video_asset').nullable()();
 }
 
 class Muscle extends Table {
@@ -470,7 +471,7 @@ class AppDb extends _$AppDb {
   AppDb.forTesting(super.executor) : _isTest = true;
 
   @override
-  int get schemaVersion => 44;
+  int get schemaVersion => 45;
 
   Future<void> seedExerciseDetails() async {
     // 1. Back Squat
@@ -627,6 +628,7 @@ class AppDb extends _$AppDb {
       if (await _tableExists('exercise')) {
         await _addColumnIfMissing('exercise', 'description', 'TEXT');
         await _addColumnIfMissing('exercise', 'etapes', 'TEXT');
+        await _addColumnIfMissing('exercise', 'video_asset', 'TEXT');
       }
 
       await _ensureUserTrainingDayTable();
