@@ -25,7 +25,7 @@ class NotificationService {
 
   Future<void> init({bool isBackground = false}) async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('ic_notification');
 
     const InitializationSettings initializationSettings =
         InitializationSettings(android: initializationSettingsAndroid);
@@ -134,10 +134,8 @@ class NotificationService {
     required int id,
     required String title,
     required String body,
-    String? channelId, // Paramètre optionnel pour choisir le canal
+    String? channelId,
   }) async {
-    // Si un channelId spécifique est fourni, on l'utilise
-    // Sinon, on utilise la logique par défaut
     String effectiveChannelId = channelId ?? _getChannelId();
     String effectiveChannelName =
         channelId == motivationChannelId
@@ -146,9 +144,11 @@ class NotificationService {
 
     AndroidNotificationDetails androidPlatformChannelSpecifics;
 
+    // Utilisation de la Large Icon (Logo en couleur)
+    // On utilise @mipmap/ic_launcher qui contient le logo original (carré/rond complet)
+    const largeIcon = DrawableResourceAndroidBitmap('@mipmap/ic_launcher');
+
     if (channelId == motivationChannelId) {
-      // Configuration spécifique pour le canal motivation (redondance pour garantir l'envoi correct)
-      // Note: La plupart des params sont définis par le channel lui-même sur Android 8+
       androidPlatformChannelSpecifics = AndroidNotificationDetails(
         motivationChannelId,
         motivationChannelName,
@@ -159,6 +159,8 @@ class NotificationService {
         sound: const RawResourceAndroidNotificationSound(motivationSoundName),
         enableVibration: true,
         vibrationPattern: Int64List.fromList([0, 200, 100, 200]),
+        largeIcon: largeIcon, // Ajout du logo en couleur
+        icon: 'ic_notification', // Petite icône (silhouette blanche)
       );
     } else if (channelId == badgeChannelId) {
       androidPlatformChannelSpecifics = const AndroidNotificationDetails(
@@ -169,6 +171,8 @@ class NotificationService {
         priority: Priority.high,
         playSound: true,
         enableVibration: true,
+        largeIcon: largeIcon, // Ajout du logo en couleur
+        icon: 'ic_notification', // Petite icône (silhouette blanche)
       );
     } else if (!_soundEnabled) {
       androidPlatformChannelSpecifics = AndroidNotificationDetails(
@@ -179,9 +183,10 @@ class NotificationService {
         priority: Priority.high,
         playSound: false,
         showWhen: true,
+        largeIcon: largeIcon,
+        icon: 'ic_notification',
       );
     } else {
-      // Nettoyage du nom du son (retirer l'extension si présente)
       String? soundRes = _soundName;
       if (soundRes != null && soundRes.contains('.')) {
         soundRes = soundRes.split('.').first;
@@ -200,6 +205,8 @@ class NotificationService {
                 ? RawResourceAndroidNotificationSound(soundRes)
                 : null,
         showWhen: true,
+        largeIcon: largeIcon,
+        icon: 'ic_notification',
       );
     }
 
