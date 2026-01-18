@@ -13,4 +13,7 @@ mixin _$ExerciseDaoMixin on DatabaseAccessor<AppDb> {
   $ProgramDayTable get programDay => attachedDatabase.programDay;
   $SessionTable get session => attachedDatabase.session;
   $UserFeedbackTable get userFeedback => attachedDatabase.userFeedback;
+  $EquipmentTable get equipment => attachedDatabase.equipment;
+  $ExerciseEquipmentTable get exerciseEquipment =>
+      attachedDatabase.exerciseEquipment;
 }

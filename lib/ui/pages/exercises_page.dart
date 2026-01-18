@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../data/db/app_db.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/repositories/exercise_repository.dart';
+import '../../data/models/exercise_with_equipment.dart';
+import '../../services/equipment_service.dart';
 import 'ExerciseDetailPage.dart';
 
 class ExercisesPage extends StatefulWidget {
@@ -49,8 +51,8 @@ class _ExercisesPageState extends State<ExercisesPage> {
           ),
 
           Expanded(
-            child: StreamBuilder<List<ExerciseData>>(
-              stream: repo.watchAll(),
+            child: StreamBuilder<List<ExerciseWithEquipment>>(
+              stream: repo.watchAllWithEquipment(),
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -68,7 +70,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
                         .where(
                           (e) =>
                               _query.isEmpty ||
-                              e.name.toLowerCase().contains(
+                              e.exercise.name.toLowerCase().contains(
                                 _query.toLowerCase(),
                               ),
                         )
@@ -87,7 +89,7 @@ class _ExercisesPageState extends State<ExercisesPage> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                   itemCount: list.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => _ExerciseTile(e: list[i]),
+                  itemBuilder: (_, i) => _ExerciseTile(data: list[i]),
                 );
               },
             ),
@@ -133,8 +135,8 @@ class _SearchField extends StatelessWidget {
 }
 
 class _ExerciseTile extends StatelessWidget {
-  final ExerciseData e;
-  const _ExerciseTile({required this.e});
+  final ExerciseWithEquipment data;
+  const _ExerciseTile({required this.data});
 
   Color _typeColor(String t) {
     switch (t.toLowerCase()) {
@@ -149,79 +151,89 @@ class _ExerciseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final e = data.exercise;
     return InkWell(
-    borderRadius: BorderRadius.circular(16),
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ExerciseDetailPage(exercise: e),
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => ExerciseDetailPage(exercise: e)),
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white10),
         ),
-      );
-    },
-    child:Container(
-      decoration: BoxDecoration(
-        color: Colors.black,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(8),
+                  child:
+                      data.equipmentId != null
+                          ? Image.asset(
+                            EquipmentService.getIconPath(data.equipmentId!),
+                            fit: BoxFit.contain,
+                            color: Colors.black,
+                          )
+                          : const Icon(
+                            Icons.fitness_center,
+                            color: Colors.black,
+                          ),
                 ),
-                child: const Icon(Icons.fitness_center, color: Colors.black),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      e.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        e.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Wrap(
-                      spacing: 10,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _ChipInfo(
-                          icon: Icons.category_outlined,
-                          label: e.type.toUpperCase(),
-                          color: _typeColor(e.type),
-                        ),
-                        _ChipInfo(
-                          icon: Icons.speed,
-                          label: "Diff ${e.difficulty}",
-                          color: Colors.white70,
-                        ),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 10,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          _ChipInfo(
+                            icon: Icons.category_outlined,
+                            label: e.type.toUpperCase(),
+                            color: _typeColor(e.type),
+                          ),
+                          _ChipInfo(
+                            icon: Icons.speed,
+                            label: "Diff ${e.difficulty}",
+                            color: Colors.white70,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          const SizedBox(height: 12),
-        ],
+            const SizedBox(height: 12),
+          ],
+        ),
       ),
-    )
     );
   }
 }

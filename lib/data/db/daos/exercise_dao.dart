@@ -1,10 +1,12 @@
-// lib/data/db/daos/exercise_dao.dart
 import 'package:drift/drift.dart';
 import '../app_db.dart';
+import '../../models/exercise_with_equipment.dart';
 
 part 'exercise_dao.g.dart';
 
-@DriftAccessor(tables: [Exercise, Muscle, ExerciseMuscle, UserFeedback])
+@DriftAccessor(
+  tables: [Exercise, Muscle, ExerciseMuscle, UserFeedback, ExerciseEquipment],
+)
 class ExerciseDao extends DatabaseAccessor<AppDb> with _$ExerciseDaoMixin {
   ExerciseDao(super.db);
 
@@ -66,6 +68,36 @@ class ExerciseDao extends DatabaseAccessor<AppDb> with _$ExerciseDaoMixin {
   Stream<List<ExerciseData>> watchAll() {
     final q = (select(exercise)..orderBy([(t) => OrderingTerm.asc(t.name)]));
     return q.watch();
+  }
+
+  Stream<List<ExerciseWithEquipment>> watchAllWithEquipment() {
+    final query = select(exercise).join([
+      leftOuterJoin(
+        exerciseEquipment,
+        exerciseEquipment.exerciseId.equalsExp(exercise.id),
+      ),
+    ]);
+
+    return query.watch().map((rows) {
+      // On regroupe pour éviter les doublons (si un exercice a plusieurs équipements)
+      // On prend arbitrairement le premier équipement rencontré pour chaque exercice
+      final Map<int, ExerciseWithEquipment> uniqueExercises = {};
+
+      for (final row in rows) {
+        final ex = row.readTable(exercise);
+        final eq = row.readTableOrNull(exerciseEquipment);
+
+        if (!uniqueExercises.containsKey(ex.id)) {
+          uniqueExercises[ex.id] = ExerciseWithEquipment(ex, eq?.equipmentId);
+        }
+      }
+
+      // On trie par nom pour garder l'ordre alphabétique
+      final result = uniqueExercises.values.toList();
+      result.sort((a, b) => a.exercise.name.compareTo(b.exercise.name));
+
+      return result;
+    });
   }
 
   Future<int> insertOne(ExerciseCompanion data) => into(exercise).insert(data);
