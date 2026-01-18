@@ -95,7 +95,13 @@ class DashboardPage extends StatelessWidget {
                     Widget mainContent;
 
                     if (!hasProgram) {
-                      mainContent = const DashboardSkeleton();
+                      mainContent = DashboardSkeleton(
+                        onNavigate:
+                            (onNavigateToTab != null)
+                                ? () =>
+                                    onNavigateToTab!(3) // Index 3 = Exercices
+                                : null,
+                      );
                     } else {
                       mainContent = Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,

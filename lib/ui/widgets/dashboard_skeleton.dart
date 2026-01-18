@@ -3,7 +3,9 @@ import '../../core/theme/app_theme.dart';
 import '../utils/responsive.dart';
 
 class DashboardSkeleton extends StatefulWidget {
-  const DashboardSkeleton({super.key});
+  final VoidCallback? onNavigate;
+
+  const DashboardSkeleton({super.key, this.onNavigate});
 
   @override
   State<DashboardSkeleton> createState() => _DashboardSkeletonState();
@@ -149,7 +151,7 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                     ],
                   ),
                   child: Icon(
-                    Icons.rocket_launch,
+                    Icons.explore, // CHANGER ICI
                     size: responsive.rsp(48),
                     color: AppTheme.gold,
                   ),
@@ -158,7 +160,7 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
 
                 // Titre
                 Text(
-                  "Prêt à décoller ?",
+                  "Explore les exercices", // CHANGER ICI
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: responsive.rsp(24),
@@ -169,7 +171,7 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
 
                 // Sous-titre
                 Text(
-                  "Ton tableau de bord est vide.\nCrée ton premier programme pour commencer ta transformation.",
+                  "Ton tableau de bord est vide.\nDécouvre la bibliothèque d'exercices avant de créer ton programme.", // CHANGER ICI
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white70,
@@ -180,61 +182,79 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                 SizedBox(height: responsive.rh(32)),
 
                 // Indicateur vers la BottomNavBar
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    vertical: responsive.rh(12),
-                    horizontal: responsive.rw(16),
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54, // Fond semi-transparent
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.gold),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                GestureDetector(
+                  onTap: widget.onNavigate, // CHANGER ICI
+                  child: Column(
                     children: [
-                      Text(
-                        "C'est par ici",
-                        style: TextStyle(
-                          color: AppTheme.gold,
-                          fontWeight: FontWeight.bold,
-                          fontSize: responsive.rsp(16),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          vertical: responsive.rh(12),
+                          horizontal: responsive.rw(16),
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54, // Fond semi-transparent
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.gold),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "C'est par ici",
+                              style: TextStyle(
+                                color: AppTheme.gold,
+                                fontWeight: FontWeight.bold,
+                                fontSize: responsive.rsp(16),
+                              ),
+                            ),
+                            SizedBox(width: responsive.rw(8)),
+                            Icon(
+                              Icons.arrow_downward_rounded,
+                              color: AppTheme.gold,
+                              size: responsive.rsp(24),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(width: responsive.rw(8)),
-                      Icon(
-                        Icons.arrow_downward_rounded,
-                        color: AppTheme.gold,
-                        size: responsive.rsp(24),
+                      SizedBox(height: responsive.rh(8)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.gold,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.gold.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.list_alt, // CHANGER ICI
+                              color: Colors.black,
+                              size: responsive.rsp(18),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              "Voir les exercices", // CHANGER ICI
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: responsive.rsp(14),
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-                SizedBox(height: responsive.rh(8)),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.gold,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.gold.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    "Onglet Programme",
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: responsive.rsp(13),
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
                   ),
                 ),
               ],
