@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../data/db/app_db.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../services/equipment_service.dart';
 
 class EquipmentPage extends StatefulWidget {
   final AppDb db;
@@ -44,9 +45,9 @@ class _EquipmentPageState extends State<EquipmentPage> {
       debugPrint('[EQUIPMENT] Erreur chargement: $e');
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur de chargement: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur de chargement: $e')));
       }
     }
   }
@@ -64,9 +65,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
   Future<void> _handleNext() async {
     if (_selectedEquipmentIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sélectionne au moins un équipement'),
-        ),
+        const SnackBar(content: Text('Sélectionne au moins un équipement')),
       );
       return;
     }
@@ -75,17 +74,17 @@ class _EquipmentPageState extends State<EquipmentPage> {
     final List<int> resultIds = _selectedEquipmentIds.toList();
     if (widget.onNext != null) {
       try {
-            await widget.onNext!(resultIds);
-        } catch (e) {
-            debugPrint('Erreur lors de la sauvegarde onNext: $e');
-        }
-        } else {
-        if (!mounted) return;
-        Navigator.pop(context, resultIds);
+        await widget.onNext!(resultIds);
+      } catch (e) {
+        debugPrint('Erreur lors de la sauvegarde onNext: $e');
+      }
+    } else {
+      if (!mounted) return;
+      Navigator.pop(context, resultIds);
     }
-    if (mounted){
-        setState(() => _submitting = false);
-        }
+    if (mounted) {
+      setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -119,39 +118,41 @@ class _EquipmentPageState extends State<EquipmentPage> {
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppTheme.gold,
-                        ),
-                      )
-                    : _equipment.isEmpty
+                child:
+                    _loading
                         ? const Center(
-                            child: Text(
-                              'Aucun équipement disponible',
-                              style: TextStyle(color: Colors.white60),
-                            ),
-                          )
-                        : GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio: 1.5,
-                            ),
-                            itemCount: _equipment.length,
-                            itemBuilder: (context, index) {
-                              final equipment = _equipment[index];
-                              final isSelected = _selectedEquipmentIds
-                                  .contains(equipment.id);
-                              return _equipmentCard(
-                                equipment: equipment,
-                                isSelected: isSelected,
-                                onTap: () => _toggleEquipment(equipment.id),
-                              );
-                            },
+                          child: CircularProgressIndicator(
+                            color: AppTheme.gold,
                           ),
+                        )
+                        : _equipment.isEmpty
+                        ? const Center(
+                          child: Text(
+                            'Aucun équipement disponible',
+                            style: TextStyle(color: Colors.white60),
+                          ),
+                        )
+                        : GridView.builder(
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: 1.5,
+                              ),
+                          itemCount: _equipment.length,
+                          itemBuilder: (context, index) {
+                            final equipment = _equipment[index];
+                            final isSelected = _selectedEquipmentIds.contains(
+                              equipment.id,
+                            );
+                            return _equipmentCard(
+                              equipment: equipment,
+                              isSelected: isSelected,
+                              onTap: () => _toggleEquipment(equipment.id),
+                            );
+                          },
+                        ),
               ),
               const SizedBox(height: 16),
               SizedBox(
@@ -194,27 +195,40 @@ class _EquipmentPageState extends State<EquipmentPage> {
             width: 2,
           ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected ? Icons.check_circle : Icons.fitness_center,
-              color: isSelected ? AppTheme.gold : Colors.grey,
-              size: 32,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              equipment.name,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: isSelected ? AppTheme.gold : Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final availableHeight = constraints.maxHeight;
+            final iconSize =
+                availableHeight * 0.5; // 50% de la hauteur disponible
+
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: iconSize,
+                  width: iconSize,
+                  child: Image.asset(
+                    EquipmentService.getIconPath(equipment.id),
+                    color: isSelected ? AppTheme.gold : Colors.white,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+                // Espacement proportionnel
+                SizedBox(height: availableHeight * 0.08),
+                Text(
+                  equipment.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isSelected ? AppTheme.gold : Colors.white,
+                    fontSize: 13, // Légère réduction pour sûreté
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
