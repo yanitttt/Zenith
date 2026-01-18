@@ -26,13 +26,13 @@ class _WelcomePageState extends State<WelcomePage>
     // Phase 1 : Entrée (1000ms - Plus lent)
     _entranceController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 1000),
     );
 
-    // Phase 2 : Respiration (1.5s, boucle)
+    // Phase 2 : Respiration (1.0s, boucle plus dynamique)
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 800),
     );
 
     // Fade : 0.0 -> 1.0
@@ -41,16 +41,17 @@ class _WelcomePageState extends State<WelcomePage>
       curve: Curves.easeOut,
     );
 
-    // Slide : Du bas (Offset(0, 0.5)) vers sa position (Offset.zero)
+    // Slide : Du bas (Offset(0, 1.0)) vers sa position (Offset.zero)
+    // Plus de distance pour une entrée plus marquée
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
+      begin: const Offset(0, 1.0),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _entranceController, curve: Curves.easeOut),
     );
 
-    // Scale : 1.0 -> 1.04
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.04).animate(
+    // Scale : 1.0 -> 1.1 (Plus grand)
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.1).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
@@ -187,7 +188,7 @@ class _WelcomePageState extends State<WelcomePage>
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              "Sculpte ta meilleure version.",
+                              "Atteignez votre apogée",
                               textAlign: TextAlign.center,
                               style: Theme.of(
                                 context,
