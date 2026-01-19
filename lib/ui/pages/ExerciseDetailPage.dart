@@ -69,9 +69,9 @@ class _ExerciseDetailPageState extends State<ExerciseDetailPage> {
                         ),
                       ),
 
-                      
+
                       Positioned(
-                        top: 12,
+                        bottom: 12,
                         right: 12,
                         child: GestureDetector(
                           onTap: () {
