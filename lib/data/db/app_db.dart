@@ -630,7 +630,7 @@ Future<void> seedExerciseVideos() async {
   """);
 
   await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/tirage_vertical.mov'
+    UPDATE exercise SET video_asset = 'assets/videos/tirage_vertical2.mp4'
     WHERE id = 7;
   """);
 
