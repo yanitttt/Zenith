@@ -59,21 +59,33 @@ class ExerciseDetailPage extends StatelessWidget {
               const Text(
                 "Description",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFD9BE77),
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                exercise.description!,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  height: 1.4,
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFFD9BE77),
+                    width: 1.2,
+                  ),
+                ),
+                child: Text(
+                  exercise.description!,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
             ],
 
             // 📋 ÉTAPES
@@ -81,18 +93,27 @@ class ExerciseDetailPage extends StatelessWidget {
               const Text(
                 "Étapes",
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFFD9BE77),
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                exercise.etapes!,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  height: 1.4,
+              const SizedBox(height: 16),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white12),
+                ),
+                child: Text(
+                  exercise.etapes!,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
                 ),
               ),
             ],
