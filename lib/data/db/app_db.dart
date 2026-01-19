@@ -614,6 +614,26 @@ Future<void> seedExerciseVideos() async {
     WHERE name = 'Presse à cuisses';
   """);
 
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/souleve_de_terre.mov'
+    WHERE id = 3;
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/rowling_haltere.mov'
+    WHERE id = 5;
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/traction.mov'
+    WHERE name = 'Tractions';
+  """);
+
+  await customStatement("""
+    UPDATE exercise SET video_asset = 'assets/videos/tirage_vertical.mov'
+    WHERE id = 7;
+  """);
+
   debugPrint('--- Vidéos des exercices correctement liées ---');
 }
 
