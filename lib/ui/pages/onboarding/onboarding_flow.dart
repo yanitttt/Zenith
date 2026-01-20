@@ -4,6 +4,7 @@ import '../../../core/prefs/app_prefs.dart';
 import '../../../data/db/app_db.dart';
 import '../../../data/repositories/user_repository.dart';
 import '../../../services/home_widget_service.dart';
+import '../../../services/data_backup_service.dart';
 import '../root_shell.dart';
 import 'profile_basics_page.dart';
 import 'metabolism_page.dart' as metabolism_page;
@@ -213,8 +214,53 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     }
   }
 
+  Future<void> _importBackup() async {
+    try {
+      final backupService = DataBackupService(widget.db);
+      final success = await backupService.importData();
+
+      if (success) {
+        // Récupérer l'utilisateur importé
+        final user =
+            await (widget.db.select(widget.db.appUser)
+              ..limit(1)).getSingleOrNull();
+
+        if (user != null) {
+          await widget.prefs.setCurrentUserId(user.id);
+          await widget.prefs.setOnboarded(true);
+
+          if (!mounted) return;
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => RootShell(db: widget.db)),
+            (_) => false,
+          );
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  "Aucun profil utilisateur trouvé dans la sauvegarde.",
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erreur lors de l'import : $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WelcomePage(onStart: _startOnboarding);
+    return WelcomePage(onStart: _startOnboarding, onImport: _importBackup);
   }
 }

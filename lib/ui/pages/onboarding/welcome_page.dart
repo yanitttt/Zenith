@@ -4,7 +4,8 @@ import '../../utils/responsive.dart';
 
 class WelcomePage extends StatefulWidget {
   final VoidCallback onStart;
-  const WelcomePage({super.key, required this.onStart});
+  final VoidCallback? onImport;
+  const WelcomePage({super.key, required this.onStart, this.onImport});
 
   @override
   State<WelcomePage> createState() => _WelcomePageState();
@@ -250,6 +251,30 @@ class _WelcomePageState extends State<WelcomePage>
                         ),
                       ),
                     ),
+
+                    if (widget.onImport != null)
+                      FadeTransition(
+                        opacity: _fadeAnimation,
+                        child: TextButton.icon(
+                          onPressed: widget.onImport,
+                          icon: const Icon(
+                            Icons.restore,
+                            color: Colors.white54,
+                            size: 20,
+                          ),
+                          label: const Text(
+                            "Restaurer une sauvegarde",
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 14,
+                              decoration: TextDecoration.underline,
+                              decorationColor: Colors.white54,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: 24),
                   ],
                 ),
               ],

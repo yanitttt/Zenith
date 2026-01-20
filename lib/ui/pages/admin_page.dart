@@ -261,7 +261,168 @@ class _AdminPageView extends StatelessWidget {
 
         // C. Bottom Buttons (Hors du conteneur unifié)
         _buildBottomActions(context, vm, u),
+
+        const SizedBox(height: 16),
+
+        // D. Data Management (Backup)
+        _buildDataManagementSection(context, vm),
       ],
+    );
+  }
+
+  // --- 3.D Data Management Section ---
+  Widget _buildDataManagementSection(BuildContext context, AdminViewModel vm) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF151525),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.dataset_linked_outlined,
+                color: AppTheme.gold,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                "Zone de Sauvegarde",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ModernButton(
+                  icon: Icons.upload_file,
+                  label: 'Exporter',
+                  isCompact: true,
+                  onPressed: () => _showExportOptions(context, vm),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ModernButton(
+                  icon: Icons.download,
+                  label: 'Importer',
+                  isCompact: true,
+                  // Style légèrement différent pour indiquer l'action "spéciale" ?
+                  onPressed: () => _confirmAndImport(context, vm),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Choix du mode d'export
+  void _showExportOptions(BuildContext context, AdminViewModel vm) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF151525),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder:
+          (ctx) => Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Exporter les données",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Option 1 : Partager
+                ListTile(
+                  leading: const Icon(Icons.share, color: AppTheme.gold),
+                  title: const Text(
+                    "Partager le fichier",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  subtitle: const Text(
+                    "Via Mail, Drive, WhatsApp...",
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      await vm.exportData();
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Erreur: $e"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+
+                const Divider(color: Colors.white10),
+
+                // Option 2 : Sauvegarder Local
+                ListTile(
+                  leading: const Icon(Icons.save_alt, color: AppTheme.gold),
+                  title: const Text(
+                    "Enregistrer sur l'appareil",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  subtitle: const Text(
+                    "Dans le dossier Téléchargements",
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(ctx);
+                    try {
+                      final path = await vm.exportToDownloads();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Sauvegardé : $path"),
+                            backgroundColor: Colors.green,
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Erreur: $e"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
     );
   }
 
@@ -622,6 +783,75 @@ class _AdminPageView extends StatelessWidget {
       await vm.updateTrainingDays(userId, result);
     }
   }
+
+  Future<void> _confirmAndImport(
+    BuildContext context,
+    AdminViewModel vm,
+  ) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder:
+          (ctx) => AlertDialog(
+            title: const Text('Importer une sauvegarde ?'),
+            content: const Text(
+              'ATTENTION : Cette action va EFFACER toutes les données actuelles de l\'application pour les remplacer par celles du fichier de sauvegarde/nUne fois l\'import terminé, l\'application redémarrera sur le profil importé.\n\nVoulez-vous continuer ?',
+            ),
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: AppTheme.gold),
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Annuler'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.red,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Écraser et Importer'),
+              ),
+            ],
+          ),
+    );
+
+    if (ok == true) {
+      if (context.mounted) {
+        try {
+          // Afficher un loader pendant l'import
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const Center(child: CircularProgressIndicator()),
+          );
+
+          final success = await vm.importData();
+
+          if (context.mounted) {
+            Navigator.of(context).pop(); // Fermer le loader
+
+            if (success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Import effectué avec succès !"),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          }
+        } catch (e) {
+          if (context.mounted) {
+            Navigator.of(context).pop(); // Fermer le loader en cas d'erreur
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text("Echec de l'import : $e"),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    }
+  }
 }
 
 /// Widget local optimisé pour l'affichage paysage dense (Grid)
@@ -644,74 +874,70 @@ class _CompactStatRow extends StatelessWidget {
     this.iconSize,
   });
 
-@override
-Widget build(BuildContext context) {
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0F0F1E),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: const Color(0xFFD9BE77).withOpacity(0.5),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFFD9BE77),
-              size: iconSize ?? 24,
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F0F1E),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFFD9BE77).withOpacity(0.5),
+              width: 1,
             ),
-            const SizedBox(width: 12),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: const Color(0xFFD9BE77), size: iconSize ?? 24),
+              const SizedBox(width: 12),
 
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  /// LABEL (Taille, Poids, IMC…)
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withOpacity(0.7),
-                        fontWeight: FontWeight.w500,
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    /// LABEL (Taille, Poids, IMC…)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.7),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 4),
+                    const SizedBox(height: 4),
 
-                  /// VALEUR + UNITE
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Expanded(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            value,
-                            style: TextStyle(
-                              fontSize: valueFontSize ?? 22,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                    /// VALEUR + UNITE
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Expanded(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              value,
+                              style: TextStyle(
+                                fontSize: valueFontSize ?? 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
 
-                      if (unit.isNotEmpty) ...[
-                        const SizedBox(width: 4),
+                        if (unit.isNotEmpty) ...[
+                          const SizedBox(width: 4),
                           Text(
                             unit,
                             style: TextStyle(
@@ -719,17 +945,16 @@ Widget build(BuildContext context) {
                               color: Colors.white.withOpacity(0.5),
                             ),
                           ),
+                        ],
                       ],
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

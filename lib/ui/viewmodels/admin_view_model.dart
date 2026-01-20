@@ -12,6 +12,8 @@ import '../../services/notification_service.dart';
 import '../../services/ImcService.dart';
 import '../../services/gamification_service.dart';
 
+import '../../services/data_backup_service.dart';
+
 class AdminViewModel extends ChangeNotifier {
   final AppDb db;
   final AppPrefs prefs;
@@ -20,6 +22,7 @@ class AdminViewModel extends ChangeNotifier {
   late final UserGoalDao goalDao;
   late final UserEquipmentDao equipmentDao;
   late final UserTrainingDayDao trainingDayDao;
+  late final DataBackupService backupService;
 
   // Cache pour les jours d'entraînement (userId -> liste de jours)
   final Map<int, List<int>> _trainingDaysCache = {};
@@ -32,6 +35,7 @@ class AdminViewModel extends ChangeNotifier {
     goalDao = UserGoalDao(db);
     equipmentDao = UserEquipmentDao(db);
     trainingDayDao = UserTrainingDayDao(db);
+    backupService = DataBackupService(db);
 
     // Initialisation unique du stream
     usersStream = userDao.watchAllOrdered();
@@ -120,6 +124,37 @@ class AdminViewModel extends ChangeNotifier {
       debugPrint("Erreur lors de la suppression de l'utilisateur: $e");
       rethrow;
     }
+  }
+
+  /// Exporte les données via le service de backup (Partage)
+  Future<void> exportData() async {
+    await backupService.exportData();
+  }
+
+  /// Sauvegarde les données localement dans les Téléchargements
+  Future<String> exportToDownloads() async {
+    return await backupService.saveToDownloads();
+  }
+
+  /// Importe les données (Attention : Ecrase tout)
+  /// Retourne true si succès
+  Future<bool> importData() async {
+    final success = await backupService.importData();
+    if (success) {
+      // Mise à jour de la session utilisateur après import
+      final users = await userDao.watchAllOrdered().first;
+      if (users.isNotEmpty) {
+        // On connecte le premier utilisateur trouvé
+        await prefs.setCurrentUserId(users.first.id);
+        await prefs.setOnboarded(true);
+      } else {
+        // Cas rare où l'import serait vide ou sans user
+        await prefs.clearCurrentUserId();
+        await prefs.setOnboarded(false);
+      }
+      notifyListeners();
+    }
+    return success;
   }
 
   /// -- Méthodes Utilitaires (Calculs) --
