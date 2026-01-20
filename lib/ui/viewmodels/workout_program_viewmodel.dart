@@ -185,6 +185,102 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Fetch details of original exercise to check its name
+      final originalExercise =
+          await (_db.select(_db.exercise)
+            ..where((e) => e.id.equals(originalExerciseId))).getSingle();
+
+      // Logique de substitution manuelle (Strict Master List)
+      List<String> targetNames = [];
+      final nameLower = originalExercise.name.toLowerCase();
+
+      if (nameLower.contains('back squat')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Gainage planche'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Presse à cuisse', 'Soulevé de terre'];
+        }
+      } else if (nameLower.contains('corde à sauter')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Pompe', 'Gainage planche'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Course tapis', 'Gainage planche'];
+        }
+      } else if (nameLower.contains('course tapis')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Pompe', 'Gainage planche'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Corde à sauter', 'Gainage planche'];
+        }
+      } else if (nameLower.contains('curl biceps')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Pompe'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Tirage vertical à la machine', 'Traction'];
+        }
+      } else if (nameLower.contains('développé couché')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Pompe'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Pompe', 'Presse à cuisse'];
+        }
+      } else if (nameLower.contains('gainage planche')) {
+        if (reason == SwapReason.pain) {
+          targetNames = ['Soulevé de terre', 'Pompe'];
+        }
+      } else if (nameLower.contains('pompe')) {
+        if (reason == SwapReason.pain) {
+          targetNames = ['Développé couché', 'Gainage planche'];
+        }
+      } else if (nameLower.contains('presse à cuisse')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Gainage planche'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Back squat', 'Soulevé de terre'];
+        }
+      } else if (nameLower.contains('rowing haltère') || nameLower.contains('rowing halter')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Pompe'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Tirage vertical à la machine', 'Traction'];
+        }
+      } else if (nameLower.contains('soulevé de terre')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Gainage planche'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Presse à cuisse', 'Gainage planche'];
+        }
+      } else if (nameLower.contains('tirage vertical') || nameLower.contains('lat pulldown')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Pompe'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Traction', 'Rowing haltère'];
+        }
+      } else if (nameLower.contains('traction')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Pompe'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Tirage vertical à la machine', 'Rowing haltère'];
+        }
+      }
+
+      // Si une substitution manuelle a été identifiée
+      if (targetNames.isNotEmpty) {
+        final results = await (_db.select(_db.exercise)
+          ..where((e) => e.name.isIn(targetNames)))
+            .get();
+
+        if (results.isNotEmpty) {
+          // Tri pour respecter l'ordre suggéré dans la liste targetNames
+          results.sort((a, b) => targetNames.indexOf(a.name).compareTo(targetNames.indexOf(b.name)));
+          _swapAlternatives = results;
+          _swapState = SwapState.success;
+          notifyListeners();
+          return;
+        }
+      }
+
+      // General logic if not the specific case or if specific case logic failed
       final primaryMuscleGroupQuery =
           _db.select(_db.exerciseMuscle, distinct: true)
             ..where((em) => em.exerciseId.equals(originalExerciseId))
@@ -226,11 +322,11 @@ class WorkoutProgramViewModel extends ChangeNotifier {
 
           break;
         case SwapReason.pain:
-          final originalExercise =
+          final originalExerciseData =
               await (_db.select(_db.exercise)
                 ..where((e) => e.id.equals(originalExerciseId))).getSingle();
           exercisesWithSameMuscle.where(
-            _db.exercise.type.isNotValue(originalExercise.type),
+            _db.exercise.type.isNotValue(originalExerciseData.type),
           );
           _swapAlternatives =
               (await exercisesWithSameMuscle.get())

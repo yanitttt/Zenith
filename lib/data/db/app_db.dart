@@ -464,6 +464,14 @@ class UserProgram extends Table {
   ],
 )
 class AppDb extends _$AppDb {
+  static AppDb? _instance;
+
+  // Singleton pattern to ensure only one connection exists
+  static AppDb get instance {
+    _instance ??= AppDb();
+    return _instance!;
+  }
+
   final bool _isTest;
 
   AppDb() : _isTest = false, super(_openConnection());
@@ -472,6 +480,13 @@ class AppDb extends _$AppDb {
 
   @override
   int get schemaVersion => 45;
+
+  Future<void> _runInitialSeed() async {
+    await transaction(() async {
+      await seedExerciseDetails();
+      await seedExerciseVideos();
+    });
+  }
 
   Future<void> seedExerciseDetails() async {
     // 1. Back Squat
@@ -574,65 +589,24 @@ class AppDb extends _$AppDb {
   }
 
 Future<void> seedExerciseVideos() async {
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/squat.mov'
-    WHERE name = 'Back Squat';
-  """);
+  final statements = [
+    "UPDATE exercise SET video_asset = 'assets/videos/squat.mov' WHERE name = 'Back Squat';",
+    "UPDATE exercise SET video_asset = 'assets/videos/corde_a_saute.mov' WHERE name = 'Corde à sauter';",
+    "UPDATE exercise SET video_asset = 'assets/videos/tapis_course.mov' WHERE name = 'Course tapis';",
+    "UPDATE exercise SET video_asset = 'assets/videos/curl_biceps.mov' WHERE name = 'Curl biceps';",
+    "UPDATE exercise SET video_asset = 'assets/videos/developpe_couche.mov' WHERE name = 'Développé couché';",
+    "UPDATE exercise SET video_asset = 'assets/videos/gainage.mov' WHERE name = 'Gainage planche';",
+    "UPDATE exercise SET video_asset = 'assets/videos/pompe.mov' WHERE name = 'Pompes';",
+    "UPDATE exercise SET video_asset = 'assets/videos/presse_a_cuisse.mov' WHERE name = 'Presse à cuisses';",
+    "UPDATE exercise SET video_asset = 'assets/videos/souleve_de_terre2.mp4' WHERE id = 3;",
+    "UPDATE exercise SET video_asset = 'assets/videos/rowling_haltere.mov' WHERE id = 5;",
+    "UPDATE exercise SET video_asset = 'assets/videos/traction.mov' WHERE name = 'Tractions';",
+    "UPDATE exercise SET video_asset = 'assets/videos/tirage_vertical2.mp4' WHERE id = 7;"
+  ];
 
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/corde_a_saute.mov'
-    WHERE name = 'Corde à sauter';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/tapis_course.mov'
-    WHERE name = 'Course tapis';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/curl_biceps.mov'
-    WHERE name = 'Curl biceps';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/developpe_couche.mov'
-    WHERE name = 'Développé couché';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/gainage.mov'
-    WHERE name = 'Gainage planche';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/pompe.mov'
-    WHERE name = 'Pompes';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/presse_a_cuisse.mov'
-    WHERE name = 'Presse à cuisses';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/souleve_de_terre2.mp4'
-    WHERE id = 3;
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/rowling_haltere.mov'
-    WHERE id = 5;
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/traction.mov'
-    WHERE name = 'Tractions';
-  """);
-
-  await customStatement("""
-    UPDATE exercise SET video_asset = 'assets/videos/tirage_vertical2.mp4'
-    WHERE id = 7;
-  """);
+  for (final sql in statements) {
+    await customStatement(sql);
+  }
 
   debugPrint('--- Vidéos des exercices correctement liées ---');
 }
@@ -644,7 +618,7 @@ Future<void> seedExerciseVideos() async {
 
       if (_isTest) return;
 
-      await _ensureAppUserSingletonColumnAndIndex(); // <<--- AJOUT CLEF
+      await _ensureAppUserSingletonColumnAndIndex(); 
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing(
           'app_user',
@@ -697,7 +671,6 @@ Future<void> seedExerciseVideos() async {
 
       await _ensureUserTrainingDayTable();
 
-      // Fix: Ensure core user columns exist even if migration was skipped (e.g. from asset DB)
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing(
           'app_user',
@@ -711,7 +684,6 @@ Future<void> seedExerciseVideos() async {
         );
         await _addColumnIfMissing('app_user', 'title', 'TEXT');
 
-        // Ensure gamification tables exist too, as they are coupled with user logic now
         await _ensureGamificationTables();
       }
 
@@ -723,8 +695,9 @@ Future<void> seedExerciseVideos() async {
         );
       }
       await customStatement('PRAGMA foreign_keys = ON;');
-      await seedExerciseDetails();
-      await seedExerciseVideos();
+      
+      // Run seeding logic within transaction to avoid locking multiple times
+      await _runInitialSeed();
     },
 
     onCreate: (m) async {
@@ -798,7 +771,6 @@ Future<void> seedExerciseVideos() async {
       await _ensureExerciseRelationTable();
       await _ensureUserTrainingDayTable();
 
-      // MIGRATION V41
       await _ensureGamificationTables();
       if (await _tableExists('app_user')) {
         await _addColumnIfMissing(
@@ -819,7 +791,6 @@ Future<void> seedExerciseVideos() async {
         await _populateBadgesV42();
       }
 
-      // MIGRATION V44 : Réparation des données corrompues (NULL dans colonnes non-nullables)
       if (to >= 44) {
         debugPrint('[MIGRATION V44] Réparation des valeurs NULL...');
         if (await _tableExists('app_user')) {
