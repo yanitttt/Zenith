@@ -457,7 +457,6 @@ class UserProgram extends Table {
     WorkoutProgram,
     ProgramDay,
     ProgramDayExercise,
-    ProgramDayExercise,
     UserProgram,
     GamificationBadge,
     UserBadge,
@@ -466,7 +465,6 @@ class UserProgram extends Table {
 class AppDb extends _$AppDb {
   static AppDb? _instance;
 
-  // Singleton pattern to ensure only one connection exists
   static AppDb get instance {
     _instance ??= AppDb();
     return _instance!;
@@ -485,11 +483,53 @@ class AppDb extends _$AppDb {
     await transaction(() async {
       await seedExerciseDetails();
       await seedExerciseVideos();
+      await seedNewBodyweightExercises();
     });
   }
 
+  Future<void> seedNewBodyweightExercises() async {
+    final countRow = await customSelect('SELECT COUNT(*) as c FROM exercise WHERE id > 12').getSingle();
+    if (countRow.read<int>('c') > 0) return;
+
+    await customStatement('''
+      INSERT INTO exercise (id, name, type, difficulty, cardio, description, etapes, video_asset) VALUES
+      (13, 'Squat au poids du corps', 'poly', 1, 0.2, 'Un exercice fondamental pour le bas du corps ciblant les quadriceps et fessiers.', 'Gardez le dos droit, descendez les hanches et remontez.', 'assets/videos/squat_bw.mov'),
+      (14, 'Fentes', 'poly', 2, 0.1, 'Excellent pour l''équilibre et le renforcement unilatéral des jambes.', 'Faites un grand pas en avant et descendez le genou arrière vers le sol.', 'assets/videos/fentes.mov'),
+      (15, 'Jumping Jacks', 'poly', 1, 0.8, 'Exercice cardio efficace pour augmenter la fréquence cardiaque.', 'Sautez en écartant les bras et les jambes simultanément.', 'assets/videos/jumping_jacks.mov'),
+      (16, 'Superman', 'iso', 2, 0.0, 'Cible les muscles lombaires pour une meilleure posture.', 'Allongé sur le ventre, levez simultanément bras et jambes.', 'assets/videos/superman.mov'),
+      (17, 'Mountain Climbers', 'poly', 2, 0.6, 'Combine renforcement des abdos et cardio.', 'En position de planche, ramenez alternativement les genoux vers la poitrine.', 'assets/videos/mountain_climbers.mov'),
+      (18, 'Dips sur banc', 'poly', 2, 0.0, 'Excellent exercice pour les triceps utilisant un support simple.', 'En appui sur un banc, descendez le bassin en pliant les coudes.', 'assets/videos/dips_banc.mov');
+    ''');
+
+    await customStatement('''
+      INSERT INTO exercise_muscle (exercise_id, muscle_id, weight)
+      SELECT 13, id, 1.0 FROM muscle WHERE name LIKE '%Quadriceps%' OR name LIKE '%Fessier%';
+    ''');
+    await customStatement('''
+      INSERT INTO exercise_muscle (exercise_id, muscle_id, weight)
+      SELECT 14, id, 1.0 FROM muscle WHERE name LIKE '%Quadriceps%' OR name LIKE '%Fessier%';
+    ''');
+    await customStatement('''
+      INSERT INTO exercise_muscle (exercise_id, muscle_id, weight)
+      SELECT 15, id, 0.5 FROM muscle WHERE name LIKE '%Quadriceps%';
+    ''');
+    await customStatement('''
+      INSERT INTO exercise_muscle (exercise_id, muscle_id, weight)
+      SELECT 16, id, 1.0 FROM muscle WHERE name LIKE '%Dos%' OR name LIKE '%Lombaire%';
+    ''');
+    await customStatement('''
+      INSERT INTO exercise_muscle (exercise_id, muscle_id, weight)
+      SELECT 17, id, 1.0 FROM muscle WHERE name LIKE '%Abdo%';
+    ''');
+    await customStatement('''
+      INSERT INTO exercise_muscle (exercise_id, muscle_id, weight)
+      SELECT 18, id, 1.0 FROM muscle WHERE name LIKE '%Triceps%';
+    ''');
+
+    debugPrint('--- Nouveaux exercices au poids du corps ajoutés ---');
+  }
+
   Future<void> seedExerciseDetails() async {
-    // 1. Back Squat
     await customStatement('''
         UPDATE exercise 
         SET description = 'L''exercice roi pour le bas du corps. Il développe une force globale impressionnante et sollicite principalement les quadriceps, les fessiers et le bas du dos.',
@@ -497,7 +537,6 @@ class AppDb extends _$AppDb {
         WHERE id = 1;
       ''');
 
-    // 2. Développé couché
     await customStatement('''
         UPDATE exercise 
         SET description = 'Le mouvement de référence pour la force du haut du corps. Il cible massivement les pectoraux, avec une aide des triceps et des épaules.',
@@ -505,7 +544,6 @@ class AppDb extends _$AppDb {
         WHERE id = 2;
       ''');
 
-    // 3. Soulevé de terre (Deadlift)
     await customStatement('''
         UPDATE exercise 
         SET description = 'Un test de force pure qui travaille toute la chaîne postérieure : ischios, fessiers, lombaires et trapèzes. Idéal pour la posture.',
@@ -513,7 +551,6 @@ class AppDb extends _$AppDb {
         WHERE id = 3;
       ''');
 
-    // 4. Pompes
     await customStatement('''
         UPDATE exercise 
         SET description = 'Un classique au poids du corps pour renforcer le torse, les bras et le gainage. Aucun matériel nécessaire.',
@@ -521,7 +558,6 @@ class AppDb extends _$AppDb {
         WHERE id = 4;
       ''');
 
-    // 5. Rowing haltère
     await customStatement('''
         UPDATE exercise 
         SET description = 'Exercice unilatéral excellent pour l''épaisseur du dos et pour corriger les déséquilibres musculaires.',
@@ -529,7 +565,6 @@ class AppDb extends _$AppDb {
         WHERE id = 5;
       ''');
 
-    // 6. Tractions
     await customStatement('''
         UPDATE exercise 
         SET description = 'Le meilleur constructeur de dos au poids du corps. Il élargit le dos (forme en V) et renforce les biceps.',
@@ -537,7 +572,6 @@ class AppDb extends _$AppDb {
         WHERE id = 6;
       ''');
 
-    // 7. Tirage vertical (Lat Pulldown)
     await customStatement('''
         UPDATE exercise 
         SET description = 'Alternative aux tractions sur machine. Permet de cibler le grand dorsal avec une charge ajustable.',
@@ -545,7 +579,6 @@ class AppDb extends _$AppDb {
         WHERE id = 7;
       ''');
 
-    // 8. Presse à cuisses
     await customStatement('''
         UPDATE exercise 
         SET description = 'Permet de charger lourd sur les jambes sans la contrainte d''équilibre du squat. Cible quadriceps et fessiers.',
@@ -553,7 +586,6 @@ class AppDb extends _$AppDb {
         WHERE id = 8;
       ''');
 
-    // 9. Corde à sauter
     await customStatement('''
         UPDATE exercise 
         SET description = 'Exercice cardio par excellence. Brûle énormément de calories, améliore la coordination et l''endurance.',
@@ -561,7 +593,6 @@ class AppDb extends _$AppDb {
         WHERE id = 9;
       ''');
 
-    // 10. Course tapis
     await customStatement('''
         UPDATE exercise 
         SET description = 'Cardio fondamental pour l''endurance cardiovasculaire et l''échauffement.',
@@ -569,7 +600,6 @@ class AppDb extends _$AppDb {
         WHERE id = 10;
       ''');
 
-    // 11. Gainage planche
     await customStatement('''
         UPDATE exercise 
         SET description = 'Exercice isométrique pour renforcer la sangle abdominale profonde (transverse) et protéger le dos.',
@@ -577,7 +607,6 @@ class AppDb extends _$AppDb {
         WHERE id = 11;
       ''');
 
-    // 12. Curl biceps
     await customStatement('''
         UPDATE exercise 
         SET description = 'L''exercice d''isolation le plus populaire pour développer le volume des bras (biceps).',
@@ -588,28 +617,28 @@ class AppDb extends _$AppDb {
     debugPrint('--- Mises à jour des descriptions terminées ---');
   }
 
-Future<void> seedExerciseVideos() async {
-  final statements = [
-    "UPDATE exercise SET video_asset = 'assets/videos/squat.mov' WHERE name = 'Back Squat';",
-    "UPDATE exercise SET video_asset = 'assets/videos/corde_a_saute.mov' WHERE name = 'Corde à sauter';",
-    "UPDATE exercise SET video_asset = 'assets/videos/tapis_course.mov' WHERE name = 'Course tapis';",
-    "UPDATE exercise SET video_asset = 'assets/videos/curl_biceps.mov' WHERE name = 'Curl biceps';",
-    "UPDATE exercise SET video_asset = 'assets/videos/developpe_couche.mov' WHERE name = 'Développé couché';",
-    "UPDATE exercise SET video_asset = 'assets/videos/gainage.mov' WHERE name = 'Gainage planche';",
-    "UPDATE exercise SET video_asset = 'assets/videos/pompe.mov' WHERE name = 'Pompes';",
-    "UPDATE exercise SET video_asset = 'assets/videos/presse_a_cuisse.mov' WHERE name = 'Presse à cuisses';",
-    "UPDATE exercise SET video_asset = 'assets/videos/souleve_de_terre2.mp4' WHERE id = 3;",
-    "UPDATE exercise SET video_asset = 'assets/videos/rowling_haltere.mov' WHERE id = 5;",
-    "UPDATE exercise SET video_asset = 'assets/videos/traction.mov' WHERE name = 'Tractions';",
-    "UPDATE exercise SET video_asset = 'assets/videos/tirage_vertical2.mp4' WHERE id = 7;"
-  ];
+  Future<void> seedExerciseVideos() async {
+    final statements = [
+      "UPDATE exercise SET video_asset = 'assets/videos/squat.mov' WHERE name = 'Back Squat';",
+      "UPDATE exercise SET video_asset = 'assets/videos/corde_a_saute.mov' WHERE name = 'Corde à sauter';",
+      "UPDATE exercise SET video_asset = 'assets/videos/tapis_course.mov' WHERE name = 'Course tapis';",
+      "UPDATE exercise SET video_asset = 'assets/videos/curl_biceps.mov' WHERE name = 'Curl biceps';",
+      "UPDATE exercise SET video_asset = 'assets/videos/developpe_couche.mov' WHERE name = 'Développé couché';",
+      "UPDATE exercise SET video_asset = 'assets/videos/gainage.mov' WHERE name = 'Gainage planche';",
+      "UPDATE exercise SET video_asset = 'assets/videos/pompe.mov' WHERE name = 'Pompes';",
+      "UPDATE exercise SET video_asset = 'assets/videos/presse_a_cuisse.mov' WHERE name = 'Presse à cuisses';",
+      "UPDATE exercise SET video_asset = 'assets/videos/souleve_de_terre2.mp4' WHERE id = 3;",
+      "UPDATE exercise SET video_asset = 'assets/videos/rowling_haltere.mov' WHERE id = 5;",
+      "UPDATE exercise SET video_asset = 'assets/videos/traction.mov' WHERE name = 'Tractions';",
+      "UPDATE exercise SET video_asset = 'assets/videos/tirage_vertical2.mp4' WHERE id = 7;"
+    ];
 
-  for (final sql in statements) {
-    await customStatement(sql);
+    for (final sql in statements) {
+      await customStatement(sql);
+    }
+
+    debugPrint('--- Vidéos des exercices correctement liées ---');
   }
-
-  debugPrint('--- Vidéos des exercices correctement liées ---');
-}
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -696,7 +725,6 @@ Future<void> seedExerciseVideos() async {
       }
       await customStatement('PRAGMA foreign_keys = ON;');
       
-      // Run seeding logic within transaction to avoid locking multiple times
       await _runInitialSeed();
     },
 
