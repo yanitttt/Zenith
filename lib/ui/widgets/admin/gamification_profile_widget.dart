@@ -86,7 +86,7 @@ class GamificationProfileWidget extends StatelessWidget {
                         textBaseline: TextBaseline.alphabetic,
                         children: [
                           Text(
-                            "Titre",
+                            "Rang",
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.white.withOpacity(0.7),
