@@ -95,3 +95,5 @@ L'application est structurée autour de plusieurs modules clés (visibles dans `
 *   `lib/ui/pages` : Écrans de l'application.
 *   `lib/ui/widgets` : Composants réutilisables.
 *   `lib/services` : Logique métier (Notifications, Background, etc.).
+
+>  **Détails techniques :** Pour approfondir l'architecture du projet, consultez [ARCHITECTURE.md](ARCHITECTURE.md).
