@@ -17,7 +17,7 @@ void main() {
     late ReminderService reminderService;
 
     setUp(() async {
-      /// Mock SharedPreferences
+      // Mock SharedPreferences
       SharedPreferences.setMockInitialValues({});
       final sp = await SharedPreferences.getInstance();
       prefs = AppPrefs(sp);
@@ -25,26 +25,29 @@ void main() {
       await prefs.setReminderEnabled(true);
       await prefs.setReminderDays(3);
 
-      /// DB en mémoire
+      // In-memory DB
       db = AppDb.forTesting(NativeDatabase.memory());
 
-      /// Créer un utilisateur
-      final userId = await db.into(db.appUser).insert(
-        AppUserCompanion.insert(
-          prenom: const drift.Value('Test'),
-        ),
-      );
+      // Create dummy user
+      final userId = await db
+          .into(db.appUser)
+          .insert(AppUserCompanion.insert(prenom: const drift.Value('Test')));
 
-      /// Simuler une séance il y a 4 jours
+      // Simulate session 4 days ago
       final now = DateTime.now();
-      await db.into(db.session).insert(
-        SessionCompanion.insert(
-          userId: userId,
-          dateTs:
-              now.subtract(const Duration(days: 4)).millisecondsSinceEpoch ~/ 1000,
-          durationMin: const drift.Value(60), // 60 minutes
-        ),
-      );
+      await db
+          .into(db.session)
+          .insert(
+            SessionCompanion.insert(
+              userId: userId,
+              dateTs:
+                  now
+                      .subtract(const Duration(days: 4))
+                      .millisecondsSinceEpoch ~/
+                  1000,
+              durationMin: const drift.Value(60), // 60 minutes
+            ),
+          );
 
       final inactivityService = InactivityService(db);
 
@@ -58,14 +61,14 @@ void main() {
       await db.close();
     });
 
-    test('Affiche un message si inactif depuis X jours', () async {
+    test('Shows message if inactive for X days', () async {
       final message = await reminderService.getReminderMessage();
 
       expect(message, isNotNull);
       expect(message, contains('4'));
     });
 
-    test('Ne retourne rien si rappel désactivé', () async {
+    test('Returns nothing if reminder disabled', () async {
       await prefs.setReminderEnabled(false);
 
       final message = await reminderService.getReminderMessage();
@@ -73,7 +76,7 @@ void main() {
       expect(message, isNull);
     });
 
-    test('Ne retourne rien si pas encore le seuil', () async {
+    test('Returns nothing if threshold not reached', () async {
       await prefs.setReminderDays(7);
 
       final message = await reminderService.getReminderMessage();

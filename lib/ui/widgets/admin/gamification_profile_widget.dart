@@ -49,7 +49,7 @@ class GamificationProfileWidget extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icone Cercle Niveau (Gauche)
+                // Left: Level Circle
                 Container(
                   width: 36,
                   height: 36,
@@ -72,14 +72,14 @@ class GamificationProfileWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
 
-                // Contenu (Centre / Droite)
+                // Center: Stats & XP
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Titre principal + XP
+                      // Rank + XP
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -104,7 +104,7 @@ class GamificationProfileWidget extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      // Valeur: Niveau - Titre
+                      // Level Title
                       Text(
                         userTitle,
                         style: const TextStyle(
@@ -116,7 +116,7 @@ class GamificationProfileWidget extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
-                      // Barre d'XP
+                      // XP Bar
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
@@ -127,7 +127,7 @@ class GamificationProfileWidget extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      // Indication de clic
+                      // Click Hint
                       const Text(
                         "Cliquez pour voir les badges obtenus",
                         style: TextStyle(
@@ -163,7 +163,7 @@ class GamificationProfileWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row: Level Circle + Text Info
+          // Level Info Row
           Row(
             children: [
               // Level Circle
@@ -231,8 +231,7 @@ class GamificationProfileWidget extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.white10,
-              color:
-                  AppTheme.success, // Using success color (green) for progress
+              color: AppTheme.success,
               minHeight: 8,
             ),
           ),
@@ -253,7 +252,7 @@ class GamificationProfileWidget extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Badges Section
+          // Badges
           if (badges.isNotEmpty) ...[
             const Text(
               "Badges Réussis",

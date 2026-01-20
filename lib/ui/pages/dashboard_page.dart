@@ -31,9 +31,6 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Responsive instancié ici, utilisé plus bas
-    // Note: On pourrait l'instancier dans le builder si on voulait être puriste sur contexte,
-    // mais ici c'est safe car on est dans build.
     final responsive = Responsive(context);
 
     final inactivityService = InactivityService(db);
@@ -44,7 +41,6 @@ class DashboardPage extends StatelessWidget {
               prefs: prefs!,
             )
             : null;
-    // Initialisation du ViewModel via Provider
     return ChangeNotifierProvider<DashboardViewModel>(
       create: (_) => DashboardViewModel(db),
       child: Scaffold(
@@ -76,7 +72,6 @@ class DashboardPage extends StatelessWidget {
                       return Center(child: Text("Erreur: ${snapshot.error}"));
                     }
 
-                    // Valeurs par défaut si pas de data ou chargement
                     final data = snapshot.data;
 
                     final streakWeeks = data?.streakWeeks ?? 0;
@@ -91,7 +86,6 @@ class DashboardPage extends StatelessWidget {
 
                     final hasProgram = data?.hasProgram ?? false;
 
-                    // Contenu principal (Squelette ou Stats)
                     Widget mainContent;
 
                     if (!hasProgram) {
@@ -106,7 +100,6 @@ class DashboardPage extends StatelessWidget {
                       mainContent = Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          /// RAPPEL INACTIVITÉ
                           if (reminderService != null)
                             FutureBuilder<String?>(
                               future: reminderService.getReminderMessage(),
@@ -134,7 +127,6 @@ class DashboardPage extends StatelessWidget {
 
                           const SizedBox(height: 16),
 
-                          /// TOP ROW - KEY METRICS (3 Cards)
                           SizedBox(
                                 height: responsive.rh(100),
                                 child: Row(
@@ -177,7 +169,6 @@ class DashboardPage extends StatelessWidget {
 
                           const SizedBox(height: 16),
 
-                          /// MIDDLE - WEEKLY CHART (Expanded)
                           Expanded(
                                 flex: 3,
                                 child: _buildWeeklyChartContainer(
@@ -191,7 +182,6 @@ class DashboardPage extends StatelessWidget {
 
                           const SizedBox(height: 16),
 
-                          /// BOTTOM - PIE CHART & SUMMARY (Expanded)
                           Expanded(
                                 flex: 2,
                                 child: Row(
@@ -228,7 +218,6 @@ class DashboardPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          /// HEADER COMPACT (Toujours visible)
                           _buildHeader(vm.userName, vm.todayDate, responsive),
 
                           const SizedBox(height: 16),
@@ -247,8 +236,6 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  /// Extrait: Header
-  /// Extrait: Header
   Widget _buildHeader(
     String userName,
     String todayDate,
@@ -296,7 +283,6 @@ class DashboardPage extends StatelessWidget {
     ).animate().fade(duration: 500.ms).slideY(begin: -0.2, end: 0);
   }
 
-  /// Extrait: Container Chart Semaine
   Widget _buildWeeklyChartContainer(
     Map<String, int> weeklyAttendance,
     Responsive responsive,
@@ -346,13 +332,10 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  /// Extrait: Container Pie Chart
   Widget _buildPieChartContainer(
     List<MuscleStat> muscleStats,
     Responsive responsive,
   ) {
-    // Note: Typage strict maintenant utilisé
-
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surface,
@@ -376,7 +359,6 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  /// Extrait: Focus Card
   Widget _buildFocusCard(List<MuscleStat> muscleStats, Responsive responsive) {
     return Container(
       decoration: BoxDecoration(
@@ -416,7 +398,6 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  /// Extrait: Carte Stat Compacte
   Widget _buildCompactStatCard(
     String title,
     String value,
@@ -469,7 +450,7 @@ class _DashboardHeader extends StatelessWidget {
     final perfService = PerfService();
     final report = perfService.getStats();
 
-    // Encoder JSON avec indentation
+    // Formatage JSON pour lisibilité
     final jsonString = const JsonEncoder.withIndent('  ').convert(report);
 
     showDialog(

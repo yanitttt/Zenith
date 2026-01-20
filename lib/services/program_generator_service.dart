@@ -95,7 +95,7 @@ class ProgramGeneratorService {
 
     DateTime currentDate = startDate;
 
-    // Si on veut commencer aujourd'hui et qu'aujourd'hui est un jour d'entrainement
+    // Start today only if it matches a training day
     if (startToday && sortedDays.contains(currentDate.weekday)) {
       scheduledDates.add(currentDate);
     }
@@ -137,15 +137,9 @@ class ProgramGeneratorService {
           userId,
         );
         if (userTrainingDays.isEmpty) {
-          debugPrint(
-            '[PROGRAM_GEN] Aucun jour d\'entraînement défini, utilisation de 3 jours par défaut',
-          );
-          targetDaysPerWeek = 3;
+          targetDaysPerWeek = 3; // Default
         } else {
           targetDaysPerWeek = userTrainingDays.length;
-          debugPrint(
-            '[PROGRAM_GEN] $targetDaysPerWeek jours d\'entraînement récupérés depuis UserTrainingDay',
-          );
         }
       }
 
@@ -241,9 +235,7 @@ class ProgramGeneratorService {
           );
 
       if (exercises.length < 10) {
-        print(
-          '[PROGRAM] Seulement ${exercises.length} exercices pour $dayName, complément avec exercices généraux',
-        );
+        // Not enough exercises: backfill with general recommendations
         final generalExercises = await recommendationService
             .getRecommendedExercises(
               userId: userId,
@@ -326,7 +318,7 @@ class ProgramGeneratorService {
           {'name': 'Challenge Full Body', 'muscleGroup': MuscleGroup.full},
         ];
       default:
-        // Sécurité si > 7 jours (on prend le max 7)
+        // Capped at 7 days
         return [
           {'name': 'Haut du corps 1', 'muscleGroup': MuscleGroup.upper},
           {'name': 'Bas du corps 1', 'muscleGroup': MuscleGroup.lower},
@@ -408,8 +400,8 @@ class ProgramGeneratorService {
               setsSuggestion: Value(suggestions['sets']),
               repsSuggestion: Value(suggestions['reps']),
               restSuggestionSec: Value(suggestions['rest']),
-              previousSetsSuggestion: Value(suggestions['previousSets']), // New
-              previousRepsSuggestion: Value(suggestions['previousReps']), // New
+              previousSetsSuggestion: Value(suggestions['previousSets']),
+              previousRepsSuggestion: Value(suggestions['previousReps']),
               notes: Value(suggestions['notes']),
               scheduledDate: Value(scheduledDate),
             ),
@@ -480,7 +472,7 @@ class ProgramGeneratorService {
     String? previousSets;
     String? previousReps;
 
-    // Capture initial values for comparison
+    // Track initial values to detect changes
     final initialSets = sets;
     final initialReps = reps;
 
@@ -662,7 +654,7 @@ class ProgramGeneratorService {
     required int programId,
   }) async {
     debugPrint(
-      '[PROGRAM_REGEN] Début régénération des jours futurs pour programme $programId',
+      '[PROGRAM_REGEN] Regenerating future days for program $programId',
     );
 
     final allDays =
@@ -672,7 +664,6 @@ class ProgramGeneratorService {
             .get();
 
     if (allDays.isEmpty) {
-      debugPrint('[PROGRAM_REGEN] Aucun jour trouvé pour ce programme');
       return;
     }
 
@@ -690,9 +681,6 @@ class ProgramGeneratorService {
 
       if (session != null) {
         completedDayIds.add(day.id);
-        debugPrint(
-          '[PROGRAM_REGEN] Jour ${day.dayOrder} (${day.name}) est complété',
-        );
       }
     }
 
@@ -706,7 +694,9 @@ class ProgramGeneratorService {
       return;
     }
 
-    debugPrint('[PROGRAM_REGEN] ${futureDays.length} jours à régénérer');
+    debugPrint(
+      '[PROGRAM_REGEN] Pending regeneration: ${futureDays.length} days',
+    );
 
     final program =
         await (db.select(db.workoutProgram)
@@ -735,8 +725,6 @@ class ProgramGeneratorService {
       }
     }
 
-    debugPrint('[PROGRAM_REGEN] Dernière date complétée: $lastCompletedDate');
-
     final scheduledDates = await _calculateTrainingDates(
       userId: userId,
       numberOfDays: futureDays.length,
@@ -746,10 +734,6 @@ class ProgramGeneratorService {
     for (int i = 0; i < futureDays.length; i++) {
       final day = futureDays[i];
       final scheduledDate = scheduledDates[i];
-
-      debugPrint(
-        '[PROGRAM_REGEN] Régénération jour ${day.dayOrder} (${day.name})',
-      );
 
       final existingExercises =
           await (db.select(db.programDayExercise)
@@ -780,7 +764,6 @@ class ProgramGeneratorService {
           );
 
       if (exercises.length < 10) {
-        debugPrint('[PROGRAM_REGEN] Complément avec exercices généraux');
         final generalExercises = await recommendationService
             .getRecommendedExercises(
               userId: userId,
@@ -796,7 +779,6 @@ class ProgramGeneratorService {
       }
 
       if (exercises.isEmpty) {
-        debugPrint('[PROGRAM_REGEN] ERREUR: Aucun exercice disponible');
         continue;
       }
 
@@ -875,12 +857,7 @@ class ProgramGeneratorService {
               ),
             );
       }
-
-      debugPrint(
-        '[PROGRAM_REGEN] Jour ${day.dayOrder} régénéré avec ${dayExercises.length} exercices',
-      );
     }
-
-    debugPrint('[PROGRAM_REGEN] Régénération terminée avec succès');
+    debugPrint('[PROGRAM_REGEN] Regeneration complete');
   }
 }

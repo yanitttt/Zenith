@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:drift/drift.dart';
 import '../data/db/app_db.dart';
-import 'package:flutter/foundation.dart';
+
 import '../core/perf/perf_service.dart';
 
 class RecommendedExercise {
@@ -76,7 +76,7 @@ class RecommendationService {
     'abs': MuscleGroup.upper,
     'core': MuscleGroup.upper,
 
-    // Bas du corps
+    // Lower Body
     'quadriceps': MuscleGroup.lower,
     'quads': MuscleGroup.lower,
     'ischio-jambiers': MuscleGroup.lower,
@@ -181,7 +181,6 @@ class RecommendationService {
         exercises: exercises,
       );
     } catch (e) {
-      print('[RECOMMENDATION] Erreur: $e');
       rethrow;
     }
   }
@@ -297,7 +296,7 @@ class RecommendationService {
         exercises: exercises,
       );
     } catch (e) {
-      print('[RECOMMENDATION] Erreur filtrage groupe musculaire: $e');
+      // print('[RECOMMENDATION] Erreur filtrage groupe musculaire: $e');
       rethrow;
     }
   }
@@ -373,10 +372,8 @@ class RecommendationService {
       () async {
         int dbCalls = 0;
 
-        // 1. EXTRACTION DES IDs
+        // Batch Fetch
         final exerciseIds = exercises.map((e) => e.id).toList();
-
-        // 2. BATCH FETCHING (2 requêtes seulement)
         final perfDataMap = await _batchFetchPerformanceData(
           userId,
           exerciseIds,
@@ -389,13 +386,10 @@ class RecommendationService {
         );
         dbCalls++;
 
-        // 3. IN-MEMORY CALCULATION (Boucle CPU rapide)
+        // Pure Calculation
         for (var exercise in exercises) {
-          // Récupération instantanée depuis la Map
           final perfRows = perfDataMap[exercise.id] ?? [];
           final fdRows = feedbackDataMap[exercise.id] ?? [];
-
-          // Calcul pur (pas d'await SQL ici)
           final performanceAdj = _calculatePerformanceAdjustmentPure(
             exerciseId: exercise.id,
             rows: perfRows,
@@ -411,7 +405,7 @@ class RecommendationService {
           PerfService().logAlgoMetric({
             'name': 'adaptive_scan_complexity',
             'n_items': exercises.length,
-            'real_db_calls': dbCalls, // PREUVE: Sera 2 au lieu de 2*N
+            'real_db_calls': dbCalls,
             'optimization': 'BATCH_PROCESSING',
             'timestamp': DateTime.now().toIso8601String(),
           });
@@ -444,9 +438,7 @@ class RecommendationService {
       ORDER BY s.date_ts DESC
     ''';
 
-    // Note: Une vraie implémentation robuste utiliserait proper variable binding pour le IN clause
-    // ou plusieurs requêtes si la liste est trop longue (SQLite limit).
-    // Pour ce projet académique, injection directe des IDs est acceptable (si liste < 1000).
+    // Note: Direct ID injection used for simplicity. In production, use bound variables or batching.
 
     final results =
         await db
@@ -468,7 +460,7 @@ class RecommendationService {
       if (!grouped.containsKey(exId)) {
         grouped[exId] = [];
       }
-      // On garde max 5 entrées par exercice (business logic de l'original)
+      // Business Logic: keep max 5 entries
       if (grouped[exId]!.length < 5) {
         grouped[exId]!.add(row);
       }
@@ -581,59 +573,30 @@ class RecommendationService {
 
     if (avgPerformanceRatio < 0.5) {
       adjustment = -0.8;
-      debugPrint(
-        '[PERF_ADJ] Exercice $exerciseId: Performance très faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.8',
-      );
     } else if (avgPerformanceRatio < 0.7) {
       adjustment = -0.5;
-      debugPrint(
-        '[PERF_ADJ] Exercice $exerciseId: Performance faible (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.5',
-      );
     } else if (avgPerformanceRatio < 0.9) {
       adjustment = -0.2;
-      debugPrint(
-        '[PERF_ADJ] Exercice $exerciseId: Performance acceptable (${(avgPerformanceRatio * 100).toStringAsFixed(0)}% des suggestions) → -0.2',
-      );
     } else if (avgPerformanceRatio >= 1.0) {
       if (avgRpe > 8.5) {
         adjustment = -0.3;
-        debugPrint(
-          '[PERF_ADJ] Exercice $exerciseId: Complète mais RPE élevé (${avgRpe.toStringAsFixed(1)}) → -0.3',
-        );
       } else if (avgRpe < 5.5) {
         adjustment = 0.5;
-        debugPrint(
-          '[PERF_ADJ] Exercice $exerciseId: Trop facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.5',
-        );
       } else if (avgRpe < 6.5) {
         adjustment = 0.2;
-        debugPrint(
-          '[PERF_ADJ] Exercice $exerciseId: Facile (RPE ${avgRpe.toStringAsFixed(1)}) → +0.2',
-        );
       } else {
         if (loadTrend > 0.1) {
           adjustment = 0.1;
-          debugPrint(
-            '[PERF_ADJ] Exercice $exerciseId: Zone optimale avec progression → +0.1',
-          );
-        } else {
-          debugPrint('[PERF_ADJ] Exercice $exerciseId: Zone optimale → neutre');
         }
       }
     }
 
     if (loadTrend > 0.2 && avgRpe < 8.0 && avgPerformanceRatio >= 0.9) {
       adjustment += 0.2;
-      debugPrint(
-        '[PERF_ADJ] Exercice $exerciseId: Bonus progression (+${(loadTrend * 100).toStringAsFixed(0)}%) → +0.2',
-      );
     }
 
     if (loadTrend < -0.1) {
       adjustment -= 0.2;
-      debugPrint(
-        '[PERF_ADJ] Exercice $exerciseId: Régression de charge (${(loadTrend * 100).toStringAsFixed(0)}%) → -0.2',
-      );
     }
 
     return adjustment.clamp(-1.0, 1.0);

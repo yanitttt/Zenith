@@ -4,11 +4,11 @@ import '../../data/db/app_db.dart';
 import '../../data/db/daos/user_training_day_dao.dart';
 import '../../services/program_generator_service.dart';
 import '../../services/session_tracking_service.dart';
-import '../../services/home_widget_service.dart'; 
+import '../../services/home_widget_service.dart';
 import '../../services/gamification_service.dart';
 import 'package:drift/drift.dart' as drift;
 
-// Enums pour la fonctionnalité Smart Swap
+// Smart Swap Enums
 enum SwapReason { noEquipment, pain }
 
 enum SwapState { initial, loading, success, error }
@@ -16,13 +16,13 @@ enum SwapState { initial, loading, success, error }
 class WorkoutProgramViewModel extends ChangeNotifier {
   final AppDb _db;
   final AppPrefs _prefs;
-  final HomeWidgetService _homeWidgetService; 
+  final HomeWidgetService _homeWidgetService;
 
   late final ProgramGeneratorService _programService;
   late final SessionTrackingService _sessionService;
   late final UserTrainingDayDao _trainingDayDao;
 
-  // État
+  // State
   WorkoutProgramData? _currentProgram;
   List<ProgramDaySession> _programDays = [];
   Map<int, SessionData> _completedSessions = {};
@@ -31,7 +31,7 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   bool _generating = false;
   String? _error;
 
-  // État pour Smart Swap
+  // Smart Swap State
   SwapState _swapState = SwapState.initial;
   List<ExerciseData> _swapAlternatives = [];
   String? _swapError;
@@ -49,7 +49,6 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     _trainingDayDao = UserTrainingDayDao(_db);
   }
 
-  // Getters
   WorkoutProgramData? get currentProgram => _currentProgram;
   List<ProgramDaySession> get programDays => _programDays;
   Map<int, SessionData> get completedSessions => _completedSessions;
@@ -60,7 +59,6 @@ class WorkoutProgramViewModel extends ChangeNotifier {
   int? get currentUserId => _prefs.currentUserId;
   AppDb get db => _db;
 
-  // Getters pour Smart Swap
   SwapState get swapState => _swapState;
   List<ExerciseData> get swapAlternatives => _swapAlternatives;
   String? get swapError => _swapError;
@@ -177,13 +175,14 @@ class WorkoutProgramViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final originalExercise = await (_db.select(_db.exercise)
+      final originalExercise =
+          await (_db.select(_db.exercise)
             ..where((e) => e.id.equals(originalExerciseId))).getSingle();
 
       List<String> targetNames = [];
       final nameLower = originalExercise.name.toLowerCase();
 
-      // LOGIQUE DE SUBSTITUTION MANUELLE (Strict 18 Exercises Mapping)
+      // MANUAL SUBSTITUTION LOGIC (Strict 18 Exercises Mapping)
       if (nameLower.contains('back squat')) {
         if (reason == SwapReason.noEquipment) {
           targetNames = ['Squat au poids du corps', 'Fentes'];
@@ -238,7 +237,8 @@ class WorkoutProgramViewModel extends ChangeNotifier {
         } else if (reason == SwapReason.pain) {
           targetNames = ['Tirage vertical (Lat Pulldown)', 'Tractions'];
         }
-      } else if (nameLower.contains('tirage vertical') || nameLower.contains('lat pulldown')) {
+      } else if (nameLower.contains('tirage vertical') ||
+          nameLower.contains('lat pulldown')) {
         if (reason == SwapReason.noEquipment) {
           targetNames = ['Tractions', 'Superman'];
         } else if (reason == SwapReason.pain) {
@@ -295,18 +295,22 @@ class WorkoutProgramViewModel extends ChangeNotifier {
       }
 
       if (targetNames.isNotEmpty) {
-        final results = await (_db.select(_db.exercise)
-              ..where((e) => e.name.isIn(targetNames)))
-            .get();
+        final results =
+            await (_db.select(_db.exercise)
+              ..where((e) => e.name.isIn(targetNames))).get();
 
         if (results.isNotEmpty) {
-          // Tri pour respecter l'ordre défini
+          // Sort based on targetNames order
           results.sort((a, b) {
-            int indexA = targetNames.indexWhere((name) => a.name.contains(name) || name.contains(a.name));
-            int indexB = targetNames.indexWhere((name) => b.name.contains(name) || name.contains(b.name));
+            int indexA = targetNames.indexWhere(
+              (name) => a.name.contains(name) || name.contains(a.name),
+            );
+            int indexB = targetNames.indexWhere(
+              (name) => b.name.contains(name) || name.contains(b.name),
+            );
             return indexA.compareTo(indexB);
           });
-          
+
           _swapAlternatives = results;
           _swapState = SwapState.success;
           notifyListeners();
@@ -314,26 +318,42 @@ class WorkoutProgramViewModel extends ChangeNotifier {
         }
       }
 
-      // FALLBACK : Logique générale par groupe musculaire si le mapping manuel échoue
-      final primaryMuscleRow = await (_db.select(_db.exerciseMuscle).join([
-        drift.innerJoin(_db.muscle, _db.muscle.id.equalsExp(_db.exerciseMuscle.muscleId)),
-      ])..where(_db.exerciseMuscle.exerciseId.equals(originalExerciseId))
-        ..orderBy([drift.OrderingTerm.desc(_db.exerciseMuscle.weight)])
-        ..limit(1)).getSingleOrNull();
+      // FALLBACK : Muscle group matching if manual mapping fails
+      final primaryMuscleRow =
+          await (_db.select(_db.exerciseMuscle).join([
+                  drift.innerJoin(
+                    _db.muscle,
+                    _db.muscle.id.equalsExp(_db.exerciseMuscle.muscleId),
+                  ),
+                ])
+                ..where(
+                  _db.exerciseMuscle.exerciseId.equals(originalExerciseId),
+                )
+                ..orderBy([drift.OrderingTerm.desc(_db.exerciseMuscle.weight)])
+                ..limit(1))
+              .getSingleOrNull();
 
       if (primaryMuscleRow != null) {
-        final muscleId = primaryMuscleRow.readTable(_db.exerciseMuscle).muscleId;
-        var query = _db.select(_db.exercise).join([
-          drift.innerJoin(_db.exerciseMuscle, _db.exerciseMuscle.exerciseId.equalsExp(_db.exercise.id)),
-        ])..where(_db.exerciseMuscle.muscleId.equals(muscleId))
-          ..where(_db.exercise.id.isNotValue(originalExerciseId));
+        final muscleId =
+            primaryMuscleRow.readTable(_db.exerciseMuscle).muscleId;
+        var query =
+            _db.select(_db.exercise).join([
+                drift.innerJoin(
+                  _db.exerciseMuscle,
+                  _db.exerciseMuscle.exerciseId.equalsExp(_db.exercise.id),
+                ),
+              ])
+              ..where(_db.exerciseMuscle.muscleId.equals(muscleId))
+              ..where(_db.exercise.id.isNotValue(originalExerciseId));
 
         if (reason == SwapReason.noEquipment) {
-          final equipmentQuery = _db.selectOnly(_db.exerciseEquipment)..addColumns([_db.exerciseEquipment.exerciseId]);
+          final equipmentQuery = _db.selectOnly(_db.exerciseEquipment)
+            ..addColumns([_db.exerciseEquipment.exerciseId]);
           query.where(_db.exercise.id.isNotInQuery(equipmentQuery));
         }
 
-        final fallbackResults = await query.map((row) => row.readTable(_db.exercise)).get();
+        final fallbackResults =
+            await query.map((row) => row.readTable(_db.exercise)).get();
         if (fallbackResults.isNotEmpty) {
           fallbackResults.shuffle();
           _swapAlternatives = fallbackResults.take(2).toList();

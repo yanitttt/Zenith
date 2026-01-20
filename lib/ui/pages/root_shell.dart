@@ -10,7 +10,7 @@ import 'workout_program_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'planning_page.dart';
 import 'perf/performance_lab_page.dart';
-import '../../services/home_widget_service.dart'; // Added
+import '../../services/home_widget_service.dart';
 
 class RootShell extends StatefulWidget {
   final AppDb db;
@@ -59,7 +59,7 @@ class _RootShellState extends State<RootShell> {
       WorkoutProgramPage(
         db: widget.db,
         prefs: _prefs!,
-        homeWidgetService: HomeWidgetService(widget.db), // Instantiate here
+        homeWidgetService: HomeWidgetService(widget.db),
       ),
       ExercisesPage(db: widget.db),
       AdminPage(key: _adminKey, db: widget.db, prefs: _prefs!),
@@ -73,7 +73,6 @@ class _RootShellState extends State<RootShell> {
       BottomNavItem(icon: Icons.person, label: 'Profil'),
     ];
 
-    // Solution propre:
     final visiblePages = List<Widget>.from(pages);
     final visibleItems = List<BottomNavItem>.from(items);
 
@@ -93,10 +92,10 @@ class _RootShellState extends State<RootShell> {
             setState(() {
               _index = i;
               if (i == 1) {
-                // Si c'est le planning
+                // Reset planning state
                 _planningKey = UniqueKey();
               } else if (i == 4) {
-                // Si c'est le profil (index 4 dans la liste originale)
+                // Reset admin state
                 _adminKey = UniqueKey();
               }
             });

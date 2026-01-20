@@ -42,17 +42,17 @@ class _AdminPageView extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 1. HEADER (Titre + Refresh)
+              // Header
               _buildHeader(context),
 
               const SizedBox(height: 8),
 
-              // 2. RAPPEL COMPACT (Redesign prioritaire)
+              // Rappel inactivité
               _buildCompactRappel(context),
 
               const SizedBox(height: 8),
 
-              // 3. DASHBOARD USER (Contenu principal Expanded)
+              // Dashboard User principal
               Expanded(
                 child: StreamBuilder<List<AppUserData>>(
                   stream: vm.usersStream,
@@ -79,11 +79,10 @@ class _AdminPageView extends StatelessWidget {
                       );
                     }
 
-                    // FOCUS SINGLE USER DASHBOARD
-                    // On prend le premier utilisateur (scenario Profile standard)
+                    // Profil mono-utilisateur
                     final user = users.first;
 
-                    // Trigger logic updates (badges, days training)
+                    // Mise à jour de la logique métier (Badges, jours)
                     vm.loadTrainingDaysIfNeeded(user.id);
                     vm.loadUserBadgesIfNeeded(user.id);
                     vm.checkRetroactiveBadges(user.id);
@@ -100,7 +99,7 @@ class _AdminPageView extends StatelessWidget {
   }
 
   // ---------------------------------------------------------------------------
-  // 1. HEADER
+  // Header
   // ---------------------------------------------------------------------------
   Widget _buildHeader(BuildContext context) {
     return Row(
@@ -109,7 +108,7 @@ class _AdminPageView extends StatelessWidget {
         const Text(
           "Profil",
           style: TextStyle(
-            fontSize: 24, // Légèrement réduit pour gagner de place
+            fontSize: 24,
             fontWeight: FontWeight.bold,
             color: Color(0xFFD4B868),
           ),
@@ -118,10 +117,10 @@ class _AdminPageView extends StatelessWidget {
           tooltip: 'Rafraîchir',
           icon: const Icon(Icons.refresh, color: AppTheme.gold, size: 20),
           onPressed: () async {
-            // Force verify badges for current user
+            // Vérification forcée des badges
             final vm = context.read<AdminViewModel>();
             final users = await vm.usersStream.first;
-            // Check for new badges (just in case)
+
             await vm.checkRetroactiveBadges(users.first.id);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -135,10 +134,9 @@ class _AdminPageView extends StatelessWidget {
   }
 
   // ---------------------------------------------------------------------------
-  // 2. COMPACT RAPPEL (Redesign Majeur)
+  // Rappel Compact
   // ---------------------------------------------------------------------------
   Widget _buildCompactRappel(BuildContext context) {
-    // Utilisation de Builder pour accéder au context avec Provider/Prefs
     return Builder(
       builder: (context) {
         final vm = context.watch<AdminViewModel>();
@@ -147,7 +145,7 @@ class _AdminPageView extends StatelessWidget {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A2E), // Fond sombre contraste
+            color: const Color(0xFF1A1A2E),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppTheme.gold.withOpacity(0.3)),
           ),
@@ -168,7 +166,7 @@ class _AdminPageView extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              // Switch compact
+              // Switch
               SizedBox(
                 height: 30,
                 child: Switch(
@@ -182,7 +180,7 @@ class _AdminPageView extends StatelessWidget {
               ),
               if (enabled) ...[
                 const SizedBox(width: 12),
-                // Dropdown très compact
+                // Dropdown jours
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   height: 32,
@@ -222,7 +220,7 @@ class _AdminPageView extends StatelessWidget {
   }
 
   // ---------------------------------------------------------------------------
-  // 3. USER PROFILE DASHBOARD (Unifié)
+  // User Profile Dashboard
   // ---------------------------------------------------------------------------
   Widget _buildUserProfile(
     BuildContext context,
@@ -231,13 +229,13 @@ class _AdminPageView extends StatelessWidget {
   ) {
     return Column(
       children: [
-        // CONTENEUR UNIFIÉ (User + Stats + Metabolisme)
+        // Conteneur groupé : User + Stats + Métabolisme
         Expanded(
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              // Couleur de fond unifiée (légèrement plus claire ou différente du Scaffold)
+              // Fond unifié
               color: const Color(0xFF151525),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withOpacity(0.05)),
@@ -245,12 +243,8 @@ class _AdminPageView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // A. User Info Header
                 _buildUserHeaderCompact(context, vm, u),
 
-                // Pas d'espace entre Header et Stats
-
-                // B. Stats Grid + Métabolisme (Expanded pour tout remplir)
                 Expanded(child: _buildStatsGrid(vm, u)),
               ],
             ),
@@ -259,18 +253,17 @@ class _AdminPageView extends StatelessWidget {
 
         const SizedBox(height: 8),
 
-        // C. Bottom Buttons (Hors du conteneur unifié)
+        const SizedBox(height: 8),
+
         _buildBottomActions(context, vm, u),
 
         const SizedBox(height: 16),
 
-        // D. Data Management (Backup)
         _buildDataManagementSection(context, vm),
       ],
     );
   }
 
-  // --- 3.D Data Management Section ---
   Widget _buildDataManagementSection(BuildContext context, AdminViewModel vm) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -317,7 +310,6 @@ class _AdminPageView extends StatelessWidget {
                   icon: Icons.download,
                   label: 'Importer',
                   isCompact: true,
-                  // Style légèrement différent pour indiquer l'action "spéciale" ?
                   onPressed: () => _confirmAndImport(context, vm),
                 ),
               ),
@@ -328,7 +320,7 @@ class _AdminPageView extends StatelessWidget {
     );
   }
 
-  // Choix du mode d'export
+  /// Options d'export : Partage ou Téléchargement local
   void _showExportOptions(BuildContext context, AdminViewModel vm) {
     showModalBottomSheet(
       context: context,
@@ -352,8 +344,6 @@ class _AdminPageView extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-
-                // Option 1 : Partager
                 ListTile(
                   leading: const Icon(Icons.share, color: AppTheme.gold),
                   title: const Text(
@@ -382,8 +372,6 @@ class _AdminPageView extends StatelessWidget {
                 ),
 
                 const Divider(color: Colors.white10),
-
-                // Option 2 : Sauvegarder Local
                 ListTile(
                   leading: const Icon(Icons.save_alt, color: AppTheme.gold),
                   title: const Text(
@@ -426,7 +414,6 @@ class _AdminPageView extends StatelessWidget {
     );
   }
 
-  // --- 3.A User Info Header ---
   Widget _buildUserHeaderCompact(
     BuildContext context,
     AdminViewModel vm,
@@ -446,7 +433,6 @@ class _AdminPageView extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Avatar
           Container(
             width: 44,
             height: 44,
@@ -458,7 +444,8 @@ class _AdminPageView extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // Infos Text
+          const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,7 +470,6 @@ class _AdminPageView extends StatelessWidget {
             ),
           ),
 
-          // ID Tag
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
@@ -505,7 +491,6 @@ class _AdminPageView extends StatelessWidget {
     ).animate().fade(duration: 500.ms).slideY(begin: -0.2, end: 0);
   }
 
-  // --- 3.B Stats Grid (Flex Version pour remplir l'espace) ---
   Widget _buildStatsGrid(AdminViewModel vm, AppUserData u) {
     final (imcVal, imcCat) = vm.calculateImc(u);
     final hasMetabolism =
@@ -549,7 +534,7 @@ class _AdminPageView extends StatelessWidget {
               : '-',
       unit: '',
       iconSize: 28,
-      valueFontSize: 20, // Niveau peut être long
+      valueFontSize: 20, // Gestion text-overflow
     );
 
     final cardMetab =
@@ -561,7 +546,7 @@ class _AdminPageView extends StatelessWidget {
                   u.metabolism!.trim().substring(0, 1).toUpperCase() +
                   u.metabolism!.trim().substring(1),
               unit: '',
-              // TAILLES RÉDUITEES POUR LE SPLIT 50/50
+              // Ajustement taille
               iconSize: 28,
               valueFontSize: 20,
             )
@@ -572,7 +557,7 @@ class _AdminPageView extends StatelessWidget {
         Selector<AdminViewModel, List<GamificationBadgeData>?>(
           selector: (_, vm) => vm.getCachedUserBadges(u.id),
           builder: (context, badges, _) {
-            // Utilisation du widget partagé en mode compact
+            // Widget partagé (mode compact)
             return GamificationProfileWidget(
               user: u,
               badges: badges ?? [],
@@ -581,12 +566,9 @@ class _AdminPageView extends StatelessWidget {
           },
         );
 
-    // Layout Flex: Column avec Expanded pour forcer le remplissage vertical
-    // Ligne 3 partagee : Metabolisme (Left) | Gamification (Right)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Ligne 1 : Taille | Poids
         Expanded(
           child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -600,7 +582,6 @@ class _AdminPageView extends StatelessWidget {
               .fade(delay: 200.ms, duration: 500.ms)
               .slideX(begin: -0.2, end: 0),
         ),
-        // Ligne 2 : IMC | Niveau
         Expanded(
           child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -614,20 +595,18 @@ class _AdminPageView extends StatelessWidget {
               .fade(delay: 300.ms, duration: 500.ms)
               .slideX(begin: -0.2, end: 0),
         ),
-        // Ligne 3 : Métabolisme ET Gamification
         Expanded(
           flex: 1,
           child:
               Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Si métabolisme existe, il prend 50%, sinon, on laisse la place pour autre chose ou on met Gamification en full
+                  // Layout adaptatif : Métabolisme (50%) ou Gamification étendu
                   if (hasMetabolism) ...[
                     Expanded(child: cardMetab!),
                     const SizedBox(width: 8),
                   ],
 
-                  // La carte Gamification prend le reste
                   Expanded(child: cardGamification),
                 ],
               ).animate().fade(delay: 400.ms, duration: 500.ms).scale(),
@@ -636,7 +615,6 @@ class _AdminPageView extends StatelessWidget {
     );
   }
 
-  // --- 3.C Bottom Actions ---
   Widget _buildBottomActions(
     BuildContext context,
     AdminViewModel vm,
@@ -645,7 +623,6 @@ class _AdminPageView extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Jours entrainement (Row pour être compact)
         Selector<AdminViewModel, List<int>?>(
           selector: (_, vm) => vm.getCachedTrainingDays(u.id),
           builder: (context, days, _) {
@@ -672,7 +649,6 @@ class _AdminPageView extends StatelessWidget {
 
         const SizedBox(height: 8),
 
-        // Modifier / Supprimer
         Row(
           children: [
             Expanded(
@@ -700,7 +676,7 @@ class _AdminPageView extends StatelessWidget {
   }
 
   // ---------------------------------------------------------------------------
-  // INTERACTION HELPERS (Ported from UserCard)
+  // Interaction Helpers
   // ---------------------------------------------------------------------------
   void _navigateToEdit(
     BuildContext context,
@@ -817,7 +793,7 @@ class _AdminPageView extends StatelessWidget {
     if (ok == true) {
       if (context.mounted) {
         try {
-          // Afficher un loader pendant l'import
+          // Feedback visuel (Loader)
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -827,7 +803,7 @@ class _AdminPageView extends StatelessWidget {
           final success = await vm.importData();
 
           if (context.mounted) {
-            Navigator.of(context).pop(); // Fermer le loader
+            Navigator.of(context).pop();
 
             if (success) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -840,7 +816,7 @@ class _AdminPageView extends StatelessWidget {
           }
         } catch (e) {
           if (context.mounted) {
-            Navigator.of(context).pop(); // Fermer le loader en cas d'erreur
+            Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text("Echec de l'import : $e"),
@@ -900,7 +876,6 @@ class _CompactStatRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    /// LABEL (Taille, Poids, IMC…)
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
@@ -916,7 +891,6 @@ class _CompactStatRow extends StatelessWidget {
 
                     const SizedBox(height: 4),
 
-                    /// VALEUR + UNITE
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.baseline,
                       textBaseline: TextBaseline.alphabetic,

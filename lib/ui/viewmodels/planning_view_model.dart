@@ -7,7 +7,7 @@ class PlanningViewModel extends ChangeNotifier {
   final AppDb db;
   late final PlanningService _service;
 
-  // État
+  // State
   DateTime _selectedDate = DateTime.now();
   DateTime _startOfWeek = DateTime.now();
   List<PlanningItem> _sessionsDuJour = [];
@@ -16,7 +16,6 @@ class PlanningViewModel extends ChangeNotifier {
   int? _currentUserId;
   String? _errorMessage;
 
-  // Getters
   DateTime get selectedDate => _selectedDate;
   DateTime get startOfWeek => _startOfWeek;
   List<PlanningItem> get sessionsDuJour => _sessionsDuJour;
@@ -27,9 +26,7 @@ class PlanningViewModel extends ChangeNotifier {
 
   PlanningViewModel(this.db) {
     _service = PlanningService(db);
-    // Initialisation de startOfWeek (Lundi de la semaine actuelle ou jour même si on veut simplifier,
-    // mais ici on garde la logique existante : 7 jours glissants ou calés sur semaine ?)
-    // Logique originale : startOfWeek = now minus weekday-1 (donc Lundi)
+    // Start week on Monday
     final now = DateTime.now();
     _startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     _startOfWeek = DateTime(
@@ -39,7 +36,7 @@ class PlanningViewModel extends ChangeNotifier {
     );
   }
 
-  /// Initialise les données (récupère user ID puis charge le planning)
+  /// Get User ID & Load Data
   Future<void> init() async {
     try {
       final user = await db.select(db.appUser).getSingleOrNull();
@@ -54,8 +51,7 @@ class PlanningViewModel extends ChangeNotifier {
     }
   }
 
-  /// Charge les données pour la semaine et le jour sélectionné
-  /// Optimisation : Appels parallèles via Future.wait
+  /// Load weekly & daily data (Parallel fetch)
   Future<void> loadData() async {
     if (_currentUserId == null) return;
 
@@ -64,7 +60,7 @@ class PlanningViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Lancement en parallèle pour gain de perf
+      // Parallel fetching for performance
       final results = await Future.wait([
         _service.getDaysWithActivity(_currentUserId!, _startOfWeek),
         _service.getSessionsForDate(_currentUserId!, _selectedDate),
@@ -73,8 +69,7 @@ class PlanningViewModel extends ChangeNotifier {
       _joursAvecActivite = results[0] as Set<int>;
       _sessionsDuJour = results[1] as List<PlanningItem>;
 
-      // On charge aussi les données du mois en parallèle "fire and forget" ou await
-      // Pour l'instant on await pour être sûr de l'UI
+      // Sync load month data (could be fire-and-forget if optimized)
       await loadMonthData();
 
       _isLoading = false;
@@ -87,13 +82,13 @@ class PlanningViewModel extends ChangeNotifier {
   /// Change de semaine de N semaines (offset)
   void changeWeek(int offset) {
     _startOfWeek = _startOfWeek.add(Duration(days: 7 * offset));
-    // On ne re-sélectionne pas forcément la date, mais on garde la semaine synchronisée
+    // Keep week synced without changing selected date unless needed
     loadData();
   }
 
   /// Change de mois de N mois (offset)
   void changeMonth(int offset) {
-    // On se déplace au 1er jour du mois cible
+    // Move to 1st of target month
     final newDate = DateTime(
       _selectedDate.year,
       _selectedDate.month + offset,
@@ -107,7 +102,7 @@ class PlanningViewModel extends ChangeNotifier {
     _selectedDate = date;
 
     if (updateWeek) {
-      // Si on vient du calendrier, on met aussi à jour la semaine affichée
+      // Sync week view if date picked from calendar
       _startOfWeek = date.subtract(Duration(days: date.weekday - 1));
       _startOfWeek = DateTime(
         _startOfWeek.year,
@@ -144,11 +139,9 @@ class PlanningViewModel extends ChangeNotifier {
             ),
           );
 
-      // Recharger pour mettre à jour l'UI
       await loadData();
     } catch (e) {
-      // On log ou on notifie l'UI via un état d'erreur temporaire si besoin,
-      // mais ici on laisse l'UI gérer le SnackBar de succès/erreur via callback si souhaité
+      // Error handling delegated to UI callbacks or global handler
       print("Erreur ajout session: $e");
     }
   }
@@ -188,13 +181,12 @@ class PlanningViewModel extends ChangeNotifier {
   Future<void> loadMonthData() async {
     if (_currentUserId == null) return;
 
-    // On prend du 1er au dernier jour du mois de _selectedDate
+    // Full month range
     final start = DateTime(_selectedDate.year, _selectedDate.month, 1);
     final nextMonth = DateTime(_selectedDate.year, _selectedDate.month + 1, 1);
     final end = nextMonth.subtract(const Duration(seconds: 1));
 
     try {
-      // Fetch parallèle : jours d'activité + liste complète des séances
       final results = await Future.wait([
         _service.getDaysWithActivityForRange(_currentUserId!, start, end),
         _service.getSessionsForRange(_currentUserId!, start, end),

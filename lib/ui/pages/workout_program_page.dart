@@ -11,18 +11,18 @@ import '../../core/theme/app_theme.dart';
 import 'active_session_page.dart';
 import '../utils/responsive.dart';
 
-import '../../services/home_widget_service.dart'; // Add import
+import '../../services/home_widget_service.dart';
 
 class WorkoutProgramPage extends StatelessWidget {
   final AppDb db;
   final AppPrefs prefs;
-  final HomeWidgetService homeWidgetService; // Add field
+  final HomeWidgetService homeWidgetService;
 
   const WorkoutProgramPage({
     super.key,
     required this.db,
     required this.prefs,
-    required this.homeWidgetService, // Add to constructor
+    required this.homeWidgetService,
   });
 
   @override
@@ -32,7 +32,7 @@ class WorkoutProgramPage extends StatelessWidget {
           (_) => WorkoutProgramViewModel(
             db: db,
             prefs: prefs,
-            homeWidgetService: homeWidgetService, // Pass to VM
+            homeWidgetService: homeWidgetService,
           )..loadProgram(),
       child: const _WorkoutProgramContent(),
     );
@@ -286,7 +286,7 @@ class _WorkoutProgramContent extends StatelessWidget {
     Responsive responsive,
     WorkoutProgramViewModel vm,
   ) {
-    // 1. Déterminer la date de référence pour l'affichage de la semaine
+    // Déterminer la date de référence pour l'affichage
     DateTime displayStart;
     DateTime displayEnd;
 
@@ -298,7 +298,6 @@ class _WorkoutProgramContent extends StatelessWidget {
           ..sort();
 
     if (scheduledDates.isNotEmpty) {
-      // Si on a un programme, on affiche la plage réelle (ex: 11 jan - 17 jan)
       displayStart = scheduledDates.first;
       displayEnd = scheduledDates.last;
     } else {
@@ -312,7 +311,7 @@ class _WorkoutProgramContent extends StatelessWidget {
     final dateRange =
         '${dateFormat.format(displayStart)} - ${dateFormat.format(displayEnd)}';
 
-    // 3. Déterminer le texte du badge
+    // Déterminer le texte du badge
     final now = DateTime.now();
     final nowClean = DateTime(now.year, now.month, now.day);
     final startClean = DateTime(
@@ -349,7 +348,6 @@ class _WorkoutProgramContent extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badge "Semaine en cours"
                     Container(
                       padding: EdgeInsets.symmetric(
                         horizontal: responsive.rw(8),
@@ -374,7 +372,6 @@ class _WorkoutProgramContent extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: responsive.rh(8)),
-                    // Titre avec dates
                     Text(
                       dateRange,
                       style: TextStyle(
@@ -389,8 +386,7 @@ class _WorkoutProgramContent extends StatelessWidget {
                       Text(
                         vm.currentProgram!.name,
                         style: TextStyle(
-                          color:
-                              Colors.white60, // Plus subtil pour le sous-titre
+                          color: Colors.white60,
                           fontSize: responsive.rsp(14),
                           fontWeight: FontWeight.w500,
                         ),
@@ -399,12 +395,9 @@ class _WorkoutProgramContent extends StatelessWidget {
                   ],
                 ),
               ),
-              // Bouton d'action "Mettre à jour"
               if (vm.programDays.isNotEmpty)
                 Container(
-                  margin: EdgeInsets.only(
-                    top: responsive.rh(8),
-                  ), // Alignement visuel
+                  margin: EdgeInsets.only(top: responsive.rh(8)),
                   child: OutlinedButton(
                     onPressed:
                         vm.isGenerating

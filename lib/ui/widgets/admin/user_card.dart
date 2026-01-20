@@ -17,23 +17,18 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Accès au ViewModel sans écoute directe (sauf via select plus bas)
+    // Access VM without listening (using select mostly)
     final vm = context.read<AdminViewModel>();
 
-    // Préparation des données d'affichage via le ViewModel (helpers)
+    // UI Helpers
     final fullName = vm.getFullName(u);
     final ageLabel = vm.getAgeLabel(u.birthDate);
     final genderLabel = vm.getGenderLabel(u.gender);
     final genderIcon = vm.getGenderIcon(u.gender);
     final (imcVal, imcCat) = vm.calculateImc(u);
 
-    // Initialisation du chargement des jours si nécessaire
-    // Note: On peut faire ceci dans un addPostFrameCallback ou ici si c'est léger.
-    // Pour éviter de déclencher un setState pendant le build, on diffère légèrement
-    // ou on utilise un FutureBuilder si on veut être puriste.
-    // Ici, vm.loadTrainingDaysIfNeeded vérifie le cache avant de lancer l'async.
+    // Load training days if needed (caches results)
     vm.loadTrainingDaysIfNeeded(u.id);
-    // Vérification rétroactive des badges (si manqués à cause d'un bug)
     vm.checkRetroactiveBadges(u.id);
 
     return Container(
@@ -45,7 +40,7 @@ class UserCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // En-tête (Avatar + Nom)
+          // Header (Avatar + Name)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
@@ -119,13 +114,13 @@ class UserCard extends StatelessWidget {
             ),
           ),
 
-          // Contenu (Stats + Actions)
+          // Content (Stats + Actions)
           Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // GAMIFICATION WIDGET
+                // Gamification
                 StreamBuilder<List<GamificationBadgeData>>(
                   stream: vm.watchUserBadges(u.id),
                   builder: (context, snapshot) {
@@ -139,7 +134,7 @@ class UserCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Taille / Poids
+                // Height / Weight
                 Row(
                   children: [
                     if (u.height != null)
@@ -167,7 +162,7 @@ class UserCard extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // IMC / Niveau
+                // BMI / Level
                 Row(
                   children: [
                     if (imcVal != null)
@@ -194,7 +189,7 @@ class UserCard extends StatelessWidget {
                   ],
                 ),
 
-                // Métabolisme
+                // Metabolism
                 if (u.metabolism != null &&
                     u.metabolism!.trim().isNotEmpty) ...[
                   const SizedBox(height: 8),
@@ -209,7 +204,7 @@ class UserCard extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                // Boutons d'action (Modifier / Supprimer)
+                // Actions (Edit / Delete)
                 Row(
                   children: [
                     Expanded(
@@ -235,7 +230,7 @@ class UserCard extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // Jours d'entraînement (Observation sélective du cache)
+                // Training Days (Selective cache observation)
                 Selector<AdminViewModel, List<int>?>(
                   selector: (_, vm) => vm.getCachedTrainingDays(u.id),
                   builder: (context, days, _) {
@@ -319,11 +314,9 @@ class UserCard extends StatelessWidget {
     );
 
     if (ok == true) {
-      // Capture du navigateur avant la suppression car le widget risque d'être démonté
-      // (la liste des user devient vide -> UserCard est retiré de l'arbre)
+      // Catch navigator before widget disposal
       final navigator = Navigator.of(context);
 
-      // Appel au ViewModel pour la suppression logique
       final isCurrentUser = await vm.deleteUser(userId);
 
       if (isCurrentUser) {

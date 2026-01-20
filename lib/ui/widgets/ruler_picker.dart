@@ -8,7 +8,7 @@ class RulerPicker extends StatefulWidget {
   final double initialValue;
   final ValueChanged<double> onChanged;
   final String unit;
-  final double step; // E.g., 0.1 or 1.0
+  final double step;
 
   const RulerPicker({
     super.key,
@@ -27,15 +27,14 @@ class RulerPicker extends StatefulWidget {
 class _RulerPickerState extends State<RulerPicker> {
   late ScrollController _scrollController;
   late double _currentValue;
-  final double _tickWidth = 10.0; // Espacement entre chaque trait
+  final double _tickWidth = 10.0;
 
   @override
   void initState() {
     super.initState();
     _currentValue = widget.initialValue;
 
-    // Calcul de l'offset initial pour centrer la valeur
-    // Offset = (Value - Min) / Step * TickWidth
+    // Initial offset to center current value
     final initialOffset =
         ((widget.initialValue - widget.min) / widget.step) * _tickWidth;
 
@@ -52,13 +51,11 @@ class _RulerPickerState extends State<RulerPicker> {
 
   void _onScroll() {
     final offset = _scrollController.offset;
-    // Index calculé depuis l'offset
+    // Calculate value from scroll offset
     final index = (offset / _tickWidth).round();
-
-    // Valeur brute
     double value = widget.min + (index * widget.step);
 
-    // Bornage
+    // Clamping
     if (value < widget.min) value = widget.min;
     if (value > widget.max) value = widget.max;
 
@@ -73,7 +70,6 @@ class _RulerPickerState extends State<RulerPicker> {
 
   @override
   Widget build(BuildContext context) {
-    // Nombre total de gradations
     final int totalTicks =
         ((widget.max - widget.min) / widget.step).floor() + 1;
 
@@ -82,19 +78,18 @@ class _RulerPickerState extends State<RulerPicker> {
         final halfWidth = constraints.maxWidth / 2;
         final maxHeight = constraints.maxHeight;
 
-        // Calcul des hauteurs proportionnelles
-        // On veut réserver ~50-60% pour la règle et le reste pour le texte
+        // Proportional heights layout
         final rulerHeight = maxHeight * 0.55;
         final textHeight = maxHeight * 0.45;
 
-        // Ajustement de la taille de police en fonction de la hauteur dispo
+        // Responsive font size
         final fontSize = (textHeight * 0.8).clamp(20.0, 48.0);
 
         return Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            // Affichage de la valeur (RESPONSIVE)
+            // Value Display
             SizedBox(
               height: textHeight,
               child: FittedBox(
@@ -119,9 +114,7 @@ class _RulerPickerState extends State<RulerPicker> {
                       widget.unit,
                       style: TextStyle(
                         color: AppTheme.gold,
-                        fontSize:
-                            fontSize *
-                            0.4, // Taille proportionnelle à la valeur
+                        fontSize: fontSize * 0.4,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -130,12 +123,11 @@ class _RulerPickerState extends State<RulerPicker> {
               ),
             ),
 
-            // La Règle (RESPONSIVE)
+            // Ruler
             SizedBox(
               height: rulerHeight,
               child: Stack(
                 children: [
-                  // Liste des graduations
                   ListView.builder(
                     controller: _scrollController,
                     physics: const BouncingScrollPhysics(),
@@ -163,12 +155,12 @@ class _RulerPickerState extends State<RulerPicker> {
                     },
                   ),
 
-                  // Curseur central fixe
+                  // Central Pointer
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: Container(
                       width: 4,
-                      height: rulerHeight * 0.7, // Proportionnel
+                      height: rulerHeight * 0.7,
                       decoration: BoxDecoration(
                         color: AppTheme.gold,
                         borderRadius: BorderRadius.circular(2),
@@ -183,7 +175,7 @@ class _RulerPickerState extends State<RulerPicker> {
                     ),
                   ),
 
-                  // Gradient léger
+                  // Fade Gradient
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(

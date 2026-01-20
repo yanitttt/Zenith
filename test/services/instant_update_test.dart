@@ -25,7 +25,7 @@ void main() {
   test(
     'Instant update: regenerating future days adjusts based on last session performance',
     () async {
-      // 1. Setup User and Objective
+      // 1. Setup User & Goal
       final objectiveId = await db
           .into(db.objective)
           .insert(ObjectiveCompanion.insert(code: 'force', name: 'Force'));
@@ -51,7 +51,7 @@ void main() {
           );
 
       // 2. Setup Exercises
-      // Exercise 1: Bench Press (Poly)
+      // Ex 1: Bench Press (Poly)
       final benchId = await db
           .into(db.exercise)
           .insert(
@@ -63,7 +63,7 @@ void main() {
             ),
           );
 
-      // Exercise 2: Squat (Poly) - will be in Day 2
+      // Ex 2: Squat (Poly) - Day 2
       final squatId = await db
           .into(db.exercise)
           .insert(
@@ -116,7 +116,7 @@ void main() {
         programName: 'Test Program',
       );
 
-      // Verify initial state of Day 2 (Squat)
+      // Check Day 2 (Squat) existence
       final days =
           await (db.select(db.programDay)
                 ..where((t) => t.programId.equals(programId))
@@ -127,10 +127,7 @@ void main() {
       final day1Id = days[0].id;
       final day2Id = days[1].id;
 
-      // Ensure Bench is in Day 1 (Upper) and Squat in Day 2 (Lower)
-      // Note: The generator logic puts Upper in Day 1 and Lower in Day 2 for 2-day split.
-
-      // 4. Simulate Session for Day 1 (Bench Press) with POOR performance
+      // 4. Simulate Session Day 1 (Bench) - Poor Performance
       final sessionId = await sessionService.startSession(
         userId: userId,
         programDayId: day1Id,
@@ -147,7 +144,7 @@ void main() {
           actualSets: 1,
           actualReps: 1,
           actualLoad: 20.0,
-          actualRpe: 9.0, // Hard
+          actualRpe: 9.0,
           isCompleted: true,
         ),
       );
@@ -157,20 +154,13 @@ void main() {
         startTime: DateTime.now().subtract(const Duration(hours: 1)),
       );
 
-      // 5. Trigger Instant Update (Regenerate Future Days)
+      // 5. Trigger Instant Update (Regenerate Future)
       await programGenerator.regenerateFutureDays(
         userId: userId,
         programId: programId,
       );
 
-      // 6. Verify Day 2 (Squat) has NOT been affected (different muscle group)
-      // BUT if we had another Upper body day, it would be affected.
-      // Let's check if we can simulate a scenario where the SAME exercise appears again or similar muscle group.
-      // In a 2-day split (Upper/Lower), Bench won't be in Day 2.
-
-      // Let's try to verify that the regeneration actually ran and didn't crash.
-      // And maybe check if we can force a Full Body split or similar where Bench appears again.
-      // Or simply check that Day 2 was re-generated (exercises might be re-shuffled).
+      // 6. Verify Day 2 persists (different muscle group not affected by Bench performance)
 
       final day2ExercisesAfter =
           await (db.select(db.programDayExercise)
@@ -191,7 +181,7 @@ void main() {
   );
 
   test('Instant update: Day 2 exercises are re-created (IDs change)', () async {
-    // 1. Setup User and Objective
+    // 1. Setup User & Goal
     final objectiveId = await db
         .into(db.objective)
         .insert(ObjectiveCompanion.insert(code: 'force', name: 'Force'));
@@ -253,7 +243,7 @@ void main() {
           ),
         );
 
-    // Generate Program (2 days)
+    // Generate Program
     final programId = await programGenerator.generateUserProgram(
       userId: userId,
       objectiveId: objectiveId,
@@ -265,7 +255,7 @@ void main() {
           ..where((t) => t.programId.equals(programId))).get();
     final day2Id = days[1].id;
 
-    // Get initial exercises of Day 2
+    // Get initial Day 2 exercises
     final initialDay2Exercises =
         await (db.select(db.programDayExercise)
           ..where((t) => t.programDayId.equals(day2Id))).get();

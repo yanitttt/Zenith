@@ -34,16 +34,15 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
   Widget build(BuildContext context) {
     final responsive = Responsive(context);
 
-    // Layout principal (le "Squelette")
+    // Skeleton Layout
     final skeletonLayout = Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header Skeleton enlevé car affiché par la page parente
-          // SizedBox(height: responsive.rh(32)),
+          // Header Skeleton (Removed: rendered by parent)
 
-          // Top Row (3 Cards)
+          // Top Cards
           SizedBox(
             height: 100,
             child: Row(
@@ -76,7 +75,7 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
           ),
           SizedBox(height: responsive.rh(16)),
 
-          // Week Chart Stub
+          // Chart Placeholder
           Expanded(
             flex: 3,
             child: _buildShimmerBox(
@@ -116,23 +115,20 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
       ),
     );
 
-    // Stack avec le contenu incitatif par dessus
+    // Skeleton + CTA Overlay
     return Stack(
       children: [
-        // Couche de fond (Squelette)
-        Opacity(
-          opacity: 0.3, // On rend le squelette discret
-          child: skeletonLayout,
-        ),
+        // Background (Skeleton)
+        Opacity(opacity: 0.3, child: skeletonLayout),
 
-        // Couche CTA (Call To Action) - Centrée
+        // CTA Layer
         Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: responsive.rw(32)),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Icône engageante
+                // Icon
                 Container(
                   padding: EdgeInsets.all(responsive.rw(24)),
                   decoration: BoxDecoration(
@@ -151,16 +147,16 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                     ],
                   ),
                   child: Icon(
-                    Icons.explore, // CHANGER ICI
+                    Icons.explore,
                     size: responsive.rsp(48),
                     color: AppTheme.gold,
                   ),
                 ),
                 SizedBox(height: responsive.rh(24)),
 
-                // Titre
+                // Title
                 Text(
-                  "Explore les exercices", // CHANGER ICI
+                  "Explore les exercices",
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: responsive.rsp(24),
@@ -169,9 +165,9 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                 ),
                 SizedBox(height: responsive.rh(12)),
 
-                // Sous-titre
+                // Subtitle
                 Text(
-                  "Ton tableau de bord est vide.\nDécouvre la bibliothèque d'exercices avant de créer ton programme.", // CHANGER ICI
+                  "Ton tableau de bord est vide.\nDécouvre la bibliothèque d'exercices avant de créer ton programme.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white70,
@@ -181,9 +177,9 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                 ),
                 SizedBox(height: responsive.rh(32)),
 
-                // Indicateur vers la BottomNavBar
+                // Navigation Pointer
                 GestureDetector(
-                  onTap: widget.onNavigate, // CHANGER ICI
+                  onTap: widget.onNavigate,
                   child: Column(
                     children: [
                       Container(
@@ -192,7 +188,7 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                           horizontal: responsive.rw(16),
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black54, // Fond semi-transparent
+                          color: Colors.black54,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppTheme.gold),
                         ),
@@ -237,13 +233,13 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.list_alt, // CHANGER ICI
+                              Icons.list_alt,
                               color: Colors.black,
                               size: responsive.rsp(18),
                             ),
                             SizedBox(width: 8),
                             Text(
-                              "Voir les exercices", // CHANGER ICI
+                              "Voir les exercices",
                               style: TextStyle(
                                 color: Colors.black,
                                 fontSize: responsive.rsp(14),
@@ -286,11 +282,7 @@ class _DashboardSkeletonState extends State<DashboardSkeleton>
                 Colors.white.withOpacity(0.1),
                 Colors.white.withOpacity(0.05),
               ],
-              stops: [
-                0.0,
-                0.5 + 0.5 * _controller.value, // Simple mouvement vague
-                1.0,
-              ],
+              stops: [0.0, 0.5 + 0.5 * _controller.value, 1.0],
             ),
           ),
         );

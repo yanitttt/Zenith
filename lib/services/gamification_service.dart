@@ -9,9 +9,7 @@ class GamificationService {
 
   GamificationService(this.db);
 
-  /// --------------------------------------------------------------------------
-  /// XP & LEVEL LOGIC
-  /// --------------------------------------------------------------------------
+  // --- XP & LEVEL LOGIC ---
 
   // Formula: Level = sqrt(XP / 50)
   // Inverse: XP needed = 50 * Level^2
@@ -48,7 +46,7 @@ class GamificationService {
     return "Novice"; // Levels 1-9
   }
 
-  /// Adds XP to user and returns true if level up occurred
+  /// Awards XP. Returns true if level up.
   Future<bool> awardXp(int userId, int amount) async {
     final user =
         await (db.select(db.appUser)
@@ -69,12 +67,9 @@ class GamificationService {
     return newLevel > oldLevel;
   }
 
-  /// --------------------------------------------------------------------------
-  /// BADGE LOGIC
-  /// --------------------------------------------------------------------------
+  // --- BADGE LOGIC ---
 
-  /// Ensures that all badges exist in the database.
-  /// This is a safety mechanism in case migration didn't populate them for existing users.
+  /// Ensures DB badge definitions exist (migration safety).
   Future<void> ensureBadgesExist() async {
     Future<void> addBadge(String id, String name, String desc, int xp) async {
       final exists =
@@ -91,7 +86,6 @@ class GamificationService {
                 xpReward: Value(xp),
               ),
             );
-        debugPrint('[GAMIFICATION] Ensured badge exists: $name');
       }
     }
 
@@ -128,11 +122,11 @@ class GamificationService {
     await addBadge('high_voltage', 'Survolté', 'Intensité moyenne > 8/10', 300);
   }
 
-  /// Checks for badges that should have been awarded but weren't (e.g. due to missing definitions).
+  /// Retroactive badge check.
   Future<void> checkRetroactiveBadges(int userId) async {
     await ensureBadgesExist();
 
-    // 1. First Steps: Check if user has at least one completed session
+    // 1. First Steps Badge
     final sessionCount = await (db.select(db.session)
       ..where((s) => s.userId.equals(userId))).get().then((l) => l.length);
 
@@ -153,7 +147,6 @@ class GamificationService {
                 earnedDateTs: DateTime.now().millisecondsSinceEpoch,
               ),
             );
-        debugPrint('[GAMIFICATION] Retroactively awarded: First Steps');
 
         await NotificationService().showNotification(
           id: Random().nextInt(100000),
@@ -165,8 +158,6 @@ class GamificationService {
     }
   }
 
-  // We are using checking the session completion, so we need Session data.
-  // We also need the exercises performed in that session.
   Future<List<String>> checkAndAwardBadges({
     required int userId,
     required SessionData session, // Drift Table Data Class
@@ -177,11 +168,10 @@ class GamificationService {
 
     List<String> newBadges = [];
 
-    // Always award base XP for completing a session
+    // Base XP award
     await awardXp(userId, 50);
-    debugPrint('[GAMIFICATION] Awarded 50 base XP for session completion');
 
-    // Helper to check and grant
+    // Badge Grant Helper
     Future<void> tryGrant(String badgeId) async {
       final hasBadge =
           await (db.select(db.userBadge)..where(
@@ -206,7 +196,7 @@ class GamificationService {
           // Grant XP for badge
           await awardXp(userId, badgeDef.xpReward);
           newBadges.add(badgeDef.name);
-          debugPrint('[GAMIFICATION] Badge awarded: ${badgeDef.name}');
+          debugPrint('[GAMIFICATION] Earned: ${badgeDef.name}');
 
           await NotificationService().showNotification(
             id: Random().nextInt(100000),

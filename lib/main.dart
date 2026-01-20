@@ -1,11 +1,10 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'data/db/app_db.dart';
 import 'core/prefs/app_prefs.dart';
-import 'core/perf/perf_service.dart'; //  Module Perf
+import 'core/perf/perf_service.dart';
 import 'core/theme/app_theme.dart';
 import 'ui/pages/root_shell.dart';
 import 'ui/pages/onboarding/onboarding_flow.dart';
@@ -19,7 +18,7 @@ void main() async {
 
   await initializeDateFormatting('fr_FR', null);
 
-  // Initialisation du service de performance (si flag activé)
+  // Performance monitoring (optional)
   PerfService().init();
 
   final db = AppDb();
@@ -31,12 +30,13 @@ void main() async {
 
   await NotificationService().init();
   await BackgroundService().init();
-  // DECOMMENTER LIGNE CI-DESSOUS POUR TESTER IMMEDIATEMENT (PUIS RE-COMMENTER)
+  // Uncomment to test background checks immediately:
   // await BackgroundService().triggerImmediateCheck();
 
   final userDao = UserDao(db);
   await userDao.ensureSingleton();
 
+  // Auto-login logic
   final count = await userDao.countUsers();
   if (count > 0) {
     final existing = await userDao.firstUser();

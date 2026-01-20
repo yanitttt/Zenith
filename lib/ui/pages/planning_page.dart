@@ -42,7 +42,7 @@ class _PlanningViewState extends State<_PlanningView> {
   @override
   void initState() {
     super.initState();
-    // Le VM est initialisé dans le create du Provider
+    super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureScrollController(context.read<PlanningViewModel>().startOfWeek);
     });
@@ -62,9 +62,7 @@ class _PlanningViewState extends State<_PlanningView> {
     final margin = responsive.rw(50);
 
     final now = DateTime.now();
-    // On veut centrer ou positionner sur le jour actuel si on est dans la semaine courante
-    // Sinon on reste au début.
-    // Logique simplifiée : si la semaine affichée contient aujourd'hui, on scroll vers aujourd'hui.
+    // Auto-scroll vers aujourd'hui si visible dans la semaine courante.
 
     final isCurrentWeek =
         now.difference(startOfWeek).inDays >= 0 &&
@@ -180,11 +178,7 @@ class _PlanningViewState extends State<_PlanningView> {
 
   Widget _buildMonthView(BuildContext context, PlanningViewModel vm) {
     final responsive = Responsive(context);
-    // Jours de la semaine
     final weekDays = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
-
-    // Calculs pour le grid
-    // On veut afficher le mois de vm.selectedDate
 
     // Premier jour du mois
     final firstDayOfMonth = DateTime(
@@ -192,7 +186,7 @@ class _PlanningViewState extends State<_PlanningView> {
       vm.selectedDate.month,
       1,
     );
-    // Dernier jour du mois (pour savoir combien de jours)
+
     final lastDayOfMonth = DateTime(
       vm.selectedDate.year,
       vm.selectedDate.month + 1,
@@ -200,10 +194,9 @@ class _PlanningViewState extends State<_PlanningView> {
     );
 
     final daysInMonth = lastDayOfMonth.day;
-    // Offset : le 1er du mois est quel jour ? (Lundi = 1, donc offset = weekday - 1)
+    // Calcul décalage début de mois (Lundi=1)
     final startOffset = firstDayOfMonth.weekday - 1;
 
-    // Total cells = offset + days
     final totalCells = startOffset + daysInMonth;
 
     return Column(
@@ -211,16 +204,13 @@ class _PlanningViewState extends State<_PlanningView> {
         Expanded(
           child: Center(
             child: SingleChildScrollView(
-              // On utilise un scroll view pour éviter l'overflow sur petits écrans
-              // même si le grid n'est pas scrollable.
+              // ScrollView pour éviter overflow sur petits écrans
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // En-têtes Jours - Alignés avec la grille
+                  // En-têtes Jours
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 0,
-                    ), // Match grid alignment
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
                     child: Row(
                       children:
                           weekDays
@@ -245,7 +235,7 @@ class _PlanningViewState extends State<_PlanningView> {
 
                   // Grille
                   AspectRatio(
-                    aspectRatio: 0.85, // Un peu plus haut
+                    aspectRatio: 0.85, // Ratio ajusté pour hauteur visuelle
                     child: GridView.builder(
                       physics: const NeverScrollableScrollPhysics(),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -501,7 +491,7 @@ class _PlanningViewState extends State<_PlanningView> {
             ),
           ],
         ),
-        // Toggle Switch & DatePicker
+        // Actions (Switch & DatePicker)
         Row(
           children: [
             if (_viewMode == PlanningViewMode.week) ...[
@@ -544,7 +534,7 @@ class _PlanningViewState extends State<_PlanningView> {
                   _viewMode =
                       val ? PlanningViewMode.month : PlanningViewMode.week;
                 });
-                // Si on passe en mode mois, on reload
+                // Reload nécessaire au changement de mode
                 if (_viewMode == PlanningViewMode.month) {
                   vm.loadMonthData();
                 }
@@ -796,7 +786,7 @@ class _PlanningViewState extends State<_PlanningView> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: const Text(
-                            "MUSCU", // À dynamiser si l'info est dispo plus précisément
+                            "MUSCU", // TODO: Catégorie dynamique
                             style: TextStyle(
                               color: Colors.blueAccent,
                               fontSize: 10,
@@ -826,11 +816,9 @@ class _PlanningViewState extends State<_PlanningView> {
                 ),
               ),
 
-              // Colonne de droite : Actions + Badge Terminé
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // Ligne des boutons (Edit / Delete)
                   Row(
                     mainAxisSize:
                         MainAxisSize
@@ -850,9 +838,8 @@ class _PlanningViewState extends State<_PlanningView> {
                                 initialDuration: item.duration,
                                 sessionId: item.sessionId,
                               ),
-                          padding: EdgeInsets.zero, // Réduire padding
-                          constraints:
-                              const BoxConstraints(), // Réduire constraints
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
                         ),
                       if (item.sessionId != null) ...[
                         const SizedBox(width: 12),
@@ -871,7 +858,6 @@ class _PlanningViewState extends State<_PlanningView> {
                     ],
                   ),
 
-                  // Badge Terminé en dessous
                   if (item.isDone) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -881,12 +867,12 @@ class _PlanningViewState extends State<_PlanningView> {
                           padding: const EdgeInsets.all(2),
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Colors.grey, // Filled grey
+                            color: Colors.grey,
                           ),
                           child: const Icon(
                             Icons.check,
                             size: 10,
-                            color: Colors.white, // White check for visibility
+                            color: Colors.white,
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -1254,7 +1240,7 @@ class _PlanningViewState extends State<_PlanningView> {
     Color bg,
     Color accent,
   ) {
-    // Version plus compacte et épurée pour la liste mensuelle
+    /// Carte compacte pour vue mensuelle
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1265,7 +1251,6 @@ class _PlanningViewState extends State<_PlanningView> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Status icon instead of big index
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -1296,7 +1281,7 @@ class _PlanningViewState extends State<_PlanningView> {
                   Padding(
                     padding: const EdgeInsets.only(top: 4.0),
                     child: Text(
-                      "${item.duration} min • Muscu", // Mock category
+                      "${item.duration} min • Muscu", // TODO: Catégorie dynamique
                       style: const TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                   ),
@@ -1304,7 +1289,6 @@ class _PlanningViewState extends State<_PlanningView> {
             ),
           ),
 
-          // Edit button (small)
           if (item.sessionId != null)
             IconButton(
               icon: const Icon(Icons.edit, size: 16, color: Colors.white30),

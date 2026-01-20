@@ -40,7 +40,7 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
   @override
   void initState() {
     super.initState();
-    debugPrint('[SWIPE_CARD] initState for exercise: ${widget.exercise.name}');
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -153,9 +153,6 @@ class _ExerciseSwipeCardState extends State<ExerciseSwipeCard>
 
   @override
   Widget build(BuildContext context) {
-    debugPrint(
-      '[SWIPE_CARD] Building card for: ${widget.exercise.name}, isDragging=$_isDragging, isAnimating=$_isAnimating',
-    );
     final offset = _isDragging ? _dragOffset : _offsetAnimation.value;
     final rotation =
         _isDragging ? _dragOffset.dx * 0.0003 : _rotationAnimation.value;

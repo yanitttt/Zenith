@@ -24,9 +24,8 @@ class AdminViewModel extends ChangeNotifier {
   late final UserTrainingDayDao trainingDayDao;
   late final DataBackupService backupService;
 
-  // Cache pour les jours d'entraînement (userId -> liste de jours)
+  // Caches & Subs (Realtime updates)
   final Map<int, List<int>> _trainingDaysCache = {};
-  // Subscriptions pour les mises à jour en temps réel
   final Map<int, StreamSubscription> _trainingDaysSubscriptions = {};
   final Map<int, StreamSubscription> _badgesSubscriptions = {};
 
@@ -37,14 +36,10 @@ class AdminViewModel extends ChangeNotifier {
     trainingDayDao = UserTrainingDayDao(db);
     backupService = DataBackupService(db);
 
-    // Initialisation unique du stream
     usersStream = userDao.watchAllOrdered();
-
-    // Ensure badges exist (repair if migration failed)
     GamificationService(db).ensureBadgesExist();
   }
 
-  /// Stream des utilisateurs pour la mise à jour en temps réel
   late final Stream<List<AppUserData>> usersStream;
 
   @override
@@ -58,16 +53,14 @@ class AdminViewModel extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Récupère les jours d'entraînement mis en cache pour un utilisateur
   List<int>? getCachedTrainingDays(int userId) {
     return _trainingDaysCache[userId];
   }
 
-  /// Charge les jours d'entraînement d'un utilisateur et écoute les changements
   void loadTrainingDaysIfNeeded(int userId) {
     if (_trainingDaysSubscriptions.containsKey(userId)) return;
 
-    // On s'abonne pour avoir les mises à jour en temps réel (ex: modif depuis WorkoutPage)
+    // Abonnement temps réel (requis pour synchro cross-pages)
     final sub = trainingDayDao.watchDayNumbersForUser(userId).listen((days) {
       _trainingDaysCache[userId] = days;
       notifyListeners();
@@ -76,7 +69,6 @@ class AdminViewModel extends ChangeNotifier {
     _trainingDaysSubscriptions[userId] = sub;
   }
 
-  /// Met à jour les jours d'entraînement pour un utilisateur
   Future<void> updateTrainingDays(int userId, List<int> newDays) async {
     try {
       await trainingDayDao.replace(userId, newDays);
@@ -88,20 +80,17 @@ class AdminViewModel extends ChangeNotifier {
     }
   }
 
-  /// Active ou désactive le rappel d'inactivité
   Future<void> toggleReminder(bool enabled) async {
     await prefs.setReminderEnabled(enabled);
     notifyListeners();
   }
 
-  /// Change le nombre de jours pour le rappel d'inactivité
   Future<void> updateReminderDays(int days) async {
     await prefs.setReminderDays(days);
     notifyListeners();
   }
 
-  /// Supprime un utilisateur et ses données associées
-  /// Retourne [true] si l'utilisateur supprimé était l'utilisateur courant
+  /// Retourne true si l'utilisateur supprimé était l'utilisateur courant (nécessite logout)
   Future<bool> deleteUser(int userId) async {
     try {
       await userDao.deleteUserCascade(userId);
@@ -126,18 +115,15 @@ class AdminViewModel extends ChangeNotifier {
     }
   }
 
-  /// Exporte les données via le service de backup (Partage)
   Future<void> exportData() async {
     await backupService.exportData();
   }
 
-  /// Sauvegarde les données localement dans les Téléchargements
   Future<String> exportToDownloads() async {
     return await backupService.saveToDownloads();
   }
 
-  /// Importe les données (Attention : Ecrase tout)
-  /// Retourne true si succès
+  /// Retourne true si succès. Attention: écrase tout.
   Future<bool> importData() async {
     final success = await backupService.importData();
     if (success) {
@@ -148,7 +134,7 @@ class AdminViewModel extends ChangeNotifier {
         await prefs.setCurrentUserId(users.first.id);
         await prefs.setOnboarded(true);
       } else {
-        // Cas rare où l'import serait vide ou sans user
+        // Fallback: Backup vide ou corrompu
         await prefs.clearCurrentUserId();
         await prefs.setOnboarded(false);
       }
@@ -157,8 +143,7 @@ class AdminViewModel extends ChangeNotifier {
     return success;
   }
 
-  /// -- Méthodes Utilitaires (Calculs) --
-  /// Déplacées ici pour alléger le Widget
+  /// --- Helpers (UI Logic) ---
 
   String getFullName(AppUserData u) {
     return [
@@ -204,7 +189,6 @@ class AdminViewModel extends ChangeNotifier {
     }
   }
 
-  // Retourne (valeurImc, categorie)
   (double?, String?) calculateImc(AppUserData u) {
     if (u.height != null && u.weight != null) {
       final calc = IMCcalculator(height: u.height!, weight: u.weight!);
@@ -245,11 +229,9 @@ class AdminViewModel extends ChangeNotifier {
     _badgesSubscriptions[userId] = sub;
   }
 
-  // Reload inutilisé mais gardé pour compatibilité ou force refresh manuel si besoin
+  // Gardé pour compatibilité ou force refresh manuel si besoin
   Future<void> reloadUserBadges(int userId) async {
-    // Si on a déjà une souscription, elle devrait gérer l'update.
-    // Mais on peut forcer une lecture one-shot si vraiment nécessaire.
-    // Pour l'instant on laisse vide ou on log.
+    // Stream gère déjà l'update.
     debugPrint(
       "Reload demandé, mais le stream gère ça automatiquement maintenant.",
     );

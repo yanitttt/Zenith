@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Couleurs principales
-  static const Color scaffold = Color(0xFF0b0f1a); // Bleu nuit profond
-  static const Color surface = Color(
-    0xFF0F0F1E,
-  ); // Bleu surface légèrement plus clair
-  static const Color gold = Color(0xFFD9BE77); // Doré principal
-  static const Color goldDark = Color(
-    0xFFC8B06A,
-  ); // Doré plus foncé (pour dégradés)
-  static const Color goldLight = Color(
-    0xFFEAD9A5,
-  ); // Doré plus clair (pour dégradés)
+  // Palette (Design Tokens)
+  static const Color scaffold = Color(0xFF0b0f1a);
+  static const Color surface = Color(0xFF0F0F1E);
+  static const Color gold = Color(0xFFD9BE77);
+  static const Color goldDark = Color(0xFFC8B06A);
+  static const Color goldLight = Color(0xFFEAD9A5);
   static const Color calendarBg = Color(0xFFD4B868);
   static const Color textOnDark = Colors.white;
 
-  // Couleurs sémantiques
+  // Semantic
   static const Color error = Color(0xFFFF6B6B);
   static const Color success = Color(0xFF4ECDC4);
 

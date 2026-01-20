@@ -5,8 +5,7 @@ import 'dart:async';
 import 'perf_frame_tracker.dart';
 import 'perf_platform.dart';
 
-/// Service central de gestion des métriques de performance.
-/// Implémente le pattern Singleton.
+/// Central performance metrics manager (Singleton).
 class PerfService {
   static final PerfService _instance = PerfService._internal();
 
@@ -16,8 +15,7 @@ class PerfService {
 
   PerfService._internal();
 
-  /// Indique si le mode performance est activé.
-  /// Cette valeur est définie à la compilation via --dart-define=PERF_MODE=true
+  /// Compile-time flag: --dart-define=PERF_MODE=true
   static const bool isPerfMode = bool.fromEnvironment(
     'PERF_MODE',
     defaultValue: false,
@@ -28,8 +26,7 @@ class PerfService {
   final List<Map<String, dynamic>> _batterySamples = [];
   final List<Map<String, dynamic>> _resourceSamples = [];
 
-  /// Initialise le service de performance.
-  /// Ne fait rien si [isPerfMode] est faux.
+  /// No-op if not in Perf Mode.
   void init() {
     if (!isPerfMode) return;
 
@@ -39,7 +36,7 @@ class PerfService {
   }
 
   void _startPolling() {
-    // Poll toutes les 2 secondes
+    // Poll every 2s
     _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
       final now = DateTime.now().toIso8601String();
 
@@ -55,13 +52,13 @@ class PerfService {
     });
   }
 
-  /// Démarre le tracking pour un nouvel écran.
+  /// Tracks screen change.
   void onScreenChanged(String screenName) {
     if (!isPerfMode) return;
     _frameTracker.setCurrentScreen(screenName);
   }
 
-  /// Mesure le temps d'exécution d'une action asynchrone.
+  /// Measures async execution time.
   Future<T> measure<T>(
     String actionName,
     Future<T> Function() action, {
@@ -85,7 +82,7 @@ class PerfService {
     }
   }
 
-  /// Mesure le temps d'exécution d'une action synchrone.
+  /// Measures sync execution time.
   T measureSync<T>(
     String actionName,
     T Function() action, {
@@ -114,19 +111,19 @@ class PerfService {
 
   // ... (existing code)
 
-  /// Log une métrique UI (PerfMonitorWidget)
+  /// Log UI metric (PerfMonitorWidget)
   void logUIMetric(Map<String, dynamic> metric) {
     if (!isPerfMode) return;
     _uiMetrics.add(metric);
   }
 
-  /// Log une métrique Algo (ComplexityAnalyzer)
+  /// Log Algo metric (ComplexityAnalyzer)
   void logAlgoMetric(Map<String, dynamic> metric) {
     if (!isPerfMode) return;
     _algoMetrics.add(metric);
   }
 
-  /// Récupère les stats actuelles (pour le rapport).
+  /// Get current stats (for report)
   Map<String, dynamic> getStats() {
     return {
       'frames': _frameTracker.getStats(),

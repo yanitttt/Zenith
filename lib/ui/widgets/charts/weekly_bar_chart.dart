@@ -9,20 +9,19 @@ class WeeklyBarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(" WeeklyBarChart - Données reçues : $weeklyData");
-
-    final correctedData = weeklyData.isEmpty
-        ? {
-      "Lun": 1,
-      "Mar": 0,
-      "Mer": 2,
-      "Jeu": 1,
-      "Ven": 0,
-      "Sam": 1,
-      "Dim": 0,
-    }
-        : weeklyData;
-
+    // Use real data or fallback (for preview/empty state)
+    final correctedData =
+        weeklyData.isEmpty
+            ? {
+              "Lun": 1,
+              "Mar": 0,
+              "Mer": 2,
+              "Jeu": 1,
+              "Ven": 0,
+              "Sam": 1,
+              "Dim": 0,
+            }
+            : weeklyData;
 
     final days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
     List<BarChartGroupData> barGroups = [];
@@ -30,19 +29,20 @@ class WeeklyBarChart extends StatelessWidget {
     int index = 0;
     for (var day in days) {
       final count = correctedData[day] ?? 0;
-      print(" $day : $count séance(s)");
       barGroups.add(
         BarChartGroupData(
           x: index,
           barRods: [
             BarChartRodData(
               toY: count.toDouble(),
-              color: count > 0
-                  ? AppTheme.gold
-                  : const Color.fromRGBO(158, 158, 158, 0.3),
+              color:
+                  count > 0
+                      ? AppTheme.gold
+                      : const Color.fromRGBO(158, 158, 158, 0.3),
               width: 16,
-              borderRadius:
-              const BorderRadius.vertical(top: Radius.circular(4)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(4),
+              ),
               backDrawRodData: BackgroundBarChartRodData(
                 show: true,
                 toY: _getMaxY(correctedData),
@@ -125,7 +125,7 @@ class WeeklyBarChart extends StatelessWidget {
     for (var val in data.values) {
       if (val > max) max = val;
     }
-    print(" Hauteur max du graphique : ${max < 5 ? 5 : max + 1}");
+
     return (max < 5 ? 5 : max + 1).toDouble();
   }
 }

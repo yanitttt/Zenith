@@ -286,16 +286,19 @@ class DashboardService {
   }
 
   Future<double> getMaxKg(int userId) async {
-    final result = await db.customSelect(
-      '''
+    final result =
+        await db
+            .customSelect(
+              '''
     SELECT MAX(se.load) AS max_kg
     FROM session_exercise se
     JOIN session s ON s.id = se.session_id
     WHERE s.user_id = ?
     ''',
-      variables: [Variable.withInt(userId)],
-      readsFrom: {db.session, db.sessionExercise},
-    ).getSingle();
+              variables: [Variable.withInt(userId)],
+              readsFrom: {db.session, db.sessionExercise},
+            )
+            .getSingle();
 
     return result.read<double?>('max_kg') ?? 0.0;
   }
@@ -377,9 +380,7 @@ class DashboardService {
     final volLast = resultLast.read<double?>('total_vol') ?? 0.0;
 
     if (volLast == 0) {
-      return volCurrent > 0
-          ? 100.0
-          : 0.0; // Si on passe de 0 à X, c'est 100% de gain (ou infini, mais on met 100 pour l'UI)
+      return volCurrent > 0 ? 100.0 : 0.0; // 0 to X => 100% gain (UI)
     }
 
     final variation = ((volCurrent - volLast) / volLast) * 100;
@@ -430,8 +431,8 @@ class DashboardService {
         break;
       }
 
-      // Sécurité pour pas boucler à l'infini si bug
-      if (weeksBack > 520) break; // 10 ans
+      // Safety cap (10 years)
+      if (weeksBack > 520) break;
     }
 
     return streak;
@@ -448,12 +449,10 @@ class DashboardService {
   }
 
   Stream<DashboardData> watchDashboardData(int userId) {
-    // On écoute plusieurs tables pour déclencher le rafraîchissement
-    // "hasProgram" dépend de userProgram
-    // Les stats dépendent de session, sessionExercise, userFeedback
+    // Data stream triggers on table updates
     return db
         .customSelect(
-          'SELECT 1', // Requête dummy pour le trigger
+          'SELECT 1', // Dummy query for trigger
           readsFrom: {
             db.session,
             db.sessionExercise,
