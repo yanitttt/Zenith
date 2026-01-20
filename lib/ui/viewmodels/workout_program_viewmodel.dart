@@ -183,10 +183,16 @@ class WorkoutProgramViewModel extends ChangeNotifier {
       List<String> targetNames = [];
       final nameLower = originalExercise.name.toLowerCase();
 
-      // LOGIQUE DE SUBSTITUTION AVEC INTÉGRATION DES NOUVEAUX EXERCICES BW
+      // LOGIQUE DE SUBSTITUTION MANUELLE (Strict 18 Exercises Mapping)
       if (nameLower.contains('back squat')) {
         if (reason == SwapReason.noEquipment) {
-          targetNames = ['Squat au poids du corps', 'Fentes', 'Gainage planche'];
+          targetNames = ['Squat au poids du corps', 'Fentes'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Presse à cuisses', 'Squat au poids du corps'];
+        }
+      } else if (nameLower.contains('fentes')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Squat au poids du corps', 'Montées sur chaise'];
         } else if (reason == SwapReason.pain) {
           targetNames = ['Presse à cuisses', 'Soulevé de terre'];
         }
@@ -194,51 +200,97 @@ class WorkoutProgramViewModel extends ChangeNotifier {
         if (reason == SwapReason.noEquipment) {
           targetNames = ['Squat au poids du corps', 'Fentes'];
         } else if (reason == SwapReason.pain) {
-          targetNames = ['Back Squat', 'Soulevé de terre'];
+          targetNames = ['Squat au poids du corps', 'Fentes'];
         }
-      } else if (nameLower.contains('corde à sauter') || nameLower.contains('course tapis')) {
+      } else if (nameLower.contains('squat au poids du corps')) {
         if (reason == SwapReason.noEquipment) {
-          targetNames = ['Jumping Jacks', 'Mountain Climbers'];
+          targetNames = ['Fentes', 'La Chaise'];
         } else if (reason == SwapReason.pain) {
-          targetNames = ['Jumping Jacks', 'Gainage planche'];
+          targetNames = ['Soulevé de terre', 'Gainage planche'];
         }
-      } else if (nameLower.contains('curl biceps') || nameLower.contains('rowing haltère')) {
+      } else if (nameLower.contains('soulevé de terre')) {
         if (reason == SwapReason.noEquipment) {
-          targetNames = ['Tractions', 'Pompes', 'Dips sur banc'];
+          targetNames = ['Superman', 'Pont fessier au sol'];
         } else if (reason == SwapReason.pain) {
-          targetNames = ['Tirage vertical (Lat Pulldown)', 'Tractions'];
+          targetNames = ['Presse à cuisses', 'Gainage planche'];
         }
       } else if (nameLower.contains('développé couché')) {
         if (reason == SwapReason.noEquipment) {
           targetNames = ['Pompes', 'Dips sur banc'];
         } else if (reason == SwapReason.pain) {
-          targetNames = ['Pompes', 'Presse à cuisses'];
+          targetNames = ['Pompes', 'Développé couché haltères prise neutre'];
         }
-      } else if (nameLower.contains('soulevé de terre')) {
+      } else if (nameLower.contains('dips sur banc')) {
         if (reason == SwapReason.noEquipment) {
-          targetNames = ['Superman', 'Gainage planche'];
+          targetNames = ['Pompes', 'Pompes diamant'];
         } else if (reason == SwapReason.pain) {
-          targetNames = ['Presse à cuisses', 'Gainage planche'];
+          targetNames = ['Développé couché', 'Pompes sur les genoux'];
+        }
+      } else if (nameLower.contains('pompe')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Dips sur banc', 'Pompes sur les genoux'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Développé couché', 'Gainage planche'];
+        }
+      } else if (nameLower.contains('rowing haltère')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Tractions', 'Rowing inversé'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Tirage vertical (Lat Pulldown)', 'Tractions'];
         }
       } else if (nameLower.contains('tirage vertical') || nameLower.contains('lat pulldown')) {
         if (reason == SwapReason.noEquipment) {
-          targetNames = ['Tractions', 'Pompes'];
+          targetNames = ['Tractions', 'Superman'];
         } else if (reason == SwapReason.pain) {
-          targetNames = ['Rowing haltère', 'Gainage planche'];
+          targetNames = ['Rowing haltère', 'Tractions assistées'];
         }
       } else if (nameLower.contains('traction')) {
         if (reason == SwapReason.noEquipment) {
-          targetNames = ['Pompes', 'Dips sur banc'];
+          targetNames = ['Rowing inversé', 'Superman'];
         } else if (reason == SwapReason.pain) {
           targetNames = ['Tirage vertical (Lat Pulldown)', 'Rowing haltère'];
         }
-      } else if (nameLower.contains('gainage planche')) {
-        if (reason == SwapReason.pain) {
-          targetNames = ['Soulevé de terre', 'Superman'];
+      } else if (nameLower.contains('curl biceps')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Tractions', 'Curl avec sac à dos'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Tractions', 'Rowing haltère'];
         }
-      } else if (nameLower.contains('pompe')) {
-        if (reason == SwapReason.pain) {
-          targetNames = ['Développé couché', 'Gainage planche'];
+      } else if (nameLower.contains('corde à sauter')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Jumping Jacks', 'Mountain Climbers'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Course tapis', 'Squat au poids du corps'];
+        }
+      } else if (nameLower.contains('course tapis')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Mountain Climbers', 'Jumping Jacks'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Marche rapide', 'Gainage planche'];
+        }
+      } else if (nameLower.contains('jumping jacks')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Mountain Climbers', 'Burpees'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Squat au poids du corps', 'Step touch'];
+        }
+      } else if (nameLower.contains('mountain climber')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Jumping Jacks', 'Montées de genoux sur place'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Course tapis', 'Corde à sauter'];
+        }
+      } else if (nameLower.contains('gainage planche')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Superman', 'Mountain Climbers'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Gainage sur les genoux', 'Superman'];
+        }
+      } else if (nameLower.contains('superman')) {
+        if (reason == SwapReason.noEquipment) {
+          targetNames = ['Gainage planche', 'Pont fessier'];
+        } else if (reason == SwapReason.pain) {
+          targetNames = ['Gainage planche', 'Soulevé de terre'];
         }
       }
 
