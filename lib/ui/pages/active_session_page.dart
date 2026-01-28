@@ -253,6 +253,32 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
                 )
                 : Column(
                   children: [
+                    // --- BOUTONS DÉMO ---
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            onPressed: () => _autoFillSession(isHard: true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('DÉMO: TROP DUR'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => _autoFillSession(isHard: false),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('DÉMO: TROP FACILE'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // ---------------------
                     _buildProgress(),
                     Expanded(child: _buildExercisesList()),
                     _buildCompleteButton(),
@@ -260,6 +286,74 @@ class _ActiveSessionPageState extends State<ActiveSessionPage> {
                 ),
       ),
     );
+  }
+
+  Future<void> _autoFillSession({required bool isHard}) async {
+    setState(() => _loading = true);
+
+    try {
+      // On parcourt tous les exercices
+      for (int i = 0; i < _exercises.length; i++) {
+        final exercise = _exercises[i];
+
+        // On ne touche pas aux exercices déjà faits (comme demandé, on remplit "les autres")
+        if (exercise.isCompleted) continue;
+
+        final ActiveSessionExercise updatedExercise;
+
+        if (isHard) {
+          // CAS TROP DUR : valeurs minimes + RPE max
+          updatedExercise = exercise.copyWith(
+            actualSets: 1,
+            actualReps: 1,
+            actualLoad: 1,
+            actualRpe: 10,
+            isCompleted: true,
+          );
+        } else {
+          // CAS TROP FACILE : valeurs aberrantes hautes + RPE min
+          updatedExercise = exercise.copyWith(
+            actualSets: 100,
+            actualReps: 100,
+            actualLoad: 100,
+            actualRpe: 1, // RPE min possible ? (Slide min=1)
+            isCompleted: true,
+          );
+        }
+
+        // Sauvegarde en BDD
+        await _sessionService.saveExercisePerformance(
+          sessionId: _sessionId!,
+          exercise: updatedExercise,
+        );
+
+        // Mise à jour de la liste locale
+        _exercises[i] = updatedExercise;
+      }
+
+      // On scrolle à la fin ou on met à jour l'index courant
+      // (Optionnel, mais logique si tout est fini)
+      _currentExerciseIndex = _exercises.length - 1;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isHard
+                ? 'Mode DÉMO: Tout marqué comme TROP DUR'
+                : 'Mode DÉMO: Tout marqué comme TROP FACILE',
+          ),
+          backgroundColor: isHard ? Colors.red : Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Erreur démo: $e')));
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   Widget _buildProgress() {
